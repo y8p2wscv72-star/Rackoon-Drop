@@ -1,0 +1,306 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>RACKOON — Мины</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Rubik:ital,wght@0,500;0,700;0,900;1,900&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#0b0d12}
+a{color:#ffc83d}a:hover{color:#ffe08a}
+@keyframes rkPop{0%{transform:scale(.7);opacity:0}60%{transform:scale(1.06);opacity:1}100%{transform:scale(1)}}
+@keyframes rkFlip{0%{transform:scale(.6)}70%{transform:scale(1.12)}100%{transform:scale(1)}}
+</style>
+</helmet>
+<div style="position: relative; width: 390px; min-height: 1180px; box-sizing: border-box; padding: 20px 16px 32px; display: flex; flex-direction: column; gap: 14px; background: #0b0d12; font-family: Rubik, system-ui, sans-serif; color: #ffffff; overflow: hidden">
+
+<header style="display: flex; align-items: center; gap: 10px; height: 48px">
+<a href="Main.dc.html" aria-label="Назад в лобби" style="width: 44px; height: 44px; border-radius: 14px; background: #1a1d27; display: flex; align-items: center; justify-content: center; flex-shrink: 0">
+<svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><path d="M13 3 L6 10 L13 17" fill="none" stroke="#ffffff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+</a>
+<div style="font-size: 26px; font-weight: 900; font-style: italic; flex-grow: 1">MINES</div>
+<div style="height: 44px; box-sizing: border-box; border-radius: 14px; background: #1a1d27; padding: 0 12px; display: flex; align-items: center; font-size: 14px; font-weight: 700; color: #ffc83d">{{balanceText}}</div>
+</header>
+
+<div style="position: relative; height: 96px; border-radius: 20px; overflow: hidden; background: #0b2672">
+<img src="/_blob/b81dc491ff982e1892b4eeeb94570e3c" alt="" style="position: absolute; right: 0; top: 0; width: 200px; height: 96px; object-fit: cover; object-position: 30% 35%; -webkit-mask-image: linear-gradient(to right, transparent 0%, #000 45%); mask-image: linear-gradient(to right, transparent 0%, #000 45%)">
+<div style="position: relative; height: 100%; box-sizing: border-box; padding: 14px 16px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; width: 230px">
+<div style="display: flex; flex-direction: column; justify-content: center; gap: 2px">
+<span style="font-size: 11px; font-weight: 500; color: #b9c3e6">Множитель</span>
+<span style="font-size: 26px; font-weight: 900; line-height: 1; color: {{multColor}}">{{multText}}</span>
+</div>
+<div style="display: flex; flex-direction: column; justify-content: center; gap: 2px">
+<span style="font-size: 11px; font-weight: 500; color: #b9c3e6">Выигрыш</span>
+<span style="font-size: 18px; font-weight: 900; line-height: 1.1; color: #ffc83d">{{winText}}</span>
+</div>
+</div>
+</div>
+
+<div style="display: flex; gap: 6px; overflow: hidden">
+<sc-for list="{{ladder}}" as="s" hint-placeholder-count="6">
+<div style="flex-shrink: 0; min-width: 52px; box-sizing: border-box; border-radius: 10px; padding: 6px 8px; background: {{s.bg}}; border: 1px solid {{s.border}}; display: flex; flex-direction: column; align-items: center; gap: 1px">
+<span style="font-size: 10px; font-weight: 500; color: #8a90a0">{{s.step}}</span>
+<span style="font-size: 13px; font-weight: 700; color: {{s.color}}">{{s.mult}}</span>
+</div>
+</sc-for>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; padding: 10px; border-radius: 22px; background: #11141c; border: 1px solid #1d2230">
+<sc-for list="{{cells}}" as="c" hint-placeholder-count="25">
+<button type="button" onClick="{{c.click}}" disabled="{{c.disabled}}" aria-label="{{c.label}}" style="height: 58px; border-radius: 14px; border: 0; padding: 0; display: flex; align-items: center; justify-content: center; cursor: pointer; background: {{c.bg}}; box-shadow: {{c.shadow}}; opacity: {{c.opacity}}">
+<sc-if value="{{c.gem}}" hint-placeholder-val="{{ false }}">
+<svg width="34" height="29" viewBox="0 0 40 34" aria-hidden="true" style="animation: rkFlip 0.28s ease-out"><path d="M8 0 L32 0 L40 11 L20 34 L0 11Z" fill="#5fd4ff"></path><path d="M8 0 L14 11 L20 0Z M20 0 L26 11 L32 0Z" fill="#a8ecff"></path><path d="M0 11 L40 11 L20 34Z" fill="#2fb4ec"></path><path d="M14 11 L20 34 L26 11Z" fill="#7fdcff"></path></svg>
+</sc-if>
+<sc-if value="{{c.mine}}" hint-placeholder-val="{{ false }}">
+<svg width="34" height="34" viewBox="0 0 34 34" aria-hidden="true" style="animation: rkFlip 0.28s ease-out"><circle cx="15" cy="19" r="12" fill="#1d1f26"></circle><circle cx="11" cy="15" r="3.5" fill="#ffffff" fill-opacity="0.35"></circle><rect x="20" y="5" width="7" height="6" rx="2" fill="#4b5160" transform="rotate(35 23 8)"></rect><path d="M26 6 Q29 1 32 3" fill="none" stroke="#ffd96b" stroke-width="2" stroke-linecap="round"></path><circle cx="32" cy="3" r="2.5" fill="#ffb703"></circle></svg>
+</sc-if>
+<sc-if value="{{c.hidden}}" hint-placeholder-val="{{ true }}">
+<span style="width: 12px; height: 12px; border-radius: 50%; background: #2c3a6e"></span>
+</sc-if>
+</button>
+</sc-for>
+</div>
+
+<sc-if value="{{playing}}" hint-placeholder-val="{{ false }}">
+<div style="display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); gap: 8px">
+<button type="button" onClick="{{randomPick}}" style="height: 60px; border-radius: 18px; border: 2px solid #2c3a6e; background: #151821; color: #ffffff; font-family: Rubik, system-ui, sans-serif; font-size: 14px; font-weight: 700; cursor: pointer">Случайная</button>
+<button type="button" onClick="{{cashout}}" disabled="{{cashoutDisabled}}" style="height: 60px; border: 0; border-radius: 18px; font-family: Rubik, system-ui, sans-serif; font-size: 18px; font-weight: 900; font-style: italic; cursor: pointer; background: {{cashBg}}; color: {{cashColor}}; box-shadow: {{cashShadow}}">{{cashText}}</button>
+</div>
+</sc-if>
+
+<sc-if value="{{notPlaying}}" hint-placeholder-val="{{ true }}">
+<div style="display: flex; flex-direction: column; gap: 12px">
+<div style="background: #151821; border: 1px solid #222838; border-radius: 18px; padding: 12px; display: flex; flex-direction: column; gap: 10px">
+<div style="display: flex; align-items: center; justify-content: space-between">
+<span style="font-size: 13px; font-weight: 500; color: #a3a8b5">Ставка</span>
+<span style="font-size: 18px; font-weight: 900; color: #ffc83d">{{betText}}</span>
+</div>
+<div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px">
+<button type="button" onClick="{{betMinus}}" style="height: 44px; border-radius: 12px; border: 1px solid #222838; background: #0b0d12; color: #ffffff; font-family: Rubik, system-ui, sans-serif; font-size: 18px; font-weight: 700; cursor: pointer">−</button>
+<button type="button" onClick="{{betPlus}}" style="height: 44px; border-radius: 12px; border: 1px solid #222838; background: #0b0d12; color: #ffffff; font-family: Rubik, system-ui, sans-serif; font-size: 18px; font-weight: 700; cursor: pointer">+</button>
+<button type="button" onClick="{{betHalf}}" style="height: 44px; border-radius: 12px; border: 1px solid #222838; background: #0b0d12; color: #ffffff; font-family: Rubik, system-ui, sans-serif; font-size: 14px; font-weight: 700; cursor: pointer">½</button>
+<button type="button" onClick="{{betDouble}}" style="height: 44px; border-radius: 12px; border: 1px solid #222838; background: #0b0d12; color: #ffffff; font-family: Rubik, system-ui, sans-serif; font-size: 14px; font-weight: 700; cursor: pointer">x2</button>
+</div>
+</div>
+<div style="background: #151821; border: 1px solid #222838; border-radius: 18px; padding: 12px; display: flex; flex-direction: column; gap: 10px">
+<div style="display: flex; align-items: center; justify-content: space-between">
+<span style="font-size: 13px; font-weight: 500; color: #a3a8b5">Количество мин</span>
+<div style="display: flex; align-items: center; gap: 8px">
+<button type="button" onClick="{{minesMinus}}" aria-label="Меньше мин" style="width: 44px; height: 44px; border-radius: 12px; border: 1px solid #222838; background: #0b0d12; color: #ffffff; font-family: Rubik, system-ui, sans-serif; font-size: 18px; font-weight: 700; cursor: pointer">−</button>
+<span style="font-size: 20px; font-weight: 900; min-width: 28px; text-align: center">{{mines}}</span>
+<button type="button" onClick="{{minesPlus}}" aria-label="Больше мин" style="width: 44px; height: 44px; border-radius: 12px; border: 1px solid #222838; background: #0b0d12; color: #ffffff; font-family: Rubik, system-ui, sans-serif; font-size: 18px; font-weight: 700; cursor: pointer">+</button>
+</div>
+</div>
+<div style="display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px">
+<sc-for list="{{minePresets}}" as="p" hint-placeholder-count="5">
+<button type="button" onClick="{{p.pick}}" aria-pressed="{{p.pressed}}" style="height: 40px; border-radius: 10px; border: 1px solid {{p.border}}; background: #0b0d12; color: {{p.color}}; font-family: Rubik, system-ui, sans-serif; font-size: 14px; font-weight: 700; cursor: pointer">{{p.n}}</button>
+</sc-for>
+</div>
+</div>
+<button type="button" onClick="{{start}}" disabled="{{startDisabled}}" style="height: 60px; border: 0; border-radius: 18px; font-family: Rubik, system-ui, sans-serif; font-size: 20px; font-weight: 900; font-style: italic; cursor: pointer; background: {{startBg}}; color: {{startColor}}; box-shadow: {{startShadow}}">{{startText}}</button>
+</div>
+</sc-if>
+
+<sc-if value="{{showOverlay}}" hint-placeholder-val="{{ false }}">
+<div style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; background: rgba(5, 6, 10, 0.72); display: flex; justify-content: center; align-items: flex-start; padding-top: 250px">
+<div role="dialog" aria-label="{{resTitle}}" style="width: 320px; box-sizing: border-box; background: #151821; border: 2px solid {{resColor}}; border-radius: 28px; padding: 24px; display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; animation: rkPop 0.45s ease-out; box-shadow: 0 0 60px {{resGlow}}">
+<img src="/_blob/661884b648dd965ea69af44ea8c7ee95" alt="Енот-бандит" style="width: 96px; height: 96px; border-radius: 50%; object-fit: cover; border: 3px solid {{resColor}}; box-sizing: border-box">
+<div style="font-size: 40px; font-weight: 900; font-style: italic; line-height: 1; color: {{resColor}}">{{resTitle}}</div>
+<div style="font-size: 15px; font-weight: 500; color: #c9cdd6">{{resText}}</div>
+<div style="font-size: 26px; font-weight: 900; color: #ffc83d">{{resAmount}}</div>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; width: 100%; margin-top: 6px">
+<button type="button" onClick="{{closeView}}" style="height: 52px; border: 2px solid #2c3a6e; border-radius: 16px; font-family: Rubik, system-ui, sans-serif; font-size: 15px; font-weight: 700; cursor: pointer; background: transparent; color: #ffffff">Смотреть поле</button>
+<button type="button" onClick="{{again}}" style="height: 52px; border: 0; border-radius: 16px; font-family: Rubik, system-ui, sans-serif; font-size: 15px; font-weight: 900; cursor: pointer; background: {{resColor}}; color: #0b0d12">Ещё раз</button>
+</div>
+</div>
+</div>
+</sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":1180}}'>
+var SIZE = 25;
+var RTP = 0.96;
+var PRESETS = [1, 3, 5, 10, 20];
+
+function multFor(k, m) {
+  if (k <= 0) return 1;
+  var p = 1;
+  for (var i = 0; i < k; i++) p *= (SIZE - i) / (SIZE - m - i);
+  return RTP * p;
+}
+function fmt(p) { return (Math.floor(p * 100) / 100) + ' TON'; }
+function fmtMult(x) { return 'x' + (x >= 100 ? x.toFixed(0) : x.toFixed(2)); }
+function round2(x) { return Math.round(x * 100) / 100; }
+
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = {
+      balance: 50, bet: 1, mines: 3, phase: 'idle',
+      mineMap: [], revealed: [], hit: -1, overlay: false, res: null
+    };
+  }
+
+  start() {
+    var s = this.state;
+    if (s.phase === 'playing' || s.bet > s.balance || s.bet <= 0) return;
+    var idx = [];
+    for (var i = 0; i < SIZE; i++) idx.push(i);
+    for (var j = idx.length - 1; j > 0; j--) { var r = Math.floor(Math.random() * (j + 1)); var t = idx[j]; idx[j] = idx[r]; idx[r] = t; }
+    var mineMap = [];
+    for (var n = 0; n < SIZE; n++) mineMap.push(false);
+    for (var q = 0; q < s.mines; q++) mineMap[idx[q]] = true;
+    var revealed = [];
+    for (var z = 0; z < SIZE; z++) revealed.push(false);
+    this.setState({ balance: round2(s.balance - s.bet), phase: 'playing', mineMap: mineMap, revealed: revealed, hit: -1, overlay: false, res: null });
+  }
+
+  safeCount() {
+    return this.state.revealed.filter(function (v) { return v; }).length;
+  }
+
+  reveal(i) {
+    var s = this.state;
+    if (s.phase !== 'playing' || s.revealed[i]) return;
+    if (s.mineMap[i]) {
+      this.setState({ phase: 'lost', hit: i, overlay: true, res: { win: false, amount: s.bet, mult: multFor(this.safeCount(), s.mines) } });
+      return;
+    }
+    var revealed = s.revealed.slice();
+    revealed[i] = true;
+    var k = revealed.filter(function (v) { return v; }).length;
+    var self = this;
+    this.setState({ revealed: revealed }, function () {
+      if (k === SIZE - s.mines) self.cashout();
+    });
+  }
+
+  cashout() {
+    var s = this.state;
+    var k = this.safeCount();
+    if (s.phase !== 'playing' || k === 0) return;
+    var m = multFor(k, s.mines);
+    var win = Math.floor(s.bet * m * 100) / 100;
+    this.setState({ phase: 'won', balance: round2(s.balance + win), overlay: true, res: { win: true, amount: win, mult: m } });
+  }
+
+  randomPick() {
+    var s = this.state;
+    if (s.phase !== 'playing') return;
+    var free = [];
+    for (var i = 0; i < SIZE; i++) if (!s.revealed[i]) free.push(i);
+    if (free.length) this.reveal(free[Math.floor(Math.random() * free.length)]);
+  }
+
+  setBet(v) {
+    var s = this.state;
+    if (s.phase === 'playing') return;
+    v = Math.max(0.1, Math.min(round2(v), Math.max(0.1, s.balance)));
+    this.setState({ bet: round2(v) });
+  }
+  setMines(v) {
+    if (this.state.phase === 'playing') return;
+    this.setState({ mines: Math.max(1, Math.min(24, v)) });
+  }
+
+  renderVals() {
+    var self = this;
+    var s = this.state;
+    var playing = s.phase === 'playing';
+    var ended = s.phase === 'won' || s.phase === 'lost';
+    var k = s.revealed.length ? this.safeCount() : 0;
+    var curMult = playing || ended ? multFor(k, s.mines) : multFor(1, s.mines);
+    var potential = Math.floor(s.bet * multFor(k, s.mines) * 100) / 100;
+
+    var cells = [];
+    for (var i = 0; i < SIZE; i++) {
+      (function (i) {
+        var rev = s.revealed[i];
+        var isMine = s.mineMap[i];
+        var showAll = ended;
+        var gem = (rev && !isMine) || (showAll && !isMine);
+        var mine = showAll && isMine;
+        var ghost = showAll && !rev && i !== s.hit;
+        var bg = '#1b2340', shadow = 'inset 0 -4px 0 #131a33';
+        if (rev) { bg = '#163a63'; shadow = '0 0 16px rgba(95,212,255,0.35)'; }
+        if (i === s.hit) { bg = '#5c1620'; shadow = '0 0 18px rgba(255,93,115,0.6)'; }
+        if (playing && !rev) { bg = '#24305a'; shadow = 'inset 0 -4px 0 #18214a'; }
+        cells.push({
+          gem: gem, mine: mine, hidden: !gem && !mine,
+          bg: bg, shadow: shadow, opacity: ghost ? '0.45' : '1',
+          disabled: !playing || rev,
+          label: rev ? 'Открыто: алмаз' : (mine ? 'Мина' : 'Клетка ' + (i + 1)),
+          click: function () { self.reveal(i); }
+        });
+      })(i);
+    }
+
+    var ladder = [];
+    var startStep = Math.max(1, k);
+    for (var st = startStep; st < startStep + 7 && st <= SIZE - s.mines; st++) {
+      var isCur = playing && st === k;
+      var isNext = st === k + 1;
+      ladder.push({
+        step: st + ' шаг', mult: fmtMult(multFor(st, s.mines)),
+        bg: isCur ? 'rgba(43,212,107,0.16)' : '#151821',
+        border: isNext && (playing || s.phase === 'idle') ? '#ffc83d' : (isCur ? '#2bd46b' : '#222838'),
+        color: isCur ? '#2bd46b' : (isNext ? '#ffc83d' : '#ffffff')
+      });
+    }
+
+    var canStart = s.bet <= s.balance && s.bet > 0;
+    var res = s.res;
+    return {
+      balanceText: fmt(s.balance),
+      multText: fmtMult(playing || ended ? multFor(k, s.mines) : curMult),
+      multColor: s.phase === 'lost' ? '#ff5d73' : (k > 0 ? '#2bd46b' : '#ffffff'),
+      winText: playing ? fmt(potential) : (res ? (res.win ? '+' + fmt(res.amount) : '−' + fmt(res.amount)) : fmt(s.bet * multFor(1, s.mines))),
+      ladder: ladder,
+      cells: cells,
+      playing: playing,
+      notPlaying: !playing,
+      randomPick: function () { self.randomPick(); },
+      cashout: function () { self.cashout(); },
+      cashoutDisabled: k === 0,
+      cashBg: k > 0 ? '#2bd46b' : '#1d2230',
+      cashColor: k > 0 ? '#06210f' : '#6c7282',
+      cashShadow: k > 0 ? '0 6px 24px rgba(43,212,107,0.35)' : 'none',
+      cashText: k > 0 ? 'ЗАБРАТЬ ' + fmt(potential) : 'ОТКРОЙ КЛЕТКУ',
+      betText: fmt(s.bet),
+      betMinus: function () { self.setBet(self.state.bet - 0.5); },
+      betPlus: function () { self.setBet(self.state.bet + 0.5); },
+      betHalf: function () { self.setBet(self.state.bet / 2); },
+      betDouble: function () { self.setBet(self.state.bet * 2); },
+      mines: s.mines,
+      minesMinus: function () { self.setMines(self.state.mines - 1); },
+      minesPlus: function () { self.setMines(self.state.mines + 1); },
+      minePresets: PRESETS.map(function (n) {
+        var sel = n === s.mines;
+        return { n: n, pressed: sel ? 'true' : 'false', border: sel ? '#ffc83d' : '#222838', color: sel ? '#ffc83d' : '#ffffff', pick: function () { self.setMines(n); } };
+      }),
+      start: function () { self.start(); },
+      startDisabled: !canStart,
+      startBg: canStart ? '#ffc83d' : '#1d2230',
+      startColor: canStart ? '#1a1300' : '#6c7282',
+      startShadow: canStart ? '0 6px 24px rgba(255,200,61,0.35)' : 'none',
+      startText: canStart ? 'ИГРАТЬ · ' + fmt(s.bet) : 'НЕ ХВАТАЕТ TON',
+      showOverlay: s.overlay && !!res,
+      resTitle: res ? (res.win ? 'КУШ!' : 'БУМ!') : '',
+      resColor: res ? (res.win ? '#2bd46b' : '#ff5d73') : '#2bd46b',
+      resGlow: res ? (res.win ? 'rgba(43,212,107,0.35)' : 'rgba(255,93,115,0.3)') : 'transparent',
+      resText: res ? (res.win ? 'Енот вынес добычу с ' + fmtMult(res.mult) : 'Енот наступил на мину') : '',
+      resAmount: res ? (res.win ? '+' + fmt(res.amount) : '−' + fmt(res.amount)) : '',
+      closeView: function () { self.setState({ overlay: false }); },
+      again: function () { self.setState({ overlay: false }, function () { self.start(); }); }
+    };
+  }
+}
+</script>
+</body>
+</html>

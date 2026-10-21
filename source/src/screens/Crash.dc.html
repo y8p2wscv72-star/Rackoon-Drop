@@ -1,0 +1,376 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>RACKOON — Краш</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Rubik:ital,wght@0,500;0,700;0,900;1,900&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#0b0d12}
+a{color:#ffc83d}a:hover{color:#ffe08a}
+@keyframes rkBoom{0%{transform:scale(.2);opacity:1}70%{transform:scale(1.2);opacity:1}100%{transform:scale(1.4);opacity:0}}
+@keyframes rkFlame{0%,100%{transform:scaleY(1)}50%{transform:scaleY(1.35)}}
+@keyframes rkPop{0%{transform:scale(.7);opacity:0}100%{transform:scale(1);opacity:1}}
+@keyframes rkFlash{0%{transform:scale(.2);opacity:1}60%{transform:scale(1.3);opacity:.9}100%{transform:scale(1.6);opacity:0}}
+@keyframes rkRing{0%{transform:scale(.2);opacity:1}100%{transform:scale(2.2);opacity:0}}
+@keyframes rkRays{0%{transform:scale(.3) rotate(0deg);opacity:1}100%{transform:scale(1.5) rotate(25deg);opacity:0}}
+@keyframes rkBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+@keyframes rkS0{0%{transform:translate(0,0);opacity:1}100%{transform:translate(0px,-80px);opacity:0}}
+@keyframes rkS1{0%{transform:translate(0,0);opacity:1}100%{transform:translate(56px,-56px);opacity:0}}
+@keyframes rkS2{0%{transform:translate(0,0);opacity:1}100%{transform:translate(80px,0px);opacity:0}}
+@keyframes rkS3{0%{transform:translate(0,0);opacity:1}100%{transform:translate(56px,56px);opacity:0}}
+@keyframes rkS4{0%{transform:translate(0,0);opacity:1}100%{transform:translate(0px,80px);opacity:0}}
+@keyframes rkS5{0%{transform:translate(0,0);opacity:1}100%{transform:translate(-56px,56px);opacity:0}}
+@keyframes rkS6{0%{transform:translate(0,0);opacity:1}100%{transform:translate(-80px,0px);opacity:0}}
+@keyframes rkS7{0%{transform:translate(0,0);opacity:1}100%{transform:translate(-56px,-56px);opacity:0}}
+</style>
+</helmet>
+<div style="position: relative; width: 390px; min-height: 1300px; box-sizing: border-box; padding: 20px 16px 32px; display: flex; flex-direction: column; gap: 14px; background: #0b0d12; font-family: Rubik, system-ui, sans-serif; color: #ffffff; overflow: hidden">
+
+<header style="display: flex; align-items: center; gap: 10px; height: 48px">
+<a href="Main.dc.html" aria-label="Назад в лобби" style="width: 44px; height: 44px; border-radius: 14px; background: #1a1d27; display: flex; align-items: center; justify-content: center; flex-shrink: 0">
+<svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><path d="M13 3 L6 10 L13 17" fill="none" stroke="#ffffff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+</a>
+<div style="font-size: 26px; font-weight: 900; font-style: italic; flex-grow: 1">CRASH</div>
+<div style="height: 44px; box-sizing: border-box; border-radius: 14px; background: #1a1d27; padding: 0 12px; display: flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 700; color: #ffc83d">{{balanceText}}</div>
+</header>
+
+<div style="position: relative; height: 400px; border-radius: 26px; overflow: hidden; background: #070b1c; border: 1px solid #1d2230">
+<img src="/_blob/29f965541d768edadf1aad890a105f4f" alt="" style="position: absolute; left: 0; top: 0; width: 100%; height: 100%; object-fit: cover">
+<div style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; background: radial-gradient(circle at 70% 30%, rgba(170,20,45,0.55), rgba(60,5,20,0.75)); opacity: {{tintOpacity}}; transition: opacity 0.35s"></div>
+
+<svg width="358" height="400" viewBox="0 0 358 400" aria-hidden="true" style="position: absolute; left: 0; top: 0; filter: drop-shadow(0 0 6px {{trailColor}})">
+<path d="{{trailD}}" fill="none" stroke="{{trailColor}}" stroke-opacity="0.25" stroke-width="12" stroke-linecap="round"></path>
+<path d="{{trailD}}" fill="none" stroke="{{trailColor}}" stroke-width="4" stroke-linecap="round"></path>
+</svg>
+
+<div style="position: absolute; left: 12px; top: 40px; height: 250px; display: flex; flex-direction: column; justify-content: space-between">
+<sc-for list="{{scale}}" as="sc" hint-placeholder-count="5">
+<span style="font-size: 11px; font-weight: 700; color: #8f9bc4; text-shadow: 0 1px 3px #000000">{{sc.label}}</span>
+</sc-for>
+</div>
+
+<sc-if value="{{showRocket}}" hint-placeholder-val="{{ false }}">
+<img src="/_blob/a8d1e2a1f1626c9b8edd4755d9c32150" alt="Енот на ракете" style="position: absolute; width: 110px; height: 121px; {{rocketStyle}}">
+</sc-if>
+
+<sc-if value="{{isWait}}" hint-placeholder-val="{{ true }}">
+<div style="position: absolute; left: 0; right: 0; top: 96px; display: flex; flex-direction: column; align-items: center; gap: 12px">
+<div style="font-size: 62px; font-weight: 900; line-height: 1; color: {{timerColor}}; font-variant-numeric: tabular-nums; text-shadow: 0 0 24px rgba(0,0,0,0.6)">{{timerText}}</div>
+<div style="width: 170px; height: 8px; border-radius: 4px; background: rgba(255,255,255,0.12); overflow: hidden">
+<div style="height: 8px; border-radius: 4px; background: {{timerColor}}; width: {{timerPct}}%"></div>
+</div>
+<div style="font-size: 13px; font-weight: 700; letter-spacing: 4px; color: {{timerColor}}">ИГРА ЧЕРЕЗ</div>
+</div>
+</sc-if>
+
+<sc-if value="{{isFly}}" hint-placeholder-val="{{ false }}">
+<div style="position: absolute; left: 0; right: 0; top: 150px; text-align: center; font-size: 64px; font-weight: 900; line-height: 1; font-variant-numeric: tabular-nums; text-shadow: 0 2px 20px rgba(0,0,0,0.7)">{{multText}}</div>
+</sc-if>
+
+<sc-if value="{{isCrash}}" hint-placeholder-val="{{ false }}">
+<div style="position: absolute; left: 0; right: 0; top: 134px; display: flex; flex-direction: column; align-items: center; gap: 6px; animation: rkPop 0.3s ease-out">
+<div style="font-size: 14px; font-weight: 700; letter-spacing: 4px; color: #ff5d73">КРАШ</div>
+<div style="font-size: 64px; font-weight: 900; line-height: 1; color: #ff4d64; text-shadow: 0 0 24px rgba(255,40,70,0.6)">{{crashText}}</div>
+</div>
+</sc-if>
+
+<sc-if value="{{isCrash}}" hint-placeholder-val="{{ false }}">
+<div style="position: absolute; width: 0; height: 0; {{boomPos}}">
+<div style="position: absolute; left: -70px; top: -70px; width: 140px; height: 140px; border-radius: 50%; background: radial-gradient(circle, #fffbe0 0%, #ffd166 30%, rgba(255,120,0,0.6) 55%, rgba(255,60,0,0) 72%); animation: rkFlash 0.7s ease-out forwards"></div>
+<div style="position: absolute; left: -60px; top: -60px; width: 120px; height: 120px; box-sizing: border-box; border-radius: 50%; border: 4px solid #ffd166; animation: rkRing 0.8s ease-out forwards"></div>
+<svg width="160" height="160" viewBox="0 0 160 160" aria-hidden="true" style="position: absolute; left: -80px; top: -80px; animation: rkRays 0.9s ease-out forwards">
+<g stroke="#ffe08a" stroke-width="4" stroke-linecap="round">
+<path d="M80 26 V6"></path><path d="M80 134 V154"></path><path d="M26 80 H6"></path><path d="M134 80 H154"></path>
+<path d="M42 42 L28 28"></path><path d="M118 42 L132 28"></path><path d="M42 118 L28 132"></path><path d="M118 118 L132 132"></path>
+</g>
+<g stroke="#ff7b00" stroke-width="3" stroke-linecap="round">
+<path d="M60 31 L54 14"></path><path d="M100 31 L106 14"></path><path d="M31 60 L14 54"></path><path d="M129 60 L146 54"></path>
+<path d="M31 100 L14 106"></path><path d="M129 100 L146 106"></path><path d="M60 129 L54 146"></path><path d="M100 129 L106 146"></path>
+</g>
+</svg>
+<span style="position: absolute; left: -4px; top: -4px; width: 8px; height: 8px; border-radius: 50%; background: #ffd166; animation: rkS0 0.9s ease-out forwards"></span>
+<span style="position: absolute; left: -3px; top: -3px; width: 6px; height: 6px; border-radius: 50%; background: #ff7b00; animation: rkS1 0.9s ease-out forwards"></span>
+<span style="position: absolute; left: -4px; top: -4px; width: 8px; height: 8px; border-radius: 50%; background: #fff3b0; animation: rkS2 0.9s ease-out forwards"></span>
+<span style="position: absolute; left: -3px; top: -3px; width: 6px; height: 6px; border-radius: 50%; background: #ff7b00; animation: rkS3 0.9s ease-out forwards"></span>
+<span style="position: absolute; left: -4px; top: -4px; width: 8px; height: 8px; border-radius: 50%; background: #ffd166; animation: rkS4 0.9s ease-out forwards"></span>
+<span style="position: absolute; left: -3px; top: -3px; width: 6px; height: 6px; border-radius: 50%; background: #ff5d3b; animation: rkS5 0.9s ease-out forwards"></span>
+<span style="position: absolute; left: -4px; top: -4px; width: 8px; height: 8px; border-radius: 50%; background: #fff3b0; animation: rkS6 0.9s ease-out forwards"></span>
+<span style="position: absolute; left: -3px; top: -3px; width: 6px; height: 6px; border-radius: 50%; background: #ff7b00; animation: rkS7 0.9s ease-out forwards"></span>
+</div>
+</sc-if>
+
+<div style="position: absolute; left: 0; right: 0; bottom: 0; padding: 8px 10px; background: rgba(7,9,16,0.72); display: flex; gap: 5px; overflow: hidden">
+<sc-for list="{{history}}" as="h" hint-placeholder-count="7">
+<span style="flex-shrink: 0; font-size: 11px; font-weight: 700; padding: 5px 7px; border-radius: 8px; background: {{h.bg}}; color: {{h.color}}">{{h.label}}</span>
+</sc-for>
+</div>
+</div>
+
+<sc-if value="{{showGiftPick}}" hint-placeholder-val="{{ false }}">
+<div style="background: #151821; border: 1px solid #222838; border-radius: 18px; padding: 12px; display: flex; flex-direction: column; gap: 10px">
+<div style="display: flex; justify-content: space-between; align-items: center">
+<span style="font-size: 14px; font-weight: 700">Поставь подарок</span>
+<button type="button" onClick="{{closeGift}}" style="height: 36px; border: 0; background: transparent; color: #a3a8b5; font-family: Rubik, system-ui, sans-serif; font-size: 13px; cursor: pointer">Отмена</button>
+</div>
+<div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px">
+<sc-for list="{{gifts}}" as="g" hint-placeholder-count="4">
+<button type="button" onClick="{{g.pick}}" style="background: #0b0d12; border: 1px solid #222838; border-radius: 12px; padding: 8px 4px; display: flex; flex-direction: column; align-items: center; gap: 2px; cursor: pointer; font-family: Rubik, system-ui, sans-serif; color: #ffffff">
+<img src="{{g.img}}" alt="" style="width: 40px; height: 40px">
+<span style="font-size: 10px; font-weight: 500; white-space: nowrap">{{g.name}}</span>
+<span style="font-size: 11px; font-weight: 700; color: #ffc83d">{{g.priceText}}</span>
+</button>
+</sc-for>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{showCashout}}" hint-placeholder-val="{{ false }}">
+<button type="button" onClick="{{cashout}}" style="height: 64px; border: 0; border-radius: 18px; font-family: Rubik, system-ui, sans-serif; font-size: 20px; font-weight: 900; font-style: italic; cursor: pointer; background: #2bd46b; color: #06210f; box-shadow: 0 6px 24px rgba(43,212,107,0.4)">ЗАБРАТЬ {{cashoutText}}</button>
+</sc-if>
+
+<sc-if value="{{showBetPanel}}" hint-placeholder-val="{{ true }}">
+<div style="display: flex; flex-direction: column; gap: 10px">
+<div style="display: grid; grid-template-columns: 44px minmax(0, 1fr) 44px 44px 44px; gap: 6px; align-items: center">
+<button type="button" onClick="{{betMinus}}" aria-label="Уменьшить ставку" style="height: 44px; border-radius: 12px; border: 1px solid #222838; background: #151821; color: #ffffff; font-family: Rubik, system-ui, sans-serif; font-size: 18px; font-weight: 700; cursor: pointer">−</button>
+<div style="height: 44px; border-radius: 12px; background: #151821; border: 1px solid #222838; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 900; color: #ffc83d">{{betText}}</div>
+<button type="button" onClick="{{betPlus}}" aria-label="Увеличить ставку" style="height: 44px; border-radius: 12px; border: 1px solid #222838; background: #151821; color: #ffffff; font-family: Rubik, system-ui, sans-serif; font-size: 18px; font-weight: 700; cursor: pointer">+</button>
+<button type="button" onClick="{{betHalf}}" style="height: 44px; border-radius: 12px; border: 1px solid #222838; background: #151821; color: #ffffff; font-family: Rubik, system-ui, sans-serif; font-size: 13px; font-weight: 700; cursor: pointer">½</button>
+<button type="button" onClick="{{betDouble}}" style="height: 44px; border-radius: 12px; border: 1px solid #222838; background: #151821; color: #ffffff; font-family: Rubik, system-ui, sans-serif; font-size: 13px; font-weight: 700; cursor: pointer">x2</button>
+</div>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px">
+<button type="button" onClick="{{openGift}}" disabled="{{betDisabled}}" style="height: 56px; border-radius: 16px; border: 2px solid #2c3244; background: #151821; color: {{giftBtnColor}}; font-family: Rubik, system-ui, sans-serif; font-size: 15px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px">
+<svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><rect x="2" y="7" width="14" height="10" rx="2" fill="none" stroke="currentColor" stroke-width="2"></rect><rect x="1" y="4" width="16" height="4" rx="1.5" fill="currentColor"></rect><path d="M9 4 V17" stroke="currentColor" stroke-width="2"></path></svg>
+Подарком
+</button>
+<button type="button" onClick="{{placeTon}}" disabled="{{betDisabled}}" style="height: 56px; border-radius: 16px; border: 0; background: {{tonBtnBg}}; color: {{tonBtnColor}}; font-family: Rubik, system-ui, sans-serif; font-size: 15px; font-weight: 900; cursor: pointer">{{tonBtnText}}</button>
+</div>
+<sc-if value="{{hasQueued}}" hint-placeholder-val="{{ false }}">
+<div style="font-size: 12px; color: #ffc83d; text-align: center">Ставка {{queuedText}} сыграет в следующем раунде</div>
+</sc-if>
+</div>
+</sc-if>
+
+<div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px">
+<span style="font-size: 17px; font-weight: 700">Ставки раунда</span>
+<span style="font-size: 13px; font-weight: 500; color: #a3a8b5">{{playersInfo}}</span>
+</div>
+<div style="display: flex; flex-direction: column; gap: 8px">
+<sc-for list="{{players}}" as="p" hint-placeholder-count="6">
+<div style="display: flex; align-items: center; gap: 10px; background: #151821; border: 1px solid {{p.border}}; border-radius: 16px; padding: 10px 12px">
+<div style="width: 38px; height: 38px; border-radius: 12px; background: {{p.avBg}}; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 900; flex-shrink: 0">{{p.initial}}</div>
+<div style="display: flex; flex-direction: column; gap: 2px; flex-grow: 1; min-width: 0">
+<span style="font-size: 14px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{p.name}}</span>
+<span style="font-size: 12px; font-weight: 500; color: #8a90a0">{{p.betText}} · <span style="color: {{p.multColor}}">{{p.multText}}</span></span>
+</div>
+<div style="display: flex; flex-direction: column; align-items: flex-end; gap: 2px">
+<span style="font-size: 15px; font-weight: 900; color: {{p.payColor}}">{{p.payText}}</span>
+<span style="font-size: 11px; font-weight: 700; color: {{p.payColor}}">TON</span>
+</div>
+<sc-if value="{{p.hasGift}}" hint-placeholder-val="{{ false }}">
+<img src="{{p.giftImg}}" alt="{{p.giftName}}" style="width: 34px; height: 34px; flex-shrink: 0">
+</sc-if>
+</div>
+</sc-for>
+</div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":1300}}'>
+var RTP = 0.96, WAIT = 5000, AFTER = 3000, GROWTH = 0.16;
+var GIFTS = {
+  cake: { name: 'Homemade Cake', price: 2.6, img: '/_blob/6ef5ecbeb712d1b1d752a33d1e9c279d' },
+  globe: { name: 'Snow Globe', price: 3.2, img: '/_blob/6e3628fac94b5266f3b64cea9c5fe7ee' },
+  record: { name: 'Record Player', price: 7.5, img: '/_blob/8f4c023d08704d2319e54c9872a8c46d' },
+  rose: { name: 'Eternal Rose', price: 16, img: '/_blob/734e25b54462cda990767f69381d8355' },
+  bear: { name: 'Toy Bear', price: 17, img: '/_blob/c02bc9477e447f6f71962df1fc7a399a' },
+  lpotion: { name: 'Love Potion', price: 13, img: '/_blob/5bb7da32fc8a6f8dbe91cf7cedc20c65' },
+  bells: { name: 'Jingle Bells', price: 2.5, img: '/_blob/808ef5efdbeb6b276f70430b220f760b' }
+};
+var BOT_GIFTS = ['cake', 'globe', 'record', 'rose', 'bear', 'lpotion', 'bells'];
+var NAMES = ['Bandit_77', 'TonWhale', 'Енотыч', 'lucky_ray', 'Gift Hunter', 'night_owl', 'Мурзик', 'Sasha_K', 'raccoon.eth', 'Vova', 'Polina', 'moonboy', 'Жора', 'kisa_mur'];
+var AV = ['#e5383b', '#2a7fff', '#2bd46b', '#9b5cff', '#ff8a5c', '#00a8a8', '#c77dff', '#e0a800'];
+
+function r2(x) { return Math.round(x * 100) / 100; }
+function fmt(x) { return (Math.floor(x * 100) / 100).toFixed(2); }
+function crashPoint() {
+  var u = Math.random();
+  var c = RTP / (1 - u);
+  return c < 1 ? 1 : Math.floor(c * 100) / 100;
+}
+function makeBots() {
+  var n = 5 + Math.floor(Math.random() * 5);
+  var names = NAMES.slice().sort(function () { return Math.random() - 0.5; }).slice(0, n);
+  return names.map(function (nm, i) {
+    var gift = Math.random() < 0.35 ? BOT_GIFTS[Math.floor(Math.random() * BOT_GIFTS.length)] : null;
+    var bet = gift ? GIFTS[gift].price : r2(0.1 + Math.pow(Math.random(), 2) * 6);
+    return { id: 'b' + i, name: nm, bet: bet, gift: gift, target: r2(1.05 + Math.pow(Math.random(), 2) * 6), cashed: false, at: 0, av: AV[i % AV.length] };
+  });
+}
+
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = {
+      phase: 'wait', t0: Date.now(), now: Date.now(), crashAt: crashPoint(), m: 1,
+      balance: 50, bet: 1, me: null, queued: null, giftPick: false,
+      inv: ['cake', 'globe', 'record', 'rose'],
+      bots: makeBots(),
+      history: [2.08, 4.6, 2.39, 1.04, 6.85, 3.3, 1.94, 12.4, 1.21, 1.55]
+    };
+  }
+  componentDidMount() {
+    var self = this;
+    this.iv = setInterval(function () { self.tick(); }, 50);
+  }
+  componentWillUnmount() { clearInterval(this.iv); }
+
+  tick() {
+    var s = this.state, now = Date.now(), el = now - s.t0;
+    if (s.phase === 'wait') {
+      if (el >= WAIT) this.setState({ phase: 'fly', t0: now, now: now, m: 1 });
+      else this.setState({ now: now });
+      return;
+    }
+    if (s.phase === 'fly') {
+      var m = Math.exp(GROWTH * el / 1000);
+      if (m >= s.crashAt) {
+        var me = s.me;
+        if (me && !me.cashed) me = Object.assign({}, me, { lost: true });
+        this.setState({ phase: 'crash', t0: now, now: now, m: s.crashAt, me: me, history: [s.crashAt].concat(s.history).slice(0, 12) });
+        return;
+      }
+      var bots = s.bots.map(function (b) { return !b.cashed && m >= b.target ? Object.assign({}, b, { cashed: true, at: b.target }) : b; });
+      this.setState({ now: now, m: m, bots: bots });
+      return;
+    }
+    if (s.phase === 'crash' && el >= AFTER) {
+      var q = s.queued, bal = s.balance, me2 = null, inv = s.inv;
+      if (q) {
+        if (q.gift) { me2 = { amount: GIFTS[q.gift].price, gift: q.gift, cashed: false }; }
+        else if (q.amount <= bal) { bal = r2(bal - q.amount); me2 = { amount: q.amount, gift: null, cashed: false }; }
+      }
+      this.setState({ phase: 'wait', t0: now, now: now, m: 1, crashAt: crashPoint(), bots: makeBots(), me: me2, queued: null, balance: bal, inv: inv });
+    }
+  }
+
+  placeTon() {
+    var s = this.state;
+    if (s.phase === 'wait') {
+      if (s.me || s.bet > s.balance) return;
+      this.setState({ balance: r2(s.balance - s.bet), me: { amount: s.bet, gift: null, cashed: false } });
+    } else {
+      this.setState({ queued: s.queued ? null : { amount: s.bet, gift: null } });
+    }
+  }
+  placeGift(k) {
+    var s = this.state;
+    var inv = s.inv.slice(); var i = inv.indexOf(k);
+    if (i === -1) return;
+    inv.splice(i, 1);
+    if (s.phase === 'wait' && !s.me) this.setState({ inv: inv, giftPick: false, me: { amount: GIFTS[k].price, gift: k, cashed: false } });
+    else this.setState({ inv: inv, giftPick: false, queued: { gift: k } });
+  }
+  cashout() {
+    var s = this.state;
+    if (s.phase !== 'fly' || !s.me || s.me.cashed) return;
+    var pay = Math.floor(s.me.amount * s.m * 100) / 100;
+    this.setState({ balance: r2(s.balance + pay), me: Object.assign({}, s.me, { cashed: true, at: Math.floor(s.m * 100) / 100, pay: pay }) });
+  }
+  setBet(v) { this.setState({ bet: r2(Math.max(0.1, Math.min(v, Math.max(0.1, this.state.balance)))) }); }
+
+  renderVals() {
+    var self = this, s = this.state;
+    var el = s.now - s.t0;
+    var remain = Math.max(0, (WAIT - el) / 1000);
+    var timerColor = remain > 3 ? '#2bd46b' : (remain > 1.5 ? '#ffc83d' : '#ff5d73');
+    var timerText = (remain < 10 ? '0' : '') + remain.toFixed(2);
+    var m = s.phase === 'wait' ? 1 : s.m;
+    var p = s.phase === 'wait' ? 0 : 1 - 1 / (1 + Math.log(m) * 1.3);
+    var sx = 42, sy = 318;
+    var rx = sx + p * 214, ry = sy - p * 196;
+
+    var top = Math.max(2, m * 1.3), scale = [];
+    for (var i = 4; i >= 0; i--) scale.push({ label: (1 + (top - 1) * i / 4).toFixed(1) + 'x' });
+
+    var players = [];
+    if (s.me) {
+      var me = s.me;
+      players.push({
+        name: 'Ты', initial: 'Я', avBg: '#ffc83d', border: '#ffc83d',
+        betText: fmt(me.amount) + ' TON',
+        multText: me.cashed ? 'x' + me.at.toFixed(2) : (s.phase === 'fly' ? 'в игре' : (me.lost ? 'краш' : 'x1.00')),
+        multColor: me.cashed ? '#2bd46b' : (me.lost ? '#ff5d73' : '#8a90a0'),
+        payText: me.cashed ? '+' + fmt(me.pay) : (me.lost ? '0.00' : fmt(me.amount)),
+        payColor: me.cashed ? '#2bd46b' : (me.lost ? '#ff5d73' : '#ffffff'),
+        hasGift: !!me.gift, giftImg: me.gift ? GIFTS[me.gift].img : '', giftName: me.gift ? GIFTS[me.gift].name : ''
+      });
+    }
+    var sorted = s.bots.slice().sort(function (a, b) { return b.bet - a.bet; });
+    sorted.forEach(function (b) {
+      var lost = s.phase === 'crash' && !b.cashed;
+      players.push({
+        name: b.name, initial: b.name.charAt(0).toUpperCase(), avBg: b.av, border: b.cashed ? 'rgba(43,212,107,0.4)' : '#222838',
+        betText: fmt(b.bet) + ' TON',
+        multText: b.cashed ? 'x' + b.at.toFixed(2) : (lost ? 'x' + s.crashAt.toFixed(2) : 'x1.00'),
+        multColor: b.cashed ? '#2bd46b' : (lost ? '#ff5d73' : '#8a90a0'),
+        payText: b.cashed ? '+' + fmt(b.bet * b.at) : (lost ? '0.00' : fmt(b.bet)),
+        payColor: b.cashed ? '#2bd46b' : (lost ? '#ff5d73' : '#ffffff'),
+        hasGift: !!b.gift, giftImg: b.gift ? GIFTS[b.gift].img : '', giftName: b.gift ? GIFTS[b.gift].name : ''
+      });
+    });
+    var total = 0; s.bots.forEach(function (b) { total += b.bet; }); if (s.me) total += s.me.amount;
+
+    var canBetNow = s.phase === 'wait' && !s.me;
+    var showCashout = s.phase === 'fly' && s.me && !s.me.cashed;
+
+    return {
+      balanceText: fmt(s.balance) + ' TON',
+      tintOpacity: s.phase === 'crash' ? '1' : '0',
+      trailColor: s.phase === 'crash' ? '#ff3b55' : '#3d8bff',
+      trailD: s.phase === 'wait' ? 'M 0 0' : 'M ' + sx + ' ' + (sy + 4) + ' Q ' + (sx + (rx - sx) * 0.6).toFixed(1) + ' ' + (sy + 4) + ' ' + rx.toFixed(1) + ' ' + ry.toFixed(1),
+      scale: scale,
+      isWait: s.phase === 'wait', isFly: s.phase === 'fly', isCrash: s.phase === 'crash',
+      timerText: timerText, timerColor: timerColor, timerPct: (remain / (WAIT / 1000)) * 100,
+      multText: m.toFixed(2) + 'x',
+      crashText: s.crashAt.toFixed(2) + 'x',
+      showRocket: s.phase !== 'crash',
+      rocketStyle: 'left: ' + (rx - 36).toFixed(1) + 'px; top: ' + (ry - 103).toFixed(1) + 'px; opacity: ' + (s.phase === 'wait' ? '0.85' : '1') + '; animation: rkBob 0.6s ease-in-out infinite; filter: drop-shadow(0 0 14px rgba(61,139,255,0.45))',
+      boomPos: 'left: ' + (rx + 28).toFixed(1) + 'px; top: ' + (ry - 44).toFixed(1) + 'px',
+      history: s.history.map(function (h) {
+        return { label: h.toFixed(2) + 'x', bg: h >= 10 ? 'rgba(255,200,61,0.18)' : (h >= 2 ? 'rgba(42,127,255,0.2)' : 'rgba(255,255,255,0.08)'), color: h >= 10 ? '#ffc83d' : (h >= 2 ? '#7fb2ff' : '#c9cdd6') };
+      }),
+      showCashout: showCashout,
+      cashoutText: showCashout ? fmt(s.me.amount * m) + ' TON' : '',
+      cashout: function () { self.cashout(); },
+      showBetPanel: !showCashout,
+      betText: fmt(s.bet) + ' TON',
+      betMinus: function () { self.setBet(self.state.bet - 0.5); },
+      betPlus: function () { self.setBet(self.state.bet + 0.5); },
+      betHalf: function () { self.setBet(self.state.bet / 2); },
+      betDouble: function () { self.setBet(self.state.bet * 2); },
+      betDisabled: s.phase === 'wait' && !!s.me,
+      tonBtnBg: canBetNow || s.phase !== 'wait' ? '#ffc83d' : '#1d2230',
+      tonBtnColor: canBetNow || s.phase !== 'wait' ? '#1a1300' : '#6c7282',
+      tonBtnText: s.phase === 'wait' ? (s.me ? 'Ставка принята' : 'Ставка TON') : (s.queued ? 'Отменить' : 'На след. раунд'),
+      giftBtnColor: s.inv.length ? '#ffffff' : '#5a6070',
+      openGift: function () { if (self.state.inv.length) self.setState({ giftPick: !self.state.giftPick }); },
+      closeGift: function () { self.setState({ giftPick: false }); },
+      placeTon: function () { self.placeTon(); },
+      showGiftPick: s.giftPick && !showCashout,
+      gifts: s.inv.map(function (k) { var g = GIFTS[k]; return { name: g.name, img: g.img, priceText: g.price + ' TON', pick: function () { self.placeGift(k); } }; }),
+      hasQueued: !!s.queued,
+      queuedText: s.queued ? (s.queued.gift ? GIFTS[s.queued.gift].name : fmt(s.queued.amount) + ' TON') : '',
+      players: players,
+      playersInfo: players.length + ' игроков · ' + fmt(total) + ' TON'
+    };
+  }
+}
+</script>
+</body>
+</html>
