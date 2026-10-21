@@ -206,10 +206,14 @@ function renderNode(node, scope, nav, key) {
       if (ev === 'Onclick') ev = 'onClick';
       if (name.toLowerCase() === 'onclick') ev = 'onClick';
       if (name.toLowerCase() === 'oninput') ev = 'onChange';
+      if (name.toLowerCase() === 'onkeydown') ev = 'onKeyDown';
       if (typeof val === 'function') props[ev] = val;
       continue;
     } else if (isSvg && name.indexOf('-') !== -1 && !name.startsWith('aria-') && !name.startsWith('data-')) name = camel(name);
     else if (name === 'tabindex') name = 'tabIndex';
+    else if (name === 'inputmode') name = 'inputMode';
+    else if (name === 'enterkeyhint') name = 'enterKeyHint';
+    else if (name === 'autocomplete') name = 'autoComplete';
     else if (name === 'readonly') name = 'readOnly';
     else if (name === 'disabled') { val = val === true || val === '' || val === 'disabled' || val === 'true'; }
     props[name] = val;

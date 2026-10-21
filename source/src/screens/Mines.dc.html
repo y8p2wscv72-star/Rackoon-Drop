@@ -78,7 +78,7 @@ a{color:#ffc83d}a:hover{color:#ffe08a}
 <div style="background: #151821; border: 1px solid #222838; border-radius: 18px; padding: 12px; display: flex; flex-direction: column; gap: 10px">
 <div style="display: flex; align-items: center; justify-content: space-between">
 <span style="font-size: 13px; font-weight: 500; color: #a3a8b5">Ставка</span>
-<span style="font-size: 18px; font-weight: 900; color: #ffc83d">{{betText}}</span>
+<div style="width: 170px"><label style="position: relative; height: 44px; border-radius: 12px; background: #0b0d12; border: 1px solid #222838; box-sizing: border-box; display: flex; align-items: center; cursor: text"><input type="text" inputmode="decimal" enterkeyhint="done" autocomplete="off" aria-label="Сумма ставки в TON" value="{{betInput}}" onInput="{{onBetInput}}" onFocus="{{onBetFocus}}" onBlur="{{onBetBlur}}" onKeyDown="{{onBetKey}}" style="width: 100%; height: 100%; box-sizing: border-box; border: 0; outline: none; background: transparent; text-align: center; font-family: Rubik, system-ui, sans-serif; font-size: 17px; font-weight: 900; color: #ffc83d; padding: 0 38px 0 10px"><span style="position: absolute; right: 12px; font-size: 12px; font-weight: 700; color: #8a90a0; pointer-events: none">TON</span></label></div>
 </div>
 <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px">
 <button type="button" onClick="{{betMinus}}" style="height: 44px; border-radius: 12px; border: 1px solid #222838; background: #0b0d12; color: #ffffff; font-family: Rubik, system-ui, sans-serif; font-size: 18px; font-weight: 700; cursor: pointer">−</button>
@@ -149,7 +149,7 @@ class Component extends DCLogic {
 
   start() {
     var s = this.state;
-    if (s.phase === 'playing' || s.bet > s.balance || s.bet <= 0) return;
+    if (s.phase === 'playing' || s.bet > s.balance || !(s.bet >= 0.1)) return;
     var idx = [];
     for (var i = 0; i < SIZE; i++) idx.push(i);
     for (var j = idx.length - 1; j > 0; j--) { var r = Math.floor(Math.random() * (j + 1)); var t = idx[j]; idx[j] = idx[r]; idx[r] = t; }
@@ -202,7 +202,7 @@ class Component extends DCLogic {
     var s = this.state;
     if (s.phase === 'playing') return;
     v = Math.max(0.1, Math.min(round2(v), Math.max(0.1, s.balance)));
-    this.setState({ bet: round2(v) });
+    this.setState({ betStr: null, bet: round2(v) });
   }
   setMines(v) {
     if (this.state.phase === 'playing') return;
@@ -254,7 +254,7 @@ class Component extends DCLogic {
       });
     }
 
-    var canStart = s.bet <= s.balance && s.bet > 0;
+    var canStart = s.bet <= s.balance && s.bet >= 0.1;
     var res = s.res;
     return {
       balanceText: fmt(s.balance),
@@ -273,6 +273,17 @@ class Component extends DCLogic {
       cashShadow: k > 0 ? '0 6px 24px rgba(43,212,107,0.35)' : 'none',
       cashText: k > 0 ? 'ЗАБРАТЬ ' + fmt(potential) : 'ОТКРОЙ КЛЕТКУ',
       betText: fmt(s.bet),
+      betInput: s.betStr != null ? s.betStr : s.bet.toFixed(2),
+      onBetInput: function (e) {
+        var v = String((e && e.target && e.target.value) || '').replace(',', '.').replace(/[^0-9.]/g, '');
+        var parts = v.split('.'); if (parts.length > 2) v = parts[0] + '.' + parts.slice(1).join('');
+        if (parts.length > 1 && parts[1].length > 2) v = parts[0] + '.' + parts[1].slice(0, 2);
+        var n = parseFloat(v);
+        self.setState({ betStr: v, bet: isNaN(n) ? 0 : Math.round(n * 100) / 100 });
+      },
+      onBetFocus: function (e) { try { e.target.select(); } catch (x) {} },
+      onBetBlur: function () { var b = self.state.bet; if (!(b >= 0.1)) b = 0.1; self.setState({ betStr: null, bet: Math.round(b * 100) / 100 }); },
+      onBetKey: function (e) { if (e && e.key === 'Enter' && e.target && e.target.blur) e.target.blur(); },
       betMinus: function () { self.setBet(self.state.bet - 0.5); },
       betPlus: function () { self.setBet(self.state.bet + 0.5); },
       betHalf: function () { self.setBet(self.state.bet / 2); },

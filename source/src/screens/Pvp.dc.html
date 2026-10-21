@@ -111,7 +111,7 @@ a{color:#ffc83d}a:hover{color:#ffe08a}
 <sc-if value="{{isTonMode}}" hint-placeholder-val="{{ true }}">
 <div style="display: grid; grid-template-columns: 44px minmax(0, 1fr) 44px; gap: 8px; padding-top: 12px; border-top: 1px solid #222838">
 <button type="button" onClick="{{betMinus}}" aria-label="Уменьшить ставку" style="height: 44px; border-radius: 12px; border: 0; background: #1d2230; color: #ffffff; font-family: Rubik, system-ui, sans-serif; font-size: 20px; cursor: pointer">−</button>
-<div style="height: 44px; border-radius: 12px; background: #0b0d12; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 700; color: #ffc83d">{{betText}}</div>
+<label style="position: relative; height: 44px; border-radius: 12px; background: #0b0d12; border: 0; box-sizing: border-box; display: flex; align-items: center; cursor: text"><input type="text" inputmode="decimal" enterkeyhint="done" autocomplete="off" aria-label="Сумма ставки в TON" value="{{betInput}}" onInput="{{onBetInput}}" onFocus="{{onBetFocus}}" onBlur="{{onBetBlur}}" onKeyDown="{{onBetKey}}" style="width: 100%; height: 100%; box-sizing: border-box; border: 0; outline: none; background: transparent; text-align: center; font-family: Rubik, system-ui, sans-serif; font-size: 17px; font-weight: 900; color: #ffc83d; padding: 0 38px 0 10px"><span style="position: absolute; right: 12px; font-size: 12px; font-weight: 700; color: #8a90a0; pointer-events: none">TON</span></label>
 <button type="button" onClick="{{betPlus}}" aria-label="Увеличить ставку" style="height: 44px; border-radius: 12px; border: 0; background: #1d2230; color: #ffffff; font-family: Rubik, system-ui, sans-serif; font-size: 20px; cursor: pointer">+</button>
 </div>
 </sc-if>
@@ -359,7 +359,7 @@ class Component extends DCLogic {
   mainAction() {
     var s = this.state;
     if (s.mode === 'ton') {
-      if (s.bet > s.balance) return;
+      if (s.bet > s.balance || !(s.bet >= 0.1)) return;
       var u = this.join(s.bet, null); if (!u) return;
       u.balance = r2(s.balance - s.bet); this.setState(u);
     } else {
@@ -444,8 +444,19 @@ class Component extends DCLogic {
       mainAction: function () { self.mainAction(); }, mainDisabled: !mainOn,
       mainBg: mainOn ? '#ffc83d' : '#3a3420', mainColor: mainOn ? '#1a1300' : '#8a8060', mainText: mainText,
       betText: s.bet.toFixed(2) + ' TON',
-      betMinus: function () { self.setState({ bet: r2(Math.max(0.1, self.state.bet - 0.1)) }); },
-      betPlus: function () { self.setState({ bet: r2(Math.min(Math.max(0.1, self.state.balance), self.state.bet + 0.1)) }); },
+      betInput: s.betStr != null ? s.betStr : s.bet.toFixed(2),
+      onBetInput: function (e) {
+        var v = String((e && e.target && e.target.value) || '').replace(',', '.').replace(/[^0-9.]/g, '');
+        var parts = v.split('.'); if (parts.length > 2) v = parts[0] + '.' + parts.slice(1).join('');
+        if (parts.length > 1 && parts[1].length > 2) v = parts[0] + '.' + parts[1].slice(0, 2);
+        var n = parseFloat(v);
+        self.setState({ betStr: v, bet: isNaN(n) ? 0 : Math.round(n * 100) / 100 });
+      },
+      onBetFocus: function (e) { try { e.target.select(); } catch (x) {} },
+      onBetBlur: function () { var b = self.state.bet; if (!(b >= 0.1)) b = 0.1; self.setState({ betStr: null, bet: Math.round(b * 100) / 100 }); },
+      onBetKey: function (e) { if (e && e.key === 'Enter' && e.target && e.target.blur) e.target.blur(); },
+      betMinus: function () { self.setState({ betStr: null, bet: r2(Math.max(0.1, self.state.bet - 0.1)) }); },
+      betPlus: function () { self.setState({ betStr: null, bet: r2(Math.min(Math.max(0.1, self.state.balance), self.state.bet + 0.1)) }); },
       gifts: s.inv.map(function (k) { var g = GIFTS[k]; var sel = s.pickGift === k; return { name: g.name, img: g.img, priceText: g.price + ' TON', pressed: sel ? 'true' : 'false', border: sel ? '#ffc83d' : '#222838', pick: function () { self.setState({ pickGift: sel ? null : k }); } }; }),
       noGifts: s.inv.length === 0,
       toggleHistory: function () { self.setState({ view: self.state.view === 'history' ? 'players' : 'history' }); },
