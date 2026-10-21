@@ -71,7 +71,7 @@ a{color:#ffc83d}a:hover{color:#ffe08a}
 
 <sc-if value="{{empty}}" hint-placeholder-val="{{ false }}">
 <div style="background: #151821; border: 1px solid #222838; border-radius: 20px; padding: 28px 20px; display: flex; flex-direction: column; align-items: center; gap: 12px; text-align: center">
-<img src="/_blob/661884b648dd965ea69af44ea8c7ee95" alt="" style="width: 84px; height: 84px; border-radius: 50%; object-fit: cover; border: 3px solid #ffc83d">
+<img src="{{meAvatar}}" referrerpolicy="no-referrer" alt="" style="width: 84px; height: 84px; border-radius: 50%; object-fit: cover; border: 3px solid #ffc83d">
 <div style="font-size: 18px; font-weight: 700">Инвентарь пуст</div>
 <div style="font-size: 13px; color: #a3a8b5">Открывай кейсы и выигрывай в играх, подарки будут появляться здесь</div>
 <a href="Cases.dc.html" style="text-decoration: none; height: 48px; padding: 0 22px; border-radius: 14px; background: #ffc83d; color: #1a1300; display: flex; align-items: center; font-size: 15px; font-weight: 900">Открыть кейсы</a>
@@ -331,6 +331,7 @@ class Component extends DCLogic {
     var picked = this.selected(), selTotal = 0; picked.forEach(function (it) { selTotal += priceOf(it); });
     var now = Date.now();
     return {
+      meAvatar: (window.RK && window.RK.user && window.RK.user.photo_url) || '/_blob/661884b648dd965ea69af44ea8c7ee95',
       balanceText: fmt(s.balance),
       count: list.length, totalText: fmt(total),
       hasItems: list.length > 0, empty: list.length === 0,

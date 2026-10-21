@@ -57,7 +57,7 @@ a{color:#ffc83d}a:hover{color:#ffe08a}
 </svg>
 <sc-for list="{{avatars}}" as="a" hint-placeholder-count="2">
 <div style="position: absolute; box-sizing: border-box; border-radius: 50%; overflow: hidden; display: flex; align-items: center; justify-content: center; font-weight: 900; color: #ffffff; left: {{a.x}}px; top: {{a.y}}px; width: {{a.s}}px; height: {{a.s}}px; font-size: {{a.fs}}px; background: {{a.bg}}; border: {{a.bw}}px solid rgba(255,255,255,0.9); box-shadow: 0 6px 18px rgba(0,0,0,0.3)">
-<sc-if value="{{a.isMe}}" hint-placeholder-val="{{ false }}"><img src="/_blob/661884b648dd965ea69af44ea8c7ee95" alt="" style="width: 100%; height: 100%; object-fit: cover"></sc-if>
+<sc-if value="{{a.isMe}}" hint-placeholder-val="{{ false }}"><img src="{{meAvatar}}" referrerpolicy="no-referrer" alt="" style="width: 100%; height: 100%; object-fit: cover"></sc-if>
 <sc-if value="{{a.notMe}}" hint-placeholder-val="{{ true }}">{{a.initial}}</sc-if>
 </div>
 </sc-for>
@@ -141,7 +141,7 @@ a{color:#ffc83d}a:hover{color:#ffe08a}
 <div style="background: #151821; border: 1px solid {{p.border}}; border-radius: 14px; padding: 10px 12px; display: flex; flex-direction: column; gap: 8px">
 <div style="display: flex; align-items: center; gap: 10px">
 <div style="width: 32px; height: 32px; border-radius: 10px; background: {{p.avBg}}; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 900; flex-shrink: 0; overflow: hidden">
-<sc-if value="{{p.isMe}}" hint-placeholder-val="{{ false }}"><img src="/_blob/661884b648dd965ea69af44ea8c7ee95" alt="" style="width: 100%; height: 100%; object-fit: cover"></sc-if>
+<sc-if value="{{p.isMe}}" hint-placeholder-val="{{ false }}"><img src="{{meAvatar}}" referrerpolicy="no-referrer" alt="" style="width: 100%; height: 100%; object-fit: cover"></sc-if>
 <sc-if value="{{p.notMe}}" hint-placeholder-val="{{ true }}">{{p.initial}}</sc-if>
 </div>
 <span style="flex-grow: 1; min-width: 0; font-size: 14px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{p.name}}</span>
@@ -197,7 +197,7 @@ a{color:#ffc83d}a:hover{color:#ffe08a}
 </div>
 <div style="display: flex; align-items: center; gap: 10px; background: #0b0d12; border: 1px solid {{winBorder}}; border-radius: 14px; padding: 12px">
 <div style="width: 36px; height: 36px; border-radius: 10px; background: {{winAvBg}}; display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 900; overflow: hidden; flex-shrink: 0">
-<sc-if value="{{winIsMe}}" hint-placeholder-val="{{ false }}"><img src="/_blob/661884b648dd965ea69af44ea8c7ee95" alt="" style="width: 100%; height: 100%; object-fit: cover"></sc-if>
+<sc-if value="{{winIsMe}}" hint-placeholder-val="{{ false }}"><img src="{{meAvatar}}" referrerpolicy="no-referrer" alt="" style="width: 100%; height: 100%; object-fit: cover"></sc-if>
 <sc-if value="{{winNotMe}}" hint-placeholder-val="{{ true }}">{{winInitial}}</sc-if>
 </div>
 <span style="flex-grow: 1; font-size: 15px; font-weight: 700">{{winName}}</span>
@@ -513,6 +513,7 @@ class Component extends DCLogic {
     var mainOn = joinable && (s.mode === 'ton' ? canTon : !!s.pickGift);
 
     return {
+      meAvatar: (window.RK && window.RK.user && window.RK.user.photo_url) || '/_blob/661884b648dd965ea69af44ea8c7ee95',
       online: s.online, balanceText: fmt(s.balance),
       bestWin: best.toFixed(2) + ' TON', lastWin: s.history.length ? s.history[0].win + ' TON' : '—',
       giftsCount: giftsCount, potText: fmt(total), playersCount: s.players.length,

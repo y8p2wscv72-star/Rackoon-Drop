@@ -170,7 +170,7 @@ a{color:#ffc83d}a:hover{color:#ffe08a}
 <div style="display: flex; flex-direction: column; gap: 8px">
 <sc-for list="{{players}}" as="p" hint-placeholder-count="6">
 <div style="display: flex; align-items: center; gap: 10px; background: #151821; border: 1px solid {{p.border}}; border-radius: 16px; padding: 10px 12px">
-<div style="width: 38px; height: 38px; border-radius: 12px; background: {{p.avBg}}; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 900; flex-shrink: 0">{{p.initial}}</div>
+<div style="width: 38px; height: 38px; border-radius: 12px; background: {{p.avBg}}; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 900; flex-shrink: 0; overflow: hidden"><sc-if value="{{p.isMe}}" hint-placeholder-val="{{ false }}"><img src="{{meAvatar}}" referrerpolicy="no-referrer" alt="" style="width: 100%; height: 100%; object-fit: cover"></sc-if><sc-if value="{{p.notMe}}" hint-placeholder-val="{{ true }}">{{p.initial}}</sc-if></div>
 <div style="display: flex; flex-direction: column; gap: 2px; flex-grow: 1; min-width: 0">
 <span style="font-size: 14px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{p.name}}</span>
 <span style="font-size: 12px; font-weight: 500; color: #8a90a0">{{p.betText}} · <span style="color: {{p.multColor}}">{{p.multText}}</span></span>
@@ -356,7 +356,7 @@ class Component extends DCLogic {
     if (s.me) {
       var me = s.me;
       players.push({
-        name: 'Ты', initial: 'Я', avBg: '#ffc83d', border: '#ffc83d',
+        name: 'Ты', initial: 'Я', isMe: true, notMe: false, avBg: '#ffc83d', border: '#ffc83d',
         betText: fmt(me.amount) + ' TON',
         multText: me.cashed ? 'x' + me.at.toFixed(2) : (s.phase === 'fly' ? 'в игре' : (me.lost ? 'краш' : 'x1.00')),
         multColor: me.cashed ? '#2bd46b' : (me.lost ? '#ff5d73' : '#8a90a0'),
@@ -369,7 +369,7 @@ class Component extends DCLogic {
     sorted.forEach(function (b) {
       var lost = s.phase === 'crash' && !b.cashed;
       players.push({
-        name: b.name, initial: b.name.charAt(0).toUpperCase(), avBg: b.av, border: b.cashed ? 'rgba(43,212,107,0.4)' : '#222838',
+        name: b.name, initial: b.name.charAt(0).toUpperCase(), isMe: false, notMe: true, avBg: b.av, border: b.cashed ? 'rgba(43,212,107,0.4)' : '#222838',
         betText: fmt(b.bet) + ' TON',
         multText: b.cashed ? 'x' + b.at.toFixed(2) : (lost ? 'x' + s.crashAt.toFixed(2) : 'x1.00'),
         multColor: b.cashed ? '#2bd46b' : (lost ? '#ff5d73' : '#8a90a0'),
@@ -384,6 +384,7 @@ class Component extends DCLogic {
     var showCashout = s.phase === 'fly' && s.me && !s.me.cashed;
 
     return {
+      meAvatar: (window.RK && window.RK.user && window.RK.user.photo_url) || '/_blob/661884b648dd965ea69af44ea8c7ee95',
       balanceText: fmt(s.balance) + ' TON',
       tintOpacity: s.phase === 'crash' ? '1' : '0',
       trailColor: s.phase === 'crash' ? '#ff3b55' : '#3d8bff',
