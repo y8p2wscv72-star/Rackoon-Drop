@@ -52,7 +52,10 @@ const ASSETS = {
   'c02bc9477e447f6f71962df1fc7a399a': 'bear.svg', '4826a2db621709393534f8feae3d3f4a': 'signet.svg',
   '5efc0b426406d53e3b649c727079f26d': 'watch.svg', 'e562d84d61312007f5108ab64cbfe6f9': 'iongem.svg',
   '923c4583ef32f1e6549c08d5a1839d4c': 'peach.svg', '500977bc4572974cf066e4c08b276369': 'cap.svg',
-  'a64ccb23ba5a5ab0f1f789ab412cf3af': 'pepe.svg', 'bb8c4faf5d5477b7abe934698601360a': 'none.svg'
+  'a64ccb23ba5a5ab0f1f789ab412cf3af': 'pepe.svg', 'bb8c4faf5d5477b7abe934698601360a': 'none.svg',
+  '34af5661e80ecf394b0a48aeeb28ab6c': 'r-fire.svg', '7629870dfcd56d08701d6a71de1e83df': 'r-laugh.svg',
+  'f5a9ceb49eb8c4c03e26914bcd1e2576': 'r-angry.svg', '89d4ee9117e73bee099492a4ce5c5498': 'r-heart.svg',
+  'c22eeb9eb2c04b336c2c7f989a2a93a7': 'r-party.svg'
 };
 function fixAssets(src) {
   return src.replace(/\/_blob\/([0-9a-f]{32})/g, (m, id) => ASSETS[id] ? 'assets/' + ASSETS[id] : m);
