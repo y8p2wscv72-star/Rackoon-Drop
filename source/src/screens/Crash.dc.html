@@ -222,30 +222,51 @@ var WARP = (function () {
   return out;
 })();
 function fmt(x) { return (Math.floor(x * 100) / 100).toFixed(2); }
-function crashPoint() {
-  var u = Math.random();
+// ---- Общее расписание раундов: ракета летает 24/7, даже когда тебя нет онлайн ----
+function srand(key) { var h = 2166136261; for (var i = 0; i < key.length; i++) { h ^= key.charCodeAt(i); h = Math.imul(h, 16777619); } h ^= h >>> 13; h = Math.imul(h, 0x5bd1e995); h ^= h >>> 15; return (h >>> 0) / 4294967296; }
+function crashPointFor(n) {
+  var u = Math.min(0.999999, srand('crash' + n));
   var c = RTP / (1 - u);
   return c < 1 ? 1 : Math.floor(c * 100) / 100;
 }
-function makeBots() {
-  var n = 5 + Math.floor(Math.random() * 5);
-  var names = NAMES.slice().sort(function () { return Math.random() - 0.5; }).slice(0, n);
-  return names.map(function (nm, i) {
-    var gift = Math.random() < 0.35 ? BOT_GIFTS[Math.floor(Math.random() * BOT_GIFTS.length)] : null;
-    var bet = gift ? GIFTS[gift].price : r2(0.1 + Math.pow(Math.random(), 2) * 6);
-    return { id: 'b' + i, name: nm, bet: bet, gift: gift, target: r2(1.05 + Math.pow(Math.random(), 2) * 6), cashed: false, at: 0, av: AV[i % AV.length] };
-  });
+function flyMs(c) { return Math.log(Math.max(1, c)) / GROWTH * 1000; }
+function roundLen(n) { return WAIT + flyMs(crashPointFor(n)) + AFTER; }
+// Раунды идут подряд с начала суток (UTC); считаем, какой сейчас и что было до него
+var SCHED = { day: -1, n: 0, start: 0, hist: [] };
+function schedAt(t) {
+  var day = Math.floor(t / 86400000);
+  if (SCHED.day !== day || t < SCHED.start) { SCHED = { day: day, n: day * 100000, start: day * 86400000, hist: [] }; }
+  while (SCHED.start + roundLen(SCHED.n) <= t) {
+    SCHED.hist.unshift(crashPointFor(SCHED.n)); if (SCHED.hist.length > 12) SCHED.hist.length = 12;
+    SCHED.start += roundLen(SCHED.n); SCHED.n += 1;
+  }
+  if (SCHED.hist.length < 12) {
+    var h = SCHED.hist.slice(), k = SCHED.n - SCHED.hist.length - 1;
+    while (h.length < 12) { h.push(crashPointFor(k)); k--; }
+    return { n: SCHED.n, start: SCHED.start, crashAt: crashPointFor(SCHED.n), hist: h };
+  }
+  return { n: SCHED.n, start: SCHED.start, crashAt: crashPointFor(SCHED.n), hist: SCHED.hist.slice() };
+}
+function makeBots(n) {
+  var cnt = 5 + Math.floor(srand('bc' + n) * 5), pool = NAMES.slice(), out = [];
+  for (var i = 0; i < cnt && pool.length; i++) {
+    var nm = pool.splice(Math.floor(srand('bn' + n + ':' + i) * pool.length), 1)[0];
+    var gift = srand('bg' + n + ':' + i) < 0.35 ? BOT_GIFTS[Math.floor(srand('bk' + n + ':' + i) * BOT_GIFTS.length)] : null;
+    var bet = gift ? GIFTS[gift].price : r2(0.1 + Math.pow(srand('bb' + n + ':' + i), 2) * 6);
+    out.push({ id: 'b' + i, name: nm, bet: bet, gift: gift, target: r2(1.05 + Math.pow(srand('bt' + n + ':' + i), 2) * 6), cashed: false, at: 0, av: AV[i % AV.length] });
+  }
+  return out;
 }
 
 class Component extends DCLogic {
   constructor(props) {
     super(props);
     this.state = {
-      phase: 'wait', t0: Date.now(), now: Date.now(), crashAt: crashPoint(), m: 1,
+      phase: 'wait', t0: Date.now(), now: Date.now(), crashAt: 1, m: 1, roundN: null,
       balance: 50, bet: 1, me: null, queued: null, giftPick: false,
       inv: ['cake', 'globe', 'record', 'rose'],
-      bots: makeBots(),
-      history: (function () { var S = typeof window !== 'undefined' && window.RK && window.RK.store; var v = S ? S.getJSON('rk_crash_hist', null) : null; return Array.isArray(v) && v.length ? v : [2.08, 4.6, 2.39, 1.04, 6.85, 3.3, 1.94, 12.4, 1.21, 1.55]; })()
+      bots: [],
+      history: schedAt(Date.now()).hist
     };
   }
   componentDidMount() {
@@ -255,34 +276,39 @@ class Component extends DCLogic {
   componentWillUnmount() { clearInterval(this.iv); }
 
   tick() {
-    var s = this.state, now = Date.now(), el = now - s.t0;
-    if (s.phase === 'wait') {
-      if (el >= WAIT) this.setState({ phase: 'fly', t0: now, now: now, m: 1 });
-      else this.setState({ now: now });
-      return;
-    }
-    if (s.phase === 'fly') {
-      var m = Math.exp(GROWTH * el / 1000);
-      if (m >= s.crashAt) {
-        var me = s.me;
-        if (me && !me.cashed) me = Object.assign({}, me, { lost: true });
-        var bp = rocketPos(el, s.crashAt);
-        this.setState({ phase: 'crash', boom: bp, t0: now, now: now, m: s.crashAt, me: me, history: [s.crashAt].concat(s.history).slice(0, 12) });
-        if (window.RK && window.RK.store) window.RK.store.setJSON('rk_crash_hist', [s.crashAt].concat(s.history).slice(0, 12));
-        return;
-      }
-      var bots = s.bots.map(function (b) { return !b.cashed && m >= b.target ? Object.assign({}, b, { cashed: true, at: b.target }) : b; });
-      this.setState({ now: now, m: m, bots: bots });
-      return;
-    }
-    if (s.phase === 'crash' && el >= AFTER) {
-      var q = s.queued, bal = s.balance, me2 = null, inv = s.inv;
-      if (q) {
-        if (q.gift) { me2 = { amount: GIFTS[q.gift].price, gift: q.gift, cashed: false }; }
+    var s = this.state, now = Date.now(), sc = schedAt(now), el = now - sc.start, fly = flyMs(sc.crashAt);
+    var upd = { now: now };
+    var newRound = sc.n !== s.roundN;
+    if (newRound) {
+      upd.roundN = sc.n; upd.crashAt = sc.crashAt; upd.bots = makeBots(sc.n); upd.boom = null; upd.history = sc.hist;
+      // ставка «на следующий раунд» входит в игру
+      var q = s.queued, bal = s.balance, me2 = null;
+      if (q && s.roundN !== null) {
+        if (q.gift) me2 = { amount: GIFTS[q.gift].price, gift: q.gift, cashed: false };
         else if (q.amount <= bal) { bal = r2(bal - q.amount); me2 = { amount: q.amount, gift: null, cashed: false }; }
+        if (me2) rkTrack({ game: 'crash', bet: me2.amount, round: true });
       }
-      this.setState({ phase: 'wait', t0: now, now: now, m: 1, crashAt: crashPoint(), bots: makeBots(), me: me2, queued: null, balance: bal, inv: inv });
+      upd.me = me2; upd.queued = null; upd.balance = bal;
     }
+    var bots = newRound ? upd.bots : s.bots;
+    if (el < WAIT) {
+      upd.phase = 'wait'; upd.t0 = sc.start; upd.m = 1;
+    } else if (el < WAIT + fly) {
+      var m = Math.exp(GROWTH * (el - WAIT) / 1000);
+      upd.phase = 'fly'; upd.t0 = sc.start + WAIT; upd.m = m;
+      upd.bots = bots.map(function (b) { return !b.cashed && m >= b.target ? Object.assign({}, b, { cashed: true, at: b.target }) : b; });
+    } else {
+      upd.t0 = sc.start + WAIT + fly; upd.m = sc.crashAt;
+      if (s.phase !== 'crash' || newRound) {
+        var me = newRound ? upd.me : s.me;
+        if (me && !me.cashed) upd.me = Object.assign({}, me, { lost: true });
+        upd.boom = rocketPos(fly, sc.crashAt);
+        upd.history = [sc.crashAt].concat(sc.hist).slice(0, 12);
+        upd.bots = bots.map(function (b) { return !b.cashed && sc.crashAt >= b.target ? Object.assign({}, b, { cashed: true, at: b.target }) : b; });
+      }
+      upd.phase = 'crash';
+    }
+    this.setState(upd);
   }
 
   placeTon() {

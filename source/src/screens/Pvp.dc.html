@@ -278,109 +278,174 @@ function bandsFor(players) {
   return list;
 }
 
+// ---- Общее расписание раундов: арена крутится 24/7, даже когда тебя нет онлайн ----
+// Раунд длится ROUND мс: [0..15с) набор игроков, [15..23с) розыгрыш, [23..30с) итог.
+var ROUND = 30000, SPIN_AT = COUNTDOWN, RESULT_AT = 23000, EPOCH = Date.UTC(2026, 0, 1);
+function srand(key) { var h = 2166136261; for (var i = 0; i < key.length; i++) { h ^= key.charCodeAt(i); h = Math.imul(h, 16777619); } h ^= h >>> 13; h = Math.imul(h, 0x5bd1e995); h ^= h >>> 15; return (h >>> 0) / 4294967296; }
+function roundIndex(t) { return Math.floor((t - EPOCH) / ROUND); }
+function roundStart(n) { return EPOCH + n * ROUND; }
+function gameIdOf(n) { return 1100000 + (n % 900000); }
+// Боты раунда: кто зайдёт, когда и с какой ставкой — одинаково для всех игроков
+function botsFor(n) {
+  var cnt = 2 + Math.floor(srand('cnt' + n) * 5), out = [], used = {};
+  for (var i = 0; i < cnt; i++) {
+    var ni = Math.floor(srand('nm' + n + ':' + i) * NAMES.length), tries = 0;
+    while (used[ni] && tries++ < 20) ni = (ni + 1) % NAMES.length;
+    used[ni] = 1;
+    var hasGift = srand('g' + n + ':' + i) < 0.55, gift = hasGift ? BOT_GIFTS[Math.floor(srand('gk' + n + ':' + i) * BOT_GIFTS.length)] : null;
+    var join = i === 0 ? 300 : i === 1 ? 1500 + srand('j' + n + ':' + i) * 3000 : 3000 + srand('j' + n + ':' + i) * 11000;
+    out.push({ id: 'b' + n + '_' + i, name: NAMES[ni], me: false, join: join,
+      ton: gift ? (srand('t' + n + ':' + i) < 0.4 ? 0.1 : 0) : r2(0.1 + Math.pow(srand('v' + n + ':' + i), 2) * 6),
+      gifts: gift ? [gift] : [], color: COLORS[(ni + n) % COLORS.length] });
+  }
+  return out.sort(function (a, b) { return a.join - b.join; });
+}
+// Точка остановки шарика — заранее известна для раунда, площади участков честно пропорциональны ставкам
+function pointFor(n) { return { x: 6 + srand('px' + n) * (S - 12), y: 6 + srand('py' + n) * (S - 12) }; }
+function winnerOf(players, n) {
+  var bands = bandsFor(withHouse(players));
+  var pt = pointFor(n), fd = depthOf(pt.x, pt.y), wb = bands[bands.length - 1];
+  for (var i = 0; i < bands.length; i++) { if (fd >= bands[i].d1 && fd < bands[i].d2) { wb = bands[i]; break; } }
+  var total = 0; players.forEach(function (p) { total += stakeOf(p); });
+  var totalAll = 0; bands.forEach(function (b) { totalAll += b.v; });
+  return { bands: bands, band: wb, pt: pt, total: total, totalAll: totalAll };
+}
+function timeOf(t) { var d = new Date(t + 3 * 3600 * 1000); var mo = ['янв.', 'февр.', 'мар.', 'апр.', 'мая', 'июн.', 'июл.', 'авг.', 'сент.', 'окт.', 'нояб.', 'дек.'][d.getUTCMonth()]; return d.getUTCDate() + ' ' + mo + ' ' + ('0' + d.getUTCHours()).slice(-2) + ':' + ('0' + d.getUTCMinutes()).slice(-2); }
+function entryFor(n, players) {
+  var w = winnerOf(players, n), wp = w.band.p, tonSum = 0, gifts = [];
+  players.forEach(function (p) { tonSum += p.ton; gifts = gifts.concat(p.gifts); });
+  return { id: gameIdOf(n), n: n, name: wp.me ? 'Ты' : wp.name, house: !!wp.house, me: !!wp.me,
+    chance: (stakeOf(wp) / w.totalAll * 100).toFixed(2) + '%', win: (wp.house ? 0 : r2(w.total * (1 - FEE))).toFixed(2),
+    av: wp.color, time: timeOf(roundStart(n) + RESULT_AT), ton: r2(tonSum), gifts: gifts.slice(0, 5) };
+}
+// История: прошлые раунды по расписанию + твои сыгранные раунды (сохраняются)
+function buildHistory(nowN, saved) {
+  var mine = {}; (saved || []).forEach(function (h) { if (h && h.n != null) mine[h.n] = h; });
+  var out = [];
+  for (var k = 1; k <= 25; k++) { var n = nowN - k; out.push(mine[n] || entryFor(n, botsFor(n))); }
+  return out;
+}
+
 class Component extends DCLogic {
   constructor(props) {
     super(props);
+    var now = Date.now(), n = roundIndex(now);
+    this.saved = pvpHistLoad([]).filter(function (h) { return h && h.n != null; });
+    // Если ты поставил и закрыл приложение до конца раунда — рассчитываем ставку сейчас
+    var st0 = rkStore(), pend = st0 ? st0.getJSON('rk_pvp_pending', null) : null, credit = 0;
+    if (pend && pend.n != null && (pend.n < n || now - roundStart(pend.n) >= RESULT_AT)) {
+      var pl = botsFor(pend.n).concat([{ id: 'me', name: 'Ты', me: true, ton: pend.ton, gifts: pend.gifts || [], color: '#d9a400' }]);
+      var e0 = entryFor(pend.n, pl), w0 = winnerOf(pl, pend.n);
+      if (w0.band.p.me) credit = r2(w0.total * (1 - FEE));
+      this.saved = [e0].concat(this.saved.filter(function (h) { return h.n !== pend.n; })).slice(0, 25);
+      pvpHistSave(this.saved);
+      rkTrack({ game: 'pvp', bet: r2(pend.ton + (pend.gifts || []).reduce(function (a, k) { return a + GIFTS[k].price; }, 0)), win: credit, round: true });
+      st0.remove('rk_pvp_pending');
+      pend = null;
+    }
+    this.credit = credit;
     this.state = {
-      phase: 'wait', t0: Date.now(), now: Date.now(), gameId: 1148666,
-      players: [this.makeBot(0)], nextBot: 1,
+      phase: 'wait', t0: roundStart(n), now: now, roundN: n, gameId: gameIdOf(n),
+      players: [], mine: pend && pend.n === n ? pend : null, spunN: null,
       balance: 50, bet: 0.5, mode: 'ton', inv: ['cake', 'globe', 'record', 'rose'], pickGift: null,
       ball: { x: S / 2, y: S / 2 }, ballDur: 0, frozen: null, cam: false,
       winner: null, showWinner: false, view: 'players', online: 6938, floaters: [], fid: 0,
-      history: pvpHistLoad([
-        { id: 1148665, name: 'hill_best', chance: '99.79%', win: '48.51', av: COLORS[0], time: '21 окт. 18:56', ton: 0.05, gifts: ['rose', 'record'] },
-        { id: 1148663, name: 'hill_best', chance: '49.81%', win: '7.54', av: COLORS[0], time: '21 окт. 18:56', ton: 0, gifts: ['bells', 'cake'] },
-        { id: 1148661, name: 'cntgf52', chance: '33.28%', win: '7.67', av: COLORS[3], time: '21 окт. 18:55', ton: 0.1, gifts: ['globe', 'lpotion'] }
-      ])
+      history: buildHistory(n, this.saved)
     };
     this.timers = [];
   }
-  makeBot(i) {
-    var gift = Math.random() < 0.55 ? BOT_GIFTS[Math.floor(Math.random() * BOT_GIFTS.length)] : null;
-    return {
-      id: 'b' + i + '_' + Date.now(), name: NAMES[Math.floor(Math.random() * NAMES.length)], me: false,
-      ton: gift ? (Math.random() < 0.4 ? 0.1 : 0) : r2(0.1 + Math.pow(Math.random(), 2) * 6),
-      gifts: gift ? [gift] : [], color: COLORS[i % COLORS.length]
-    };
-  }
-  componentDidMount() { var self = this; this.iv = setInterval(function () { self.tick(); }, 250); }
+  componentDidMount() { var self = this; if (this.credit) this.setState({ balance: r2(this.state.balance + this.credit) }); this.tick(); this.iv = setInterval(function () { self.tick(); }, 250); }
   componentWillUnmount() { clearInterval(this.iv); this.timers.forEach(clearTimeout); }
   later(fn, ms) { this.timers.push(setTimeout(fn, ms)); }
 
+  playersAt(n, el, mine) {
+    var list = botsFor(n).filter(function (b) { return b.join <= el; });
+    if (mine && mine.n === n) list = list.concat([{ id: 'me', name: 'Ты', me: true, ton: mine.ton, gifts: mine.gifts, color: '#d9a400' }]);
+    return list;
+  }
+
   tick() {
-    var s = this.state, now = Date.now();
+    var s = this.state, now = Date.now(), n = roundIndex(now), el = now - roundStart(n);
     var upd = { now: now, online: Math.max(6000, s.online + Math.round((Math.random() - 0.5) * 6)) };
-    if (s.phase === 'wait' || s.phase === 'count') {
-      var players = s.players;
-      if (players.length < 8 && Math.random() < (s.phase === 'wait' ? 0.05 : 0.035)) {
-        players = players.concat([this.makeBot(s.nextBot)]);
-        upd.players = players; upd.nextBot = s.nextBot + 1;
-      }
-      if (s.phase === 'wait' && players.length >= 2) { upd.phase = 'count'; upd.t0 = now; }
-      if (s.phase === 'count' && now - s.t0 >= COUNTDOWN) { this.setState(upd); this.spin(); return; }
-    }
     if (s.floaters.length) upd.floaters = s.floaters.filter(function (f) { return now - f.t < 1800; });
+    if (n !== s.roundN) {
+      // Новый раунд
+      this.timers.forEach(clearTimeout); this.timers = [];
+      upd.roundN = n; upd.gameId = gameIdOf(n); upd.t0 = roundStart(n); upd.frozen = null; upd.cam = false;
+      upd.ball = { x: S / 2, y: S / 2 }; upd.ballDur = 0; upd.spunN = null;
+      upd.history = buildHistory(n, this.saved);
+      if (s.showWinner && s.winner && !s.winner.me) { upd.showWinner = false; upd.winner = null; }
+    }
+    var mine = s.mine;
+    var players = this.playersAt(n, Math.min(el, SPIN_AT), mine);
+    upd.players = players;
+    if (el < SPIN_AT) {
+      upd.phase = players.length >= 2 ? 'count' : 'wait';
+    } else if ((s.spunN !== n) && (n === s.roundN || upd.roundN === n)) {
+      upd.spunN = n;
+      this.setState(upd);
+      this.spin(n, players, el);
+      return;
+    }
     this.setState(upd);
   }
 
-  spin() {
-    var s = this.state, self = this;
-    var bands = bandsFor(withHouse(s.players));
-    var total = 0; s.players.forEach(function (p) { total += stakeOf(p); });
-    var totalAll = 0; bands.forEach(function (b) { totalAll += b.v; });
-    // Победная точка — случайное место на арене
-    var fx = 6 + Math.random() * (S - 12), fy = 6 + Math.random() * (S - 12);
-    var fd = depthOf(fx, fy), winBand = bands[bands.length - 1];
-    for (var i = 0; i < bands.length; i++) { if (fd >= bands[i].d1 && fd < bands[i].d2) { winBand = bands[i]; break; } }
+  spin(n, players, el) {
+    var self = this;
+    var w = winnerOf(players, n);
+    var late = el > SPIN_AT + 1500;
+    if (late) {
+      // Открыл экран посреди розыгрыша — сразу показываем итог
+      this.setState({ phase: el >= RESULT_AT ? 'result' : 'spin', frozen: w.bands, cam: false, ball: { x: w.pt.x, y: w.pt.y }, ballDur: 0 });
+      this.finish(n, players, w, true);
+      return;
+    }
     var path = [], t = 80;
     for (var j = 0; j < 10; j++) path.push({ x: 15 + Math.random() * (S - 30), y: 15 + Math.random() * (S - 30), d: 520 - j * 15 });
-    path.push({ x: fx, y: fy, d: 1100 });
-    this.setState({ phase: 'spin', frozen: bands, cam: true, ball: { x: S / 2, y: S / 2 }, ballDur: 0 });
+    path.push({ x: w.pt.x, y: w.pt.y, d: 1100 });
+    this.setState({ phase: 'spin', frozen: w.bands, cam: true, ball: { x: S / 2, y: S / 2 }, ballDur: 0, giftPick: false });
     path.forEach(function (pt) {
       self.later(function () { self.setState({ ball: { x: pt.x, y: pt.y }, ballDur: pt.d }); }, t);
       t += pt.d;
     });
-    this.later(function () { self.finish(winBand.p, total, totalAll); }, t + 900);
+    this.later(function () { self.finish(n, players, w, false); }, t + 900);
   }
 
-  finish(wp, total, totalAll) {
-    var s = this.state;
-    var win = wp.house ? 0 : r2(total * (1 - FEE));
-    var chance = (stakeOf(wp) / (totalAll || total) * 100).toFixed(2) + '%';
-    var tonSum = 0, giftsAll = [];
-    s.players.forEach(function (p) { tonSum += p.ton; giftsAll = giftsAll.concat(p.gifts); });
-    var upd = {
-      phase: 'result', showWinner: true, cam: false,
-      winner: { name: wp.me ? 'Ты' : wp.name, me: wp.me, house: !!wp.house, color: wp.color, chance: chance, win: win, pot: total, gameId: s.gameId },
-      history: [{ id: s.gameId, name: wp.me ? 'Ты' : wp.name, chance: chance, win: win.toFixed(2), av: wp.color, time: nowTime(), ton: r2(tonSum), gifts: giftsAll.slice(0, 5) }].concat(s.history).slice(0, 20)
-    };
-    if (wp.me) upd.balance = r2(s.balance + win);
-    var mine = s.players.filter(function (p) { return p.me; })[0];
-    if (mine) rkTrack({ game: 'pvp', bet: stakeOf(mine), win: wp.me ? win : 0, round: true });
-    pvpHistSave(upd.history);
+  finish(n, players, w, quiet) {
+    var s = this.state, wp = w.band.p;
+    var mineP = players.filter(function (p) { return p.me; })[0];
+    var entry = entryFor(n, players);
+    var win = wp.house ? 0 : r2(w.total * (1 - FEE));
+    var upd = { phase: 'result', cam: false };
+    if (mineP) {
+      var stR = rkStore(); if (stR) stR.remove('rk_pvp_pending');
+      // Ты участвовал — запоминаем раунд в истории и начисляем выигрыш
+      this.saved = [entry].concat(this.saved.filter(function (h) { return h.n !== n; })).slice(0, 25);
+      pvpHistSave(this.saved);
+      rkTrack({ game: 'pvp', bet: stakeOf(mineP), win: wp.me ? win : 0, round: true });
+      if (wp.me) upd.balance = r2(s.balance + win);
+      upd.mine = null;
+    }
+    if (!quiet || mineP) {
+      upd.showWinner = true;
+      upd.winner = { name: entry.name, me: !!wp.me, house: !!wp.house, color: wp.color, chance: entry.chance, win: win, pot: w.total, gameId: gameIdOf(n) };
+    }
     this.setState(upd);
   }
 
-  newRound() {
-    this.timers.forEach(clearTimeout); this.timers = [];
-    this.setState({
-      phase: 'wait', t0: Date.now(), gameId: this.state.gameId + 1, players: [],
-      frozen: null, cam: false, showWinner: false, winner: null, ball: { x: S / 2, y: S / 2 }, ballDur: 0
-    });
-  }
+  newRound() { this.setState({ showWinner: false, winner: null }); }
 
   join(ton, gift) {
     var s = this.state;
     if (s.phase !== 'wait' && s.phase !== 'count') return null;
-    var players = s.players.slice(), idx = -1;
-    players.forEach(function (p, i) { if (p.me) idx = i; });
-    var me = idx >= 0 ? Object.assign({}, players[idx]) : { id: 'me', name: 'Ты', me: true, ton: 0, gifts: [], color: '#d9a400' };
-    me.ton = r2(me.ton + ton);
-    if (gift) me.gifts = me.gifts.concat([gift]);
-    if (idx >= 0) players[idx] = me; else players.push(me);
-    var upd = { players: players };
-    if (s.phase === 'wait' && players.length >= 2) { upd.phase = 'count'; upd.t0 = Date.now(); }
-    return upd;
+    var n = s.roundN;
+    var mine = s.mine && s.mine.n === n ? { n: n, ton: s.mine.ton, gifts: s.mine.gifts.slice() } : { n: n, ton: 0, gifts: [] };
+    mine.ton = r2(mine.ton + ton);
+    if (gift) mine.gifts.push(gift);
+    var el = Date.now() - roundStart(n);
+    var players = this.playersAt(n, el, mine);
+    var stJ = rkStore(); if (stJ) stJ.setJSON('rk_pvp_pending', mine);
+    return { mine: mine, players: players, phase: players.length >= 2 ? 'count' : 'wait' };
   }
   mainAction() {
     var s = this.state;
