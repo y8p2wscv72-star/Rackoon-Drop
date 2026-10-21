@@ -34,7 +34,7 @@ a{color:#ffc83d}a:hover{color:#ffe08a}
 </div>
 <div style="display: flex; align-items: center; gap: 8px; background: #1b1e27; border-radius: 999px; padding: 4px 4px 4px 14px">
 <span style="font-size: 15px; font-weight: 700; white-space: nowrap">{{balanceText}}</span>
-<button type="button" aria-label="\u041F\u043E\u043F\u043E\u043B\u043D\u0438\u0442\u044C \u0431\u0430\u043B\u0430\u043D\u0441" style="width: 40px; height: 40px; border-radius: 50%; border: 0; background: #2a7fff; color: #ffffff; display: flex; align-items: center; justify-content: center; cursor: pointer">
+<button type="button" onClick="{{topUp}}" aria-label="\u041F\u043E\u043F\u043E\u043B\u043D\u0438\u0442\u044C \u0434\u0435\u043C\u043E-\u0431\u0430\u043B\u0430\u043D\u0441 \u043D\u0430 100 TON" style="width: 40px; height: 40px; border-radius: 50%; border: 0; background: #2a7fff; color: #ffffff; display: flex; align-items: center; justify-content: center; cursor: pointer">
 <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><path d="M9 2 V16 M2 9 H16" stroke="#ffffff" stroke-width="2.6" stroke-linecap="round"></path></svg>
 </button>
 </div>
@@ -156,7 +156,9 @@ class Component extends DCLogic {
   }
   componentWillUnmount() { clearInterval(this.iv); }
   renderVals() {
+    var self = this;
     return {
+      topUp: function () { if (window.RK) { window.RK.wallet.set(window.RK.wallet.get() + 100); } self.forceUpdate(); },
       online: this.state.online,
       balanceText: (window.RK ? window.RK.wallet.get() : 0).toFixed(2) + ' TON',
       tgName: (window.RK && window.RK.user && window.RK.user.first_name) || '\u0413\u043E\u0441\u0442\u044C',
