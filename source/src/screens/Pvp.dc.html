@@ -1,0 +1,438 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>RACKOON — PvP</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Rubik:ital,wght@0,500;0,700;0,900;1,900&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#0b0d12}
+a{color:#ffc83d}a:hover{color:#ffe08a}
+@keyframes rkWin{0%{transform:scale(.7);opacity:0}60%{transform:scale(1.05);opacity:1}100%{transform:scale(1)}}
+@keyframes rkPulseBall{0%,100%{box-shadow:0 0 0 0 rgba(255,200,61,.7),0 0 18px rgba(255,200,61,.9)}50%{box-shadow:0 0 0 8px rgba(255,200,61,0),0 0 24px rgba(255,200,61,1)}}
+@keyframes rkTileIn{0%{opacity:0;transform:scale(.92)}100%{opacity:1;transform:scale(1)}}
+</style>
+</helmet>
+<div style="position: relative; width: 390px; min-height: 1300px; box-sizing: border-box; padding: 20px 16px 32px; display: flex; flex-direction: column; gap: 14px; background: #0b0d12; font-family: Rubik, system-ui, sans-serif; color: #ffffff; overflow: hidden">
+
+<header style="display: flex; align-items: center; gap: 10px; height: 48px">
+<a href="Main.dc.html" aria-label="Назад в лобби" style="width: 44px; height: 44px; border-radius: 14px; background: #1a1d27; display: flex; align-items: center; justify-content: center; flex-shrink: 0">
+<svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><path d="M13 3 L6 10 L13 17" fill="none" stroke="#ffffff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+</a>
+<div style="display: flex; flex-direction: column; gap: 2px; flex-grow: 1">
+<div style="font-size: 26px; font-weight: 900; font-style: italic; line-height: 1">PVP</div>
+<div style="font-size: 11px; font-weight: 500; color: #2bd46b">● {{online}} онлайн</div>
+</div>
+<div style="height: 44px; box-sizing: border-box; border-radius: 14px; background: #1a1d27; padding: 0 12px; display: flex; align-items: center; font-size: 14px; font-weight: 700; color: #ffc83d">{{balanceText}}</div>
+</header>
+
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px">
+<div style="height: 40px; border-radius: 12px; background: #151821; border: 1px solid #222838; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 14px; font-weight: 700">
+<svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="5" r="3" fill="none" stroke="#a3a8b5" stroke-width="1.8"></circle><path d="M2 15 C2 10 14 10 14 15" fill="none" stroke="#a3a8b5" stroke-width="1.8"></path></svg>
+{{playersCount}}
+</div>
+<div style="height: 40px; border-radius: 12px; background: #151821; border: 1px solid #222838; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 14px; font-weight: 700; color: #ffc83d">Банк {{potText}}</div>
+</div>
+
+<div style="position: relative; width: 358px; height: 358px; border-radius: 24px; overflow: hidden; background: #11141c; border: 1px solid #1d2230">
+<div style="position: absolute; left: 0; top: 0; width: 358px; height: 358px; {{arenaStyle}}">
+<sc-for list="{{tiles}}" as="t" hint-placeholder-count="2">
+<div style="position: absolute; box-sizing: border-box; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; left: {{t.x}}px; top: {{t.y}}px; width: {{t.w}}px; height: {{t.h}}px; background: {{t.bg}}; border: {{t.border}}; animation: rkTileIn 0.35s ease-out">
+<div style="width: {{t.av}}px; height: {{t.av}}px; border-radius: 50%; background: {{t.avBg}}; border: 3px solid rgba(255,255,255,0.85); box-sizing: border-box; display: flex; align-items: center; justify-content: center; font-size: {{t.fs}}px; font-weight: 900; color: #ffffff; overflow: hidden">
+<sc-if value="{{t.isMe}}" hint-placeholder-val="{{ false }}">
+<img src="/_blob/661884b648dd965ea69af44ea8c7ee95" alt="" style="width: 100%; height: 100%; object-fit: cover">
+</sc-if>
+<sc-if value="{{t.notMe}}" hint-placeholder-val="{{ true }}">{{t.initial}}</sc-if>
+</div>
+<sc-if value="{{t.showLabel}}" hint-placeholder-val="{{ false }}">
+<span style="max-width: 92%; font-size: 12px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-shadow: 0 1px 3px rgba(0,0,0,0.5)">{{t.name}}</span>
+<span style="font-size: 11px; font-weight: 700; padding: 2px 7px; border-radius: 7px; background: rgba(0,0,0,0.3)">{{t.chance}}</span>
+</sc-if>
+</div>
+</sc-for>
+
+<sc-if value="{{showBall}}" hint-placeholder-val="{{ false }}">
+<div style="position: absolute; width: 0; height: 0; {{ballStyle}}">
+<div style="position: absolute; left: -10px; top: -10px; width: 20px; height: 20px; border-radius: 50%; background: #ffc83d; border: 3px solid #ffffff; box-sizing: border-box; animation: rkPulseBall 0.9s infinite"></div>
+<span style="position: absolute; left: 50%; top: 14px; transform: translateX(-50%); white-space: nowrap; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 8px; background: rgba(11,13,18,0.85); color: #ffc83d">@{{ballOwner}}</span>
+</div>
+</sc-if>
+</div>
+
+<sc-if value="{{isWaiting}}" hint-placeholder-val="{{ true }}">
+<div style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; background: rgba(11,13,18,0.55)">
+<svg width="120" height="34" viewBox="0 0 120 34" aria-hidden="true"><circle cx="17" cy="17" r="13" fill="none" stroke="#3a4157" stroke-width="3"></circle><path d="M60 4 L74 30 H46Z" fill="none" stroke="#3a4157" stroke-width="3" stroke-linejoin="round"></path><rect x="90" y="4" width="26" height="26" rx="3" fill="none" stroke="#3a4157" stroke-width="3"></rect></svg>
+<div style="font-size: 20px; font-weight: 700; color: #c9cdd6">Ожидание игроков</div>
+<div style="font-size: 13px; color: #8a90a0">Раунд начнётся, когда зайдёт второй игрок</div>
+</div>
+</sc-if>
+
+</div>
+<div style="height: 40px; margin-top: -6px; border-radius: 12px; background: #151821; border: 1px solid #222838; display: flex; align-items: center; justify-content: space-between; padding: 0 14px; font-size: 13px; font-weight: 700">
+<span>Игроки: {{playersCount}}/32</span>
+<span style="color: {{statusColor}}">{{statusText}}</span>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 10px">
+<div style="display: grid; grid-template-columns: 44px minmax(0, 1fr) 44px 44px 44px; gap: 6px; align-items: center">
+<button type="button" onClick="{{betMinus}}" aria-label="Уменьшить ставку" style="height: 44px; border-radius: 12px; border: 1px solid #222838; background: #151821; color: #ffffff; font-family: Rubik, system-ui, sans-serif; font-size: 18px; font-weight: 700; cursor: pointer">−</button>
+<div style="height: 44px; border-radius: 12px; background: #151821; border: 1px solid #222838; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 900; color: #ffc83d">{{betText}}</div>
+<button type="button" onClick="{{betPlus}}" aria-label="Увеличить ставку" style="height: 44px; border-radius: 12px; border: 1px solid #222838; background: #151821; color: #ffffff; font-family: Rubik, system-ui, sans-serif; font-size: 18px; font-weight: 700; cursor: pointer">+</button>
+<button type="button" onClick="{{betHalf}}" style="height: 44px; border-radius: 12px; border: 1px solid #222838; background: #151821; color: #ffffff; font-family: Rubik, system-ui, sans-serif; font-size: 13px; font-weight: 700; cursor: pointer">½</button>
+<button type="button" onClick="{{betDouble}}" style="height: 44px; border-radius: 12px; border: 1px solid #222838; background: #151821; color: #ffffff; font-family: Rubik, system-ui, sans-serif; font-size: 13px; font-weight: 700; cursor: pointer">x2</button>
+</div>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px">
+<button type="button" onClick="{{openGift}}" disabled="{{joinDisabled}}" style="height: 56px; border-radius: 16px; border: 2px solid #2c3244; background: #151821; color: {{giftBtnColor}}; font-family: Rubik, system-ui, sans-serif; font-size: 15px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px">
+<svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><rect x="2" y="7" width="14" height="10" rx="2" fill="none" stroke="currentColor" stroke-width="2"></rect><rect x="1" y="4" width="16" height="4" rx="1.5" fill="currentColor"></rect><path d="M9 4 V17" stroke="currentColor" stroke-width="2"></path></svg>
+Подарком
+</button>
+<button type="button" onClick="{{placeTon}}" disabled="{{joinDisabled}}" style="height: 56px; border-radius: 16px; border: 0; background: {{tonBtnBg}}; color: {{tonBtnColor}}; font-family: Rubik, system-ui, sans-serif; font-size: 15px; font-weight: 900; cursor: pointer">{{tonBtnText}}</button>
+</div>
+<sc-if value="{{showGiftPick}}" hint-placeholder-val="{{ false }}">
+<div style="background: #151821; border: 1px solid #222838; border-radius: 18px; padding: 12px; display: flex; flex-direction: column; gap: 10px">
+<div style="display: flex; justify-content: space-between; align-items: center">
+<span style="font-size: 14px; font-weight: 700">Поставь подарок</span>
+<button type="button" onClick="{{closeGift}}" style="height: 36px; border: 0; background: transparent; color: #a3a8b5; font-family: Rubik, system-ui, sans-serif; font-size: 13px; cursor: pointer">Отмена</button>
+</div>
+<div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px">
+<sc-for list="{{gifts}}" as="g" hint-placeholder-count="4">
+<button type="button" onClick="{{g.pick}}" style="min-width: 0; background: #0b0d12; border: 1px solid #222838; border-radius: 12px; padding: 8px 4px; display: flex; flex-direction: column; align-items: center; gap: 2px; cursor: pointer; font-family: Rubik, system-ui, sans-serif; color: #ffffff">
+<img src="{{g.img}}" alt="" style="width: 40px; height: 40px">
+<span style="max-width: 100%; font-size: 10px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{g.name}}</span>
+<span style="font-size: 11px; font-weight: 700; color: #ffc83d">{{g.priceText}}</span>
+</button>
+</sc-for>
+</div>
+</div>
+</sc-if>
+<div style="font-size: 12px; color: #8a90a0; text-align: center">Шанс = твоя доля в банке. Победитель забирает весь банк, комиссия 5% с выигрыша.</div>
+</div>
+
+<div role="tablist" style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px; background: #151821; border-radius: 14px; padding: 4px">
+<button type="button" role="tab" onClick="{{tabPlayers}}" aria-selected="{{playersSel}}" style="height: 40px; border: 0; border-radius: 11px; font-family: Rubik, system-ui, sans-serif; font-size: 14px; font-weight: 700; cursor: pointer; background: {{playersTabBg}}; color: {{playersTabColor}}">Участники ({{playersCount}})</button>
+<button type="button" role="tab" onClick="{{tabHistory}}" aria-selected="{{historySel}}" style="height: 40px; border: 0; border-radius: 11px; font-family: Rubik, system-ui, sans-serif; font-size: 14px; font-weight: 700; cursor: pointer; background: {{historyTabBg}}; color: {{historyTabColor}}">История</button>
+</div>
+
+<sc-if value="{{showPlayersTab}}" hint-placeholder-val="{{ true }}">
+<div style="display: flex; justify-content: space-between; font-size: 12px; color: #8a90a0"><span>Игра #{{gameId}}</span><span>шанс · ставка</span></div>
+<div style="display: flex; flex-direction: column; gap: 8px">
+<sc-for list="{{players}}" as="p" hint-placeholder-count="2">
+<div style="background: #151821; border: 1px solid {{p.border}}; border-radius: 16px; padding: 10px 12px; display: flex; flex-direction: column; gap: 8px">
+<div style="display: flex; align-items: center; gap: 10px">
+<div style="width: 36px; height: 36px; border-radius: 12px; background: {{p.avBg}}; display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 900; flex-shrink: 0; overflow: hidden">
+<sc-if value="{{p.isMe}}" hint-placeholder-val="{{ false }}"><img src="/_blob/661884b648dd965ea69af44ea8c7ee95" alt="" style="width: 100%; height: 100%; object-fit: cover"></sc-if>
+<sc-if value="{{p.notMe}}" hint-placeholder-val="{{ true }}">{{p.initial}}</sc-if>
+</div>
+<span style="flex-grow: 1; min-width: 0; font-size: 14px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{p.name}}</span>
+<span style="font-size: 12px; font-weight: 700; padding: 3px 8px; border-radius: 8px; background: #0b0d12; color: #c9cdd6">{{p.chance}}</span>
+<span style="font-size: 14px; font-weight: 900; color: #ffc83d">{{p.stakeText}}</span>
+</div>
+<sc-if value="{{p.hasItems}}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap">
+<sc-if value="{{p.hasTon}}" hint-placeholder-val="{{ false }}"><span style="font-size: 12px; font-weight: 700; padding: 4px 8px; border-radius: 8px; background: #0b0d12; color: #ffc83d">{{p.tonText}}</span></sc-if>
+<sc-for list="{{p.giftImgs}}" as="gi" hint-placeholder-count="0"><img src="{{gi.img}}" alt="{{gi.name}}" style="width: 30px; height: 30px; border-radius: 8px; background: #0b0d12"></sc-for>
+</div>
+</sc-if>
+</div>
+</sc-for>
+</div>
+</sc-if>
+
+<sc-if value="{{showHistoryTab}}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; flex-direction: column; gap: 8px">
+<sc-for list="{{history}}" as="h" hint-placeholder-count="3">
+<div style="background: #151821; border: 1px solid #222838; border-radius: 16px; padding: 10px 12px; display: flex; flex-direction: column; gap: 6px">
+<div style="display: flex; justify-content: space-between; font-size: 11px; color: #8a90a0"><span>Игра #{{h.id}}</span><span>{{h.time}}</span></div>
+<div style="display: flex; align-items: center; gap: 10px">
+<div style="width: 30px; height: 30px; border-radius: 10px; background: {{h.avBg}}; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 900; flex-shrink: 0">{{h.initial}}</div>
+<span style="flex-grow: 1; min-width: 0; font-size: 14px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{h.name}}</span>
+<span style="font-size: 12px; font-weight: 700; padding: 3px 8px; border-radius: 8px; background: #0b0d12; color: #c9cdd6">{{h.chance}}</span>
+<span style="font-size: 14px; font-weight: 900; color: #2bd46b">+{{h.win}}</span>
+</div>
+</div>
+</sc-for>
+</div>
+</sc-if>
+
+<sc-if value="{{showWinner}}" hint-placeholder-val="{{ false }}">
+<div style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; background: rgba(5, 6, 10, 0.8); display: flex; justify-content: center; align-items: flex-start; padding-top: 200px">
+<div role="dialog" aria-label="Победитель" style="width: 320px; box-sizing: border-box; background: #151821; border: 2px solid {{winColor}}; border-radius: 28px; padding: 24px; display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; animation: rkWin 0.45s ease-out; box-shadow: 0 0 60px {{winGlow}}">
+<div style="font-size: 14px; font-weight: 700; color: #a3a8b5">Победитель · игра #{{winGameId}}</div>
+<div style="width: 96px; height: 96px; border-radius: 50%; border: 3px solid {{winColor}}; box-sizing: border-box; background: {{winAvBg}}; display: flex; align-items: center; justify-content: center; font-size: 40px; font-weight: 900; overflow: hidden">
+<sc-if value="{{winIsMe}}" hint-placeholder-val="{{ false }}"><img src="/_blob/661884b648dd965ea69af44ea8c7ee95" alt="" style="width: 100%; height: 100%; object-fit: cover"></sc-if>
+<sc-if value="{{winNotMe}}" hint-placeholder-val="{{ true }}">{{winInitial}}</sc-if>
+</div>
+<div style="font-size: 30px; font-weight: 900; font-style: italic; line-height: 1.05; color: {{winColor}}">{{winTitle}}</div>
+<div style="font-size: 14px; color: #c9cdd6">Шанс был {{winChance}}</div>
+<div style="font-size: 26px; font-weight: 900; color: #ffc83d">+{{winAmount}}</div>
+<div style="font-size: 12px; color: #8a90a0">Банк {{winPot}}, комиссия 5% удержана</div>
+<button type="button" onClick="{{closeWinner}}" style="width: 100%; height: 52px; border: 0; border-radius: 16px; margin-top: 6px; font-family: Rubik, system-ui, sans-serif; font-size: 17px; font-weight: 900; cursor: pointer; background: {{winColor}}; color: #0b0d12">Ок</button>
+</div>
+</div>
+</sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":1300}}'>
+var FEE = 0.05, COUNTDOWN = 12000, ARENA = 358, MAX_PLAYERS = 32;
+var GIFTS = {
+  cake: { name: 'Homemade Cake', price: 2.6, img: '/_blob/6ef5ecbeb712d1b1d752a33d1e9c279d' },
+  globe: { name: 'Snow Globe', price: 3.2, img: '/_blob/6e3628fac94b5266f3b64cea9c5fe7ee' },
+  record: { name: 'Record Player', price: 7.5, img: '/_blob/8f4c023d08704d2319e54c9872a8c46d' },
+  rose: { name: 'Eternal Rose', price: 16, img: '/_blob/734e25b54462cda990767f69381d8355' },
+  bear: { name: 'Toy Bear', price: 17, img: '/_blob/c02bc9477e447f6f71962df1fc7a399a' },
+  lpotion: { name: 'Love Potion', price: 13, img: '/_blob/5bb7da32fc8a6f8dbe91cf7cedc20c65' },
+  bells: { name: 'Jingle Bells', price: 2.5, img: '/_blob/808ef5efdbeb6b276f70430b220f760b' },
+  signet: { name: 'Signet Ring', price: 25, img: '/_blob/4826a2db621709393534f8feae3d3f4a' }
+};
+if (window.rkThumb) Object.keys(GIFTS).forEach(function (k) { GIFTS[k].img = window.rkThumb(GIFTS[k].name, GIFTS[k].img); });
+var BOT_GIFTS = Object.keys(GIFTS);
+var NAMES = ['hill_best', 'vova_tushlek', 'cntgf52', 'Investor_Belarus', 'Eugeneer', 'Bandit_77', 'TonWhale', 'Енотыч', 'lucky_ray', 'night_owl', 'Мурзик', 'kisa_mur', 'moonboy', 'Жора'];
+var COLORS = ['#13a58a', '#c41a78', '#2a6fe0', '#d9730a', '#7c3fe0', '#c92a2d', '#078a8a', '#9a7a00', '#3a8a2a', '#b0368f'];
+
+function r2(x) { return Math.round(x * 100) / 100; }
+function fmt(x) { return (Math.floor(x * 100) / 100).toFixed(2) + ' TON'; }
+function stakeOf(p) { var s = p.ton; p.gifts.forEach(function (k) { s += GIFTS[k].price; }); return r2(s); }
+function nowTime() { var d = new Date(); return ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2); }
+
+// Раскладка арены: площадь участка игрока = его доля в банке
+function layout(items, x, y, w, h) {
+  if (!items.length) return [];
+  if (items.length === 1) return [{ p: items[0].p, x: x, y: y, w: w, h: h }];
+  var total = 0; items.forEach(function (it) { total += it.v; });
+  var acc = 0, i = 0;
+  while (i < items.length - 1 && acc + items[i].v / 2 < total / 2) { acc += items[i].v; i++; }
+  if (i === 0) { acc = items[0].v; i = 1; }
+  var a = items.slice(0, i), b = items.slice(i), f = acc / total;
+  if (w >= h) return layout(a, x, y, w * f, h).concat(layout(b, x + w * f, y, w * (1 - f), h));
+  return layout(a, x, y, w, h * f).concat(layout(b, x, y + h * f, w, h * (1 - f)));
+}
+function tilesFor(players) {
+  var items = players.map(function (p) { return { p: p, v: stakeOf(p) }; }).filter(function (it) { return it.v > 0; })
+    .sort(function (a, b) { return b.v - a.v; });
+  return layout(items, 0, 0, ARENA, ARENA);
+}
+
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = {
+      phase: 'wait', t0: Date.now(), now: Date.now(), gameId: 1148666,
+      players: [this.makeBot(0)], nextBot: 1,
+      balance: 50, bet: 1, inv: ['cake', 'globe', 'record', 'rose'], giftPick: false,
+      ball: { x: ARENA / 2, y: ARENA / 2 }, ballDur: 0, zoom: false, frozen: null,
+      winner: null, showWinner: false, tab: 'players', online: 6938,
+      history: [
+        { id: 1148665, name: 'hill_best', chance: '99.79%', win: '46.08', av: COLORS[0], time: '18:56' },
+        { id: 1148663, name: 'hill_best', chance: '49.81%', win: '7.16', av: COLORS[0], time: '18:56' },
+        { id: 1148661, name: 'cntgf52', chance: '33.28%', win: '7.29', av: COLORS[2], time: '18:55' }
+      ]
+    };
+    this.timers = [];
+  }
+  makeBot(i) {
+    var gift = Math.random() < 0.5 ? BOT_GIFTS[Math.floor(Math.random() * BOT_GIFTS.length)] : null;
+    return {
+      id: 'b' + i + '_' + Date.now(), name: NAMES[Math.floor(Math.random() * NAMES.length)], me: false,
+      ton: gift ? (Math.random() < 0.4 ? r2(0.1 + Math.random()) : 0) : r2(0.1 + Math.pow(Math.random(), 2) * 8),
+      gifts: gift ? [gift] : [], av: COLORS[i % COLORS.length]
+    };
+  }
+  componentDidMount() {
+    var self = this;
+    this.iv = setInterval(function () { self.tick(); }, 250);
+  }
+  componentWillUnmount() { clearInterval(this.iv); this.timers.forEach(clearTimeout); }
+  later(fn, ms) { this.timers.push(setTimeout(fn, ms)); }
+
+  tick() {
+    var s = this.state, now = Date.now();
+    var upd = { now: now, online: Math.max(6000, s.online + Math.round((Math.random() - 0.5) * 6)) };
+    if (s.phase === 'wait' || s.phase === 'count') {
+      var players = s.players;
+      var joinChance = s.phase === 'wait' ? 0.06 : 0.05;
+      if (players.length < 9 && Math.random() < joinChance) {
+        players = players.concat([this.makeBot(s.nextBot)]);
+        upd.players = players; upd.nextBot = s.nextBot + 1;
+      }
+      if (s.phase === 'wait' && players.length >= 2) { upd.phase = 'count'; upd.t0 = now; }
+      if (s.phase === 'count' && now - s.t0 >= COUNTDOWN) { this.setState(upd); this.spin(); return; }
+    }
+    this.setState(upd);
+  }
+
+  spin() {
+    var s = this.state, self = this;
+    var tiles = tilesFor(s.players);
+    var total = 0; s.players.forEach(function (p) { total += stakeOf(p); });
+    var r = Math.random() * total, acc = 0, winTile = tiles[tiles.length - 1];
+    for (var i = 0; i < tiles.length; i++) { acc += stakeOf(tiles[i].p); if (r < acc) { winTile = tiles[i]; break; } }
+    var m = 10;
+    var fx = winTile.x + m + Math.random() * Math.max(1, winTile.w - 2 * m);
+    var fy = winTile.y + m + Math.random() * Math.max(1, winTile.h - 2 * m);
+    var path = [];
+    for (var j = 0; j < 9; j++) path.push({ x: 20 + Math.random() * (ARENA - 40), y: 20 + Math.random() * (ARENA - 40), d: 380 });
+    path.push({ x: fx, y: fy, d: 900 });
+    this.setState({ phase: 'spin', frozen: tiles, zoom: false, giftPick: false, ball: { x: ARENA / 2, y: ARENA / 2 }, ballDur: 0 });
+    var t = 60;
+    path.forEach(function (pt) {
+      self.later(function () { self.setState({ ball: { x: pt.x, y: pt.y }, ballDur: pt.d }); }, t);
+      t += pt.d;
+    });
+    this.later(function () { self.setState({ zoom: true }); }, t + 100);
+    this.later(function () { self.finish(winTile.p, total); }, t + 1100);
+  }
+
+  finish(wp, total) {
+    var s = this.state;
+    var win = r2(total * (1 - FEE));
+    var chance = (stakeOf(wp) / total * 100).toFixed(2) + '%';
+    var upd = {
+      phase: 'result', showWinner: true,
+      winner: { name: wp.me ? 'Ты' : wp.name, me: wp.me, av: wp.av, chance: chance, win: win, pot: total, gameId: s.gameId },
+      history: [{ id: s.gameId, name: wp.me ? 'Ты' : wp.name, chance: chance, win: win.toFixed(2), av: wp.av, time: nowTime() }].concat(s.history).slice(0, 15)
+    };
+    if (wp.me) upd.balance = r2(s.balance + win);
+    this.setState(upd);
+    var self = this;
+    this.later(function () { if (self.state.phase === 'result') self.newRound(); }, 7000);
+  }
+
+  newRound() {
+    this.timers.forEach(clearTimeout); this.timers = [];
+    this.setState({
+      phase: 'wait', t0: Date.now(), gameId: this.state.gameId + 1, players: [this.makeBot(this.state.nextBot)], nextBot: this.state.nextBot + 1,
+      frozen: null, zoom: false, showWinner: false, winner: null, ball: { x: ARENA / 2, y: ARENA / 2 }, ballDur: 0
+    });
+  }
+
+  joinWith(ton, gift) {
+    var s = this.state;
+    if (s.phase !== 'wait' && s.phase !== 'count') return;
+    var players = s.players.slice();
+    var idx = -1;
+    players.forEach(function (p, i) { if (p.me) idx = i; });
+    var me = idx >= 0 ? Object.assign({}, players[idx]) : { id: 'me', name: 'Ты', me: true, ton: 0, gifts: [], av: '#ffc83d' };
+    me.ton = r2(me.ton + ton);
+    if (gift) me.gifts = me.gifts.concat([gift]);
+    if (idx >= 0) players[idx] = me; else players.push(me);
+    var upd = { players: players };
+    if (s.phase === 'wait' && players.length >= 2) { upd.phase = 'count'; upd.t0 = Date.now(); }
+    return upd;
+  }
+  placeTon() {
+    var s = this.state;
+    if (s.bet > s.balance) return;
+    var upd = this.joinWith(s.bet, null);
+    if (!upd) return;
+    upd.balance = r2(s.balance - s.bet);
+    this.setState(upd);
+  }
+  placeGift(k) {
+    var upd = this.joinWith(0, k);
+    if (!upd) return;
+    var inv = this.state.inv.slice(); inv.splice(inv.indexOf(k), 1);
+    upd.inv = inv; upd.giftPick = false;
+    this.setState(upd);
+  }
+  setBet(v) { this.setState({ bet: r2(Math.max(0.1, Math.min(v, Math.max(0.1, this.state.balance)))) }); }
+
+  renderVals() {
+    var self = this, s = this.state;
+    var total = 0; s.players.forEach(function (p) { total += stakeOf(p); });
+    var tiles = s.frozen || tilesFor(s.players);
+    var joinable = s.phase === 'wait' || s.phase === 'count';
+    var remain = Math.max(0, (COUNTDOWN - (s.now - s.t0)) / 1000);
+
+    var tileVals = tiles.map(function (t, i) {
+      var p = t.p, st = stakeOf(p), mn = Math.min(t.w, t.h);
+      var av = Math.max(14, Math.min(110, mn * 0.5));
+      return {
+        x: t.x.toFixed(1), y: t.y.toFixed(1), w: t.w.toFixed(1), h: t.h.toFixed(1),
+        bg: p.me ? '#b8860b' : COLORS[i % COLORS.length],
+        border: p.me ? '3px solid #ffc83d' : '1px solid rgba(11,13,18,0.6)',
+        av: av.toFixed(0), fs: Math.max(8, av * 0.42).toFixed(0), avBg: 'rgba(0,0,0,0.25)',
+        initial: p.name.charAt(0).toUpperCase(), name: p.me ? 'Ты' : p.name, isMe: p.me, notMe: !p.me,
+        chance: total ? (st / total * 100).toFixed(1) + '%' : '', showLabel: t.w > 70 && t.h > 90
+      };
+    });
+
+    var owner = '';
+    tiles.forEach(function (t) { if (s.ball.x >= t.x && s.ball.x <= t.x + t.w && s.ball.y >= t.y && s.ball.y <= t.y + t.h) owner = t.p.me ? 'ты' : t.p.name; });
+
+    var players = s.players.slice().sort(function (a, b) { return stakeOf(b) - stakeOf(a); }).map(function (p) {
+      var st = stakeOf(p);
+      return {
+        name: p.me ? 'Ты' : p.name, initial: p.name.charAt(0).toUpperCase(), avBg: p.av, isMe: p.me, notMe: !p.me,
+        border: p.me ? '#ffc83d' : '#222838',
+        chance: total ? (st / total * 100).toFixed(2) + '%' : '—', stakeText: st.toFixed(2),
+        hasTon: p.ton > 0, tonText: p.ton.toFixed(2) + ' TON',
+        hasItems: p.ton > 0 || p.gifts.length > 0,
+        giftImgs: p.gifts.map(function (k) { return { img: GIFTS[k].img, name: GIFTS[k].name }; })
+      };
+    });
+
+    var statusText = s.phase === 'wait' ? 'Ждём игроков' : (s.phase === 'count' ? 'Начало 00:' + ('0' + Math.ceil(remain)).slice(-2) : (s.phase === 'spin' ? 'Идёт розыгрыш' : 'Раунд завершён'));
+    var w = s.winner;
+    var meIn = s.players.some(function (p) { return p.me; });
+
+    return {
+      online: s.online,
+      balanceText: fmt(s.balance),
+      playersCount: s.players.length,
+      potText: fmt(total),
+      tiles: tileVals,
+      arenaStyle: s.zoom ? 'transform: scale(1.7); transform-origin: ' + s.ball.x.toFixed(0) + 'px ' + s.ball.y.toFixed(0) + 'px; transition: transform 0.8s cubic-bezier(0.2, 0.8, 0.2, 1)' : 'transform: scale(1); transition: transform 0.4s',
+      showBall: s.phase === 'spin' || s.phase === 'result',
+      ballStyle: 'left: ' + s.ball.x.toFixed(1) + 'px; top: ' + s.ball.y.toFixed(1) + 'px; transition: left ' + s.ballDur + 'ms cubic-bezier(0.45, 0, 0.55, 1), top ' + s.ballDur + 'ms cubic-bezier(0.45, 0, 0.55, 1)',
+      ballOwner: owner || '...',
+      isWaiting: s.phase === 'wait' && s.players.length < 2,
+      statusText: statusText,
+      statusColor: s.phase === 'count' ? (remain > 5 ? '#2bd46b' : '#ffc83d') : (s.phase === 'spin' ? '#ffc83d' : '#a3a8b5'),
+      betText: fmt(s.bet),
+      betMinus: function () { self.setBet(self.state.bet - 0.5); },
+      betPlus: function () { self.setBet(self.state.bet + 0.5); },
+      betHalf: function () { self.setBet(self.state.bet / 2); },
+      betDouble: function () { self.setBet(self.state.bet * 2); },
+      joinDisabled: !joinable,
+      tonBtnBg: joinable && s.bet <= s.balance ? '#ffc83d' : '#1d2230',
+      tonBtnColor: joinable && s.bet <= s.balance ? '#1a1300' : '#6c7282',
+      tonBtnText: !joinable ? 'Раунд идёт' : (s.bet > s.balance ? 'Не хватает TON' : (meIn ? 'Добавить ' + s.bet.toFixed(2) : 'Играть ' + s.bet.toFixed(2))),
+      placeTon: function () { self.placeTon(); },
+      giftBtnColor: s.inv.length && joinable ? '#ffffff' : '#5a6070',
+      openGift: function () { if (self.state.inv.length) self.setState({ giftPick: !self.state.giftPick }); },
+      closeGift: function () { self.setState({ giftPick: false }); },
+      showGiftPick: s.giftPick && joinable,
+      gifts: s.inv.map(function (k) { var g = GIFTS[k]; return { name: g.name, img: g.img, priceText: g.price + ' TON', pick: function () { self.placeGift(k); } }; }),
+      tabPlayers: function () { self.setState({ tab: 'players' }); },
+      tabHistory: function () { self.setState({ tab: 'history' }); },
+      playersSel: s.tab === 'players' ? 'true' : 'false', historySel: s.tab === 'history' ? 'true' : 'false',
+      playersTabBg: s.tab === 'players' ? '#ffc83d' : 'transparent', playersTabColor: s.tab === 'players' ? '#1a1300' : '#a3a8b5',
+      historyTabBg: s.tab === 'history' ? '#ffc83d' : 'transparent', historyTabColor: s.tab === 'history' ? '#1a1300' : '#a3a8b5',
+      showPlayersTab: s.tab === 'players', showHistoryTab: s.tab === 'history',
+      gameId: s.gameId,
+      players: players,
+      history: s.history.map(function (h) { return { id: h.id, name: h.name, chance: h.chance, win: h.win, time: h.time, avBg: h.av, initial: h.name.charAt(0).toUpperCase() }; }),
+      showWinner: s.showWinner && !!w,
+      winGameId: w ? w.gameId : '',
+      winIsMe: w ? w.me : false, winNotMe: w ? !w.me : true,
+      winInitial: w ? w.name.charAt(0).toUpperCase() : '',
+      winAvBg: w ? w.av : '#222838',
+      winTitle: w ? (w.me ? 'ТЫ ЗАБРАЛ БАНК!' : w.name) : '',
+      winColor: w && w.me ? '#2bd46b' : '#ffc83d',
+      winGlow: w && w.me ? 'rgba(43,212,107,0.35)' : 'rgba(255,200,61,0.25)',
+      winChance: w ? w.chance : '',
+      winAmount: w ? fmt(w.win) : '',
+      winPot: w ? fmt(w.pot) : '',
+      closeWinner: function () { self.newRound(); }
+    };
+  }
+}
+</script>
+</body>
+</html>

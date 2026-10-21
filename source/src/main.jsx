@@ -10,6 +10,7 @@ import CrashSrc from './screens/Crash.dc.html';
 import UpgradeSrc from './screens/Upgrade.dc.html';
 import CasesSrc from './screens/Cases.dc.html';
 import MinesSrc from './screens/Mines.dc.html';
+import PvpSrc from './screens/Pvp.dc.html';
 
 // ---------- Telegram ----------
 const tg = window.Telegram && window.Telegram.WebApp;
@@ -218,7 +219,7 @@ class Screen extends React.Component {
 // ---------- Приложение ----------
 const SCREENS = {
   Main: parseScreen('Main', MainSrc), Crash: parseScreen('Crash', CrashSrc),
-  Upgrade: parseScreen('Upgrade', UpgradeSrc), Cases: parseScreen('Cases', CasesSrc), Mines: parseScreen('Mines', MinesSrc)
+  Upgrade: parseScreen('Upgrade', UpgradeSrc), Cases: parseScreen('Cases', CasesSrc), Mines: parseScreen('Mines', MinesSrc), Pvp: parseScreen('Pvp', PvpSrc)
 };
 const injected = new Set();
 Object.values(SCREENS).forEach((s) => s.head.forEach((h) => {
