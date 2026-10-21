@@ -360,7 +360,7 @@ a{color:#ffc83d}a:hover{color:#ffe08a}
 </div>
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":1300}}'>
-var RTP = 0.90, WAIT = 5000, AFTER = 3000, GROWTH = 0.16;
+var RTP = 0.80, WAIT = 5000, AFTER = 3000, GROWTH = 0.16;
 var GIFTS = {
   cake: { name: 'Homemade Cake', price: 5.04, img: '/_blob/6ef5ecbeb712d1b1d752a33d1e9c279d' },
   globe: { name: 'Snow Globe', price: 5.92, img: '/_blob/6e3628fac94b5266f3b64cea9c5fe7ee' },
@@ -927,7 +927,7 @@ function chgColor(c) { return chg(c) >= 0 ? '#2bd46b' : '#ff5d73'; }
 function supplyText(c) { return c.supply ? c.supply.toLocaleString('ru-RU') + ' \u0448\u0442.' : '\u043D\u043E\u0432\u0430\u044F \u043A\u043E\u043B\u043B\u0435\u043A\u0446\u0438\u044F'; }
 
 var QUICK = [1.5, 2, 3, 5, 10, 20];
-var RTP = 0.98, MAX_CHANCE = 0.75, MAX_PICK = 6, SHOW = 15;
+var RTP = 0.80, MAX_CHANCE = 0.75, MAX_PICK = 6, SHOW = 15;
 var R = 112, CIRC = 2 * Math.PI * R;
 var GREEN = '#2bd46b', RED = '#ff5d73';
 var TICKS = (function () {
@@ -1824,7 +1824,7 @@ a{color:#ffc83d}a:hover{color:#ffe08a}
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":1180}}'>
 var SIZE = 25;
-var RTP = 0.98;
+var RTP = 0.95;
 var PRESETS = [1, 3, 5, 10, 20];
 
 function multFor(k, m) {
@@ -2223,7 +2223,7 @@ a{color:#ffc83d}a:hover{color:#ffe08a}
 <span style="font-size: 11px; font-weight: 700; padding: 3px 7px; border-radius: 7px; background: #151821; color: #c9cdd6">{{winChance}}</span>
 <span style="font-size: 14px; font-weight: 900; color: #ffc83d">{{winAmount}}</span>
 </div>
-<div style="font-size: 12px; color: #8a90a0; text-align: center">\u0411\u0430\u043D\u043A {{winPot}} \xB7 \u043A\u043E\u043C\u0438\u0441\u0441\u0438\u044F 5% \u0441 \u0432\u044B\u0438\u0433\u0440\u044B\u0448\u0430</div>
+<div style="font-size: 12px; color: #8a90a0; text-align: center">\u0411\u0430\u043D\u043A {{winPot}} \xB7 \u043A\u043E\u043C\u0438\u0441\u0441\u0438\u044F 7% \u0441 \u0432\u044B\u0438\u0433\u0440\u044B\u0448\u0430</div>
 <button type="button" onClick="{{closeWinner}}" style="height: 52px; border: 0; border-radius: 14px; font-family: Rubik, system-ui, sans-serif; font-size: 16px; font-weight: 700; cursor: pointer; background: #ffc83d; color: #1a1300">\u041E\u043A</button>
 </div>
 </div>
@@ -2232,7 +2232,7 @@ a{color:#ffc83d}a:hover{color:#ffe08a}
 </div>
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":1250}}'>
-var FEE = 0.05, COUNTDOWN = 15000, S = 358;
+var FEE = 0.07, COUNTDOWN = 15000, S = 358;
 var GIFTS = {
   cake: { name: 'Homemade Cake', price: 5.04, img: '/_blob/6ef5ecbeb712d1b1d752a33d1e9c279d' },
   globe: { name: 'Snow Globe', price: 5.92, img: '/_blob/6e3628fac94b5266f3b64cea9c5fe7ee' },
