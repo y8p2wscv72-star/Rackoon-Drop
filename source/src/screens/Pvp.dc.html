@@ -238,6 +238,9 @@ var REACTIONS = [
 ];
 
 function r2(x) { return Math.round(x * 100) / 100; }
+function rkStore() { return typeof window !== 'undefined' && window.RK && window.RK.store ? window.RK.store : null; }
+function pvpHistLoad(def) { var S = rkStore(); var v = S ? S.getJSON('rk_pvp_hist', null) : null; return Array.isArray(v) && v.length ? v : def; }
+function pvpHistSave(h) { var S = rkStore(); if (S) S.setJSON('rk_pvp_hist', h); }
 function fmt(x) { return (Math.floor(x * 100) / 100).toFixed(2) + ' TON'; }
 function stakeOf(p) { var s = p.ton; p.gifts.forEach(function (k) { s += GIFTS[k].price; }); return r2(s); }
 function nowTime() { var d = new Date(); return ('0' + d.getDate()).slice(-2) + ' окт. ' + ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2); }
@@ -275,11 +278,11 @@ class Component extends DCLogic {
       balance: 50, bet: 0.5, mode: 'ton', inv: ['cake', 'globe', 'record', 'rose'], pickGift: null,
       ball: { x: S / 2, y: S / 2 }, ballDur: 0, frozen: null, cam: false,
       winner: null, showWinner: false, view: 'players', online: 6938, floaters: [], fid: 0,
-      history: [
+      history: pvpHistLoad([
         { id: 1148665, name: 'hill_best', chance: '99.79%', win: '48.51', av: COLORS[0], time: '21 окт. 18:56', ton: 0.05, gifts: ['rose', 'record'] },
         { id: 1148663, name: 'hill_best', chance: '49.81%', win: '7.54', av: COLORS[0], time: '21 окт. 18:56', ton: 0, gifts: ['bells', 'cake'] },
         { id: 1148661, name: 'cntgf52', chance: '33.28%', win: '7.67', av: COLORS[3], time: '21 окт. 18:55', ton: 0.1, gifts: ['globe', 'lpotion'] }
-      ]
+      ])
     };
     this.timers = [];
   }
@@ -342,6 +345,7 @@ class Component extends DCLogic {
       history: [{ id: s.gameId, name: wp.me ? 'Ты' : wp.name, chance: chance, win: win.toFixed(2), av: wp.color, time: nowTime(), ton: r2(tonSum), gifts: giftsAll.slice(0, 5) }].concat(s.history).slice(0, 20)
     };
     if (wp.me) upd.balance = r2(s.balance + win);
+    pvpHistSave(upd.history);
     this.setState(upd);
   }
 

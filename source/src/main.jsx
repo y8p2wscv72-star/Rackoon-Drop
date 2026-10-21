@@ -17,17 +17,71 @@ import InventorySrc from './screens/Inventory.dc.html';
 const tg = window.Telegram && window.Telegram.WebApp;
 const START_BALANCE = 100;
 
+// ---------- Сохранение: на устройстве + в облаке Telegram (CloudStorage) ----------
+// Облако Telegram привязано к аккаунту игрока и боту: данные не пропадут,
+// даже если Telegram почистит кэш или игрок зайдёт с другого телефона.
+const SYNC_KEYS = ['rk_balance', 'rk_inv', 'rk_free_at', 'rk_pvp_hist', 'rk_crash_hist', 'rk_upg_hist'];
+const CHUNK = 3900;
+const cloud = (() => {
+  try { return tg && tg.CloudStorage && (!tg.isVersionAtLeast || tg.isVersionAtLeast('6.9')) ? tg.CloudStorage : null; } catch (e) { return null; }
+})();
+const store = {
+  _m: {}, _t: {},
+  get(k) { let v = null; try { v = localStorage.getItem(k); } catch (e) {} return v != null ? v : (k in this._m ? this._m[k] : null); },
+  set(k, v) {
+    v = String(v); this._m[k] = v;
+    try { localStorage.setItem(k, v); } catch (e) {}
+    if (cloud && SYNC_KEYS.indexOf(k) !== -1) {
+      clearTimeout(this._t[k]);
+      this._t[k] = setTimeout(() => {
+        const parts = []; for (let i = 0; i < v.length; i += CHUNK) parts.push(v.slice(i, i + CHUNK));
+        if (!parts.length) parts.push('');
+        try { cloud.setItem(k + '__n', String(parts.length)); parts.forEach((part, i) => cloud.setItem(k + '__' + i, part)); } catch (e) {}
+      }, 400);
+    }
+  },
+  remove(k) { delete this._m[k]; try { localStorage.removeItem(k); } catch (e) {} if (cloud) { try { cloud.setItem(k + '__n', '0'); } catch (e) {} } },
+  getJSON(k, def) { try { const v = JSON.parse(this.get(k) || 'null'); return v == null ? def : v; } catch (e) { return def; } },
+  setJSON(k, v) { this.set(k, JSON.stringify(v)); }
+};
+// При запуске подтягиваем сохранённое из облака Telegram
+function loadFromCloud() {
+  return new Promise((resolve) => {
+    if (!cloud) return resolve();
+    const done = setTimeout(resolve, 2500);
+    try {
+      cloud.getItems(SYNC_KEYS.map((k) => k + '__n'), (err, counts) => {
+        if (err || !counts) { clearTimeout(done); return resolve(); }
+        const want = [];
+        SYNC_KEYS.forEach((k) => { const n = parseInt(counts[k + '__n'] || '0', 10) || 0; for (let i = 0; i < n; i++) want.push(k + '__' + i); });
+        if (!want.length) { clearTimeout(done); return resolve(); }
+        cloud.getItems(want, (err2, vals) => {
+          if (!err2 && vals) {
+            SYNC_KEYS.forEach((k) => {
+              const n = parseInt(counts[k + '__n'] || '0', 10) || 0;
+              if (!n) return;
+              let v = ''; for (let i = 0; i < n; i++) v += vals[k + '__' + i] || '';
+              store._m[k] = v; try { localStorage.setItem(k, v); } catch (e) {}
+            });
+          }
+          clearTimeout(done); resolve();
+        });
+      });
+    } catch (e) { clearTimeout(done); resolve(); }
+  });
+}
+
 const wallet = {
   get() {
-    try { const v = parseFloat(localStorage.getItem('rk_balance')); return isNaN(v) ? START_BALANCE : v; } catch (e) { return START_BALANCE; }
+    const v = parseFloat(store.get('rk_balance')); return isNaN(v) ? START_BALANCE : v;
   },
-  set(v) { try { localStorage.setItem('rk_balance', String(Math.round(v * 100) / 100)); } catch (e) {} }
+  set(v) { store.set('rk_balance', String(Math.round(v * 100) / 100)); }
 };
 // Общий инвентарь подарков (демо: хранится на устройстве игрока)
 const STARTER_GIFTS = ['B-Day Candle', 'Lol Pop', 'Desk Calendar', 'Homemade Cake', 'Homemade Cake', 'Jingle Bells', 'Hypno Lollipop', 'Snow Globe', 'Berry Box'];
 const inventory = {
-  _load() { try { const v = JSON.parse(localStorage.getItem('rk_inv') || 'null'); return Array.isArray(v) ? v : null; } catch (e) { return null; } },
-  _save(a) { try { localStorage.setItem('rk_inv', JSON.stringify(a)); } catch (e) {} this._mem = a; },
+  _load() { const v = store.getJSON('rk_inv', null); return Array.isArray(v) ? v : null; },
+  _save(a) { store.setJSON('rk_inv', a); this._mem = a; },
   list() {
     let a = this._load() || this._mem;
     if (!a) { const t = Date.now(); a = STARTER_GIFTS.map((k, i) => ({ uid: 's' + i + '_' + t, key: k, at: t - (i + 1) * 3600000 })); this._save(a); }
@@ -35,9 +89,9 @@ const inventory = {
   },
   add(key) { const a = this.list(); const it = { uid: 'g' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), key, at: Date.now() }; a.unshift(it); this._save(a); return it; },
   remove(uids) { const set = new Set([].concat(uids)); this._save(this.list().filter((x) => !set.has(x.uid))); },
-  reset() { try { localStorage.removeItem('rk_inv'); } catch (e) {} this._mem = null; return this.list(); }
+  reset() { store.remove('rk_inv'); this._mem = null; return this.list(); }
 };
-window.RK = { wallet, inventory, user: (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) || null };
+window.RK = { wallet, inventory, store, user: (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) || null };
 
 if (tg) {
   tg.ready();
@@ -294,4 +348,4 @@ function fit() {
 }
 window.addEventListener('resize', fit);
 fit();
-createRoot(document.getElementById('app')).render(React.createElement(App));
+loadFromCloud().then(() => createRoot(document.getElementById('app')).render(React.createElement(App)));

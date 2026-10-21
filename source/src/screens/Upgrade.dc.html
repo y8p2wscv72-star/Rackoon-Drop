@@ -371,7 +371,7 @@ class Component extends DCLogic {
     this.state = {
       inv: loadInv(), own: [], target: null, angle: 0, spinning: false,
       result: null, overlay: false, lastChance: 0, lastSide: 'right',
-      side: 'right', fast: true, history: [], res: null, nextId: 100, q: ''
+      side: 'right', fast: true, history: (function () { var S = typeof window !== 'undefined' && window.RK && window.RK.store; var v = S ? S.getJSON('rk_upg_hist', null) : null; return Array.isArray(v) ? v : []; })(), res: null, nextId: 100, q: ''
     };
     this.timer = null;
   }
@@ -409,6 +409,7 @@ class Component extends DCLogic {
       else if (win) { inv = [{ uid: 'i' + nextId, key: st.target }].concat(inv); nextId += 1; }
       var mult = 'x' + (tgt.price / st0.price).toFixed(2);
       var history = [{ mult: mult, win: win }].concat(st.history).slice(0, 10);
+      if (window.RK && window.RK.store) window.RK.store.setJSON('rk_upg_hist', history);
       self.setState({
         inv: inv, nextId: nextId, own: [], target: null, spinning: false,
         result: win ? 'win' : 'lose', overlay: true, history: history,

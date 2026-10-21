@@ -244,7 +244,7 @@ class Component extends DCLogic {
       balance: 50, bet: 1, me: null, queued: null, giftPick: false,
       inv: ['cake', 'globe', 'record', 'rose'],
       bots: makeBots(),
-      history: [2.08, 4.6, 2.39, 1.04, 6.85, 3.3, 1.94, 12.4, 1.21, 1.55]
+      history: (function () { var S = typeof window !== 'undefined' && window.RK && window.RK.store; var v = S ? S.getJSON('rk_crash_hist', null) : null; return Array.isArray(v) && v.length ? v : [2.08, 4.6, 2.39, 1.04, 6.85, 3.3, 1.94, 12.4, 1.21, 1.55]; })()
     };
   }
   componentDidMount() {
@@ -267,6 +267,7 @@ class Component extends DCLogic {
         if (me && !me.cashed) me = Object.assign({}, me, { lost: true });
         var bp = rocketPos(el, s.crashAt);
         this.setState({ phase: 'crash', boom: bp, t0: now, now: now, m: s.crashAt, me: me, history: [s.crashAt].concat(s.history).slice(0, 12) });
+        if (window.RK && window.RK.store) window.RK.store.setJSON('rk_crash_hist', [s.crashAt].concat(s.history).slice(0, 12));
         return;
       }
       var bots = s.bots.map(function (b) { return !b.cashed && m >= b.target ? Object.assign({}, b, { cashed: true, at: b.target }) : b; });
