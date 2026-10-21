@@ -2169,7 +2169,15 @@ a{color:#ffc83d}a:hover{color:#ffe08a}
 </sc-if>
 
 <sc-if value="{{showHistory}}" hint-placeholder-val="{{ false }}">
-<div style="font-size: 20px; font-weight: 500; margin-top: 4px">\u0418\u0441\u0442\u043E\u0440\u0438\u044F</div>
+<div role="dialog" aria-label="\u0418\u0441\u0442\u043E\u0440\u0438\u044F \u0438\u0433\u0440" style="position: fixed; left: 0; top: 0; right: 0; bottom: 0; z-index: 45; background: #0b0d12; overflow-y: auto; -webkit-overflow-scrolling: touch">
+<div style="max-width: 390px; margin: 0 auto; box-sizing: border-box; padding: 20px 16px 32px; display: flex; flex-direction: column; gap: 10px">
+<div style="display: flex; align-items: center; gap: 10px; height: 48px">
+<button type="button" onClick="{{toggleHistory}}" aria-label="\u0417\u0430\u043A\u0440\u044B\u0442\u044C \u0438\u0441\u0442\u043E\u0440\u0438\u044E" style="width: 44px; height: 44px; border-radius: 14px; border: 0; background: #1a1d27; display: flex; align-items: center; justify-content: center; cursor: pointer; padding: 0">
+<svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><path d="M13 3 L6 10 L13 17" fill="none" stroke="#ffffff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+</button>
+<div style="font-size: 24px; font-weight: 700; flex-grow: 1">\u0418\u0441\u0442\u043E\u0440\u0438\u044F</div>
+<span style="font-size: 12px; color: #8a90a0">{{historyCount}} \u0438\u0433\u0440</span>
+</div>
 <div style="display: flex; flex-direction: column; gap: 8px">
 <sc-for list="{{history}}" as="h" hint-placeholder-count="3">
 <div style="background: #151821; border: 1px solid #222838; border-radius: 14px; padding: 10px 12px; display: flex; flex-direction: column; gap: 8px">
@@ -2186,6 +2194,8 @@ a{color:#ffc83d}a:hover{color:#ffe08a}
 </div>
 </div>
 </sc-for>
+</div>
+</div>
 </div>
 </sc-if>
 
@@ -2470,9 +2480,9 @@ class Component extends DCLogic {
       betPlus: function () { self.setState({ betStr: null, bet: r2(Math.min(Math.max(0.1, self.state.balance), self.state.bet + 0.1)) }); },
       gifts: s.inv.map(function (k) { var g = GIFTS[k]; var sel = s.pickGift === k; return { name: g.name, img: g.img, priceText: g.price + ' TON', pressed: sel ? 'true' : 'false', border: sel ? '#ffc83d' : '#222838', pick: function () { self.setState({ pickGift: sel ? null : k }); } }; }),
       noGifts: s.inv.length === 0,
-      toggleHistory: function () { self.setState({ view: self.state.view === 'history' ? 'players' : 'history' }); },
+      toggleHistory: function () { self.setState({ view: self.state.view === 'history' ? 'players' : 'history' }); try { if (window.scrollTo) window.scrollTo(0, 0); } catch (e) {} },
       historyPressed: s.view === 'history' ? 'true' : 'false', historyBorder: s.view === 'history' ? '#ffc83d' : '#1a1d27',
-      showPlayers: s.view === 'players', showHistory: s.view === 'history',
+      showPlayers: true, showHistory: s.view === 'history', historyCount: s.history.length,
       gameId: s.gameId, players: players,
       history: s.history.map(function (h) { return { id: h.id, name: h.name, chance: h.chance, win: h.win, time: h.time, avBg: h.av, initial: h.name.charAt(0).toUpperCase(), hasTon: h.ton > 0, tonText: h.ton.toFixed(2), giftImgs: (h.gifts || []).map(function (k) { return GIFTS[k].img; }) }; }),
       showWinner: s.showWinner && !!w,
