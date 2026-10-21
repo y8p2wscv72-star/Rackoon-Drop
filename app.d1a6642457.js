@@ -927,7 +927,7 @@ function chgColor(c) { return chg(c) >= 0 ? '#2bd46b' : '#ff5d73'; }
 function supplyText(c) { return c.supply ? c.supply.toLocaleString('ru-RU') + ' \u0448\u0442.' : '\u043D\u043E\u0432\u0430\u044F \u043A\u043E\u043B\u043B\u0435\u043A\u0446\u0438\u044F'; }
 
 var QUICK = [1.5, 2, 3, 5, 10, 20];
-var RTP = 0.80, MAX_CHANCE = 0.75, MAX_PICK = 6, SHOW = 15;
+var RTP = 0.70, MAX_CHANCE = 0.75, MAX_PICK = 6, SHOW = 15;
 var R = 112, CIRC = 2 * Math.PI * R;
 var GREEN = '#2bd46b', RED = '#ff5d73';
 var TICKS = (function () {
