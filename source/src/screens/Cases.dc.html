@@ -351,7 +351,7 @@ function chgText(c) { var v = chg(c); return (v >= 0 ? '▲ ' : '▼ ') + Math.a
 function chgColor(c) { return chg(c) >= 0 ? '#2bd46b' : '#ff5d73'; }
 function supplyText(c) { return c.supply ? c.supply.toLocaleString('ru-RU') + ' шт.' : 'новая коллекция'; }
 
-var RTP = 0.96;
+var RTP = 0.92;
 var FREE_COOLDOWN = 24 * 3600 * 1000;
 var CASES = [
   { id: 'c1', name: 'Карманник', price: 5, color: '#2bbf5a', dark: '#1a8a3e', bg: '#10291a', glow: 'rgba(43,191,90,0.9)', edge: '#1f4a2c', opened: 2591 },
