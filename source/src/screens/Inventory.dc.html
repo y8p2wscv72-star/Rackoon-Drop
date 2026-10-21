@@ -1,0 +1,372 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>RACKOON — Инвентарь</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Rubik:ital,wght@0,500;0,700;0,900;1,900&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#0b0d12}
+a{color:#ffc83d}a:hover{color:#ffe08a}
+@keyframes rkSheet{0%{transform:translateY(100%)}100%{transform:translateY(0)}}
+@keyframes rkToast{0%{transform:translateY(-20px);opacity:0}15%{transform:translateY(0);opacity:1}85%{opacity:1}100%{opacity:0}}
+</style>
+</helmet>
+<div style="position: relative; width: 390px; min-height: 1100px; box-sizing: border-box; padding: 20px 16px 120px; display: flex; flex-direction: column; gap: 14px; background: #0b0d12; font-family: Rubik, system-ui, sans-serif; color: #ffffff">
+
+<header style="display: flex; align-items: center; gap: 10px; height: 48px">
+<a href="Main.dc.html" aria-label="Назад в лобби" style="width: 44px; height: 44px; border-radius: 14px; background: #1a1d27; display: flex; align-items: center; justify-content: center; flex-shrink: 0">
+<svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><path d="M13 3 L6 10 L13 17" fill="none" stroke="#ffffff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+</a>
+<div style="font-size: 24px; font-weight: 900; font-style: italic; flex-grow: 1">ИНВЕНТАРЬ</div>
+<div style="height: 44px; box-sizing: border-box; border-radius: 14px; background: #1a1d27; padding: 0 12px; display: flex; align-items: center; font-size: 14px; font-weight: 700; color: #ffc83d">{{balanceText}}</div>
+</header>
+
+<sc-if value="{{showToast}}" hint-placeholder-val="{{ false }}">
+<div role="status" style="position: fixed; left: 0; right: 0; margin: 0 auto; top: 16px; z-index: 60; width: 340px; box-sizing: border-box; border-radius: 14px; background: #123d22; border: 1px solid #2bd46b; padding: 12px 14px; font-size: 14px; font-weight: 700; text-align: center; animation: rkToast 2.6s ease forwards">{{toastText}}</div>
+</sc-if>
+
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px">
+<div style="background: #151821; border: 1px solid #222838; border-radius: 16px; padding: 12px 14px; display: flex; flex-direction: column; gap: 2px">
+<span style="font-size: 12px; color: #a3a8b5">Подарков</span>
+<span style="font-size: 22px; font-weight: 900">{{count}}</span>
+</div>
+<div style="background: #151821; border: 1px solid #222838; border-radius: 16px; padding: 12px 14px; display: flex; flex-direction: column; gap: 2px">
+<span style="font-size: 12px; color: #a3a8b5">Стоимость по флору</span>
+<span style="font-size: 22px; font-weight: 900; color: #ffc83d">{{totalText}}</span>
+</div>
+</div>
+
+<sc-if value="{{hasItems}}" hint-placeholder-val="{{ true }}">
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 8px">
+<div role="group" aria-label="Сортировка" style="display: flex; gap: 4px; background: #151821; border-radius: 12px; padding: 4px">
+<button type="button" onClick="{{sortNew}}" aria-pressed="{{newPressed}}" style="height: 36px; border: 0; border-radius: 9px; padding: 0 12px; font-family: Rubik, system-ui, sans-serif; font-size: 13px; font-weight: 700; cursor: pointer; background: {{newBg}}; color: {{newColor}}">Новые</button>
+<button type="button" onClick="{{sortPrice}}" aria-pressed="{{pricePressed}}" style="height: 36px; border: 0; border-radius: 9px; padding: 0 12px; font-family: Rubik, system-ui, sans-serif; font-size: 13px; font-weight: 700; cursor: pointer; background: {{priceBg}}; color: {{priceColor}}">Дорогие</button>
+</div>
+<button type="button" onClick="{{toggleAll}}" style="height: 44px; border: 0; background: transparent; color: #ffc83d; font-family: Rubik, system-ui, sans-serif; font-size: 13px; font-weight: 700; cursor: pointer; padding: 0 4px">{{allText}}</button>
+</div>
+
+<div style="font-size: 12px; color: #8a90a0">Нажми на подарок, чтобы выбрать его для продажи</div>
+
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px">
+<sc-for list="{{items}}" as="it" hint-placeholder-count="9">
+<button type="button" onClick="{{it.toggle}}" aria-pressed="{{it.pressed}}" style="position: relative; min-width: 0; background: #151821; border: 2px solid {{it.border}}; border-radius: 14px; padding: 12px 6px 10px; display: flex; flex-direction: column; align-items: center; gap: 3px; cursor: pointer; font-family: Rubik, system-ui, sans-serif; color: #ffffff; overflow: hidden">
+<span style="position: absolute; left: 0; top: 0; right: 0; height: 3px; background: {{it.color}}"></span>
+<span style="position: absolute; top: 7px; right: 7px; width: 20px; height: 20px; box-sizing: border-box; border-radius: 6px; border: 2px solid {{it.checkBorder}}; background: {{it.checkBg}}; display: flex; align-items: center; justify-content: center">
+<sc-if value="{{it.selected}}" hint-placeholder-val="{{ false }}"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M2 6 L5 9 L10 3" fill="none" stroke="#1a1300" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"></path></svg></sc-if>
+</span>
+<sc-if value="{{it.isNew}}" hint-placeholder-val="{{ false }}"><span style="position: absolute; top: 8px; left: 7px; font-size: 9px; font-weight: 900; padding: 2px 5px; border-radius: 5px; background: #2bd46b; color: #06210f">NEW</span></sc-if>
+<img src="{{it.img}}" alt="" style="width: 56px; height: 56px">
+<span style="max-width: 100%; font-size: 12px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{it.name}}</span>
+<span style="font-size: 13px; font-weight: 700; color: #ffc83d">{{it.priceText}}</span>
+</button>
+</sc-for>
+</div>
+</sc-if>
+
+<sc-if value="{{empty}}" hint-placeholder-val="{{ false }}">
+<div style="background: #151821; border: 1px solid #222838; border-radius: 20px; padding: 28px 20px; display: flex; flex-direction: column; align-items: center; gap: 12px; text-align: center">
+<img src="/_blob/661884b648dd965ea69af44ea8c7ee95" alt="" style="width: 84px; height: 84px; border-radius: 50%; object-fit: cover; border: 3px solid #ffc83d">
+<div style="font-size: 18px; font-weight: 700">Инвентарь пуст</div>
+<div style="font-size: 13px; color: #a3a8b5">Открывай кейсы и выигрывай в играх, подарки будут появляться здесь</div>
+<a href="Cases.dc.html" style="text-decoration: none; height: 48px; padding: 0 22px; border-radius: 14px; background: #ffc83d; color: #1a1300; display: flex; align-items: center; font-size: 15px; font-weight: 900">Открыть кейсы</a>
+</div>
+</sc-if>
+
+<sc-if value="{{hasSelection}}" hint-placeholder-val="{{ false }}">
+<div style="position: fixed; left: 0; right: 0; bottom: 0; z-index: 40; display: flex; justify-content: center; padding: 12px 16px 20px; background: linear-gradient(to top, #0b0d12 70%, rgba(11,13,18,0))">
+<div style="width: 100%; max-width: 358px; display: grid; grid-template-columns: minmax(0, 1fr) 2fr; gap: 8px">
+<button type="button" onClick="{{withdraw}}" style="height: 56px; border-radius: 16px; border: 2px solid #2c3244; background: #151821; color: #a3a8b5; font-family: Rubik, system-ui, sans-serif; font-size: 14px; font-weight: 700; cursor: pointer">Вывести</button>
+<button type="button" onClick="{{askSell}}" style="height: 56px; border: 0; border-radius: 16px; background: #2bd46b; color: #06210f; font-family: Rubik, system-ui, sans-serif; font-size: 15px; font-weight: 900; cursor: pointer; box-shadow: 0 6px 24px rgba(43,212,107,0.35)">Продать {{selCount}} · {{selTotal}}</button>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{showConfirm}}" hint-placeholder-val="{{ false }}">
+<div style="position: fixed; left: 0; top: 0; right: 0; bottom: 0; z-index: 50; background: rgba(5, 6, 10, 0.65); display: flex; flex-direction: column; justify-content: flex-end">
+<div role="dialog" aria-label="Подтверждение продажи" style="width: 100%; max-width: 390px; margin: 0 auto; box-sizing: border-box; background: #151821; border-radius: 24px 24px 0 0; padding: 22px 16px 24px; display: flex; flex-direction: column; gap: 14px; animation: rkSheet 0.3s ease-out">
+<div style="font-size: 20px; font-weight: 700">Продать подарки?</div>
+<div style="font-size: 14px; color: #c9cdd6">{{confirmText}}</div>
+<div style="display: flex; gap: 6px; flex-wrap: wrap">
+<sc-for list="{{confirmItems}}" as="ci" hint-placeholder-count="3">
+<div style="width: 52px; height: 52px; border-radius: 12px; background: #0b0d12; display: flex; align-items: center; justify-content: center"><img src="{{ci.img}}" alt="{{ci.name}}" style="width: 40px; height: 40px"></div>
+</sc-for>
+<sc-if value="{{confirmMore}}" hint-placeholder-val="{{ false }}"><div style="width: 52px; height: 52px; border-radius: 12px; background: #0b0d12; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; color: #a3a8b5">+{{confirmMoreN}}</div></sc-if>
+</div>
+<div style="display: flex; justify-content: space-between; align-items: center; background: #0b0d12; border-radius: 14px; padding: 14px">
+<span style="font-size: 14px; color: #a3a8b5">Получишь на баланс</span>
+<span style="font-size: 20px; font-weight: 900; color: #2bd46b">+{{selTotal}}</span>
+</div>
+<div style="font-size: 12px; color: #8a90a0">Подарки продаются по текущему флору. Отменить продажу нельзя.</div>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px">
+<button type="button" onClick="{{cancelSell}}" style="height: 52px; border-radius: 14px; border: 2px solid #2c3244; background: transparent; color: #ffffff; font-family: Rubik, system-ui, sans-serif; font-size: 15px; font-weight: 700; cursor: pointer">Отмена</button>
+<button type="button" onClick="{{confirmSell}}" style="height: 52px; border: 0; border-radius: 14px; background: #2bd46b; color: #06210f; font-family: Rubik, system-ui, sans-serif; font-size: 15px; font-weight: 900; cursor: pointer">Продать</button>
+</div>
+</div>
+</div>
+</sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":1100}}'>
+// Все коллекции NFT-подарков Telegram. Третье число — флор в TON (floorprice.is, 21.10.2026),
+// второе — тираж (giftclub.app, 0 = нет данных).
+// В продакшене цены берутся с маркетплейса (MRKT / Portals / Fragment).
+var RAW = [
+  ["Plush Pepe", 2448, 6300],
+  ["Algorithm Cup", 0, 1450],
+  ["Intelligence Cup", 0, 1224],
+  ["Heart Locket", 1305, 1189],
+  ["Resistance Dog", 0, 633.1],
+  ["Durov's Cap", 3029, 404],
+  ["Scared Cat", 13986, 274],
+  ["Precious Peach", 2112, 244.2],
+  ["Heroic Helmet", 1258, 172.9],
+  ["Durov's Glasses", 148, 156.1],
+  ["Mighty Arm", 1769, 127.9],
+  ["Loot Bag", 6429, 120.6],
+  ["Astral Shard", 2889, 118],
+  ["Nail Bracelet", 1832, 114.4],
+  ["Westside Sign", 5186, 108.5],
+  ["Perfume Bottle", 2106, 76.5],
+  ["Mini Oscar", 2108, 70.3],
+  ["Artisan Brick", 2852, 68],
+  ["Ion Gem", 2615, 66.1],
+  ["Gem Signet", 2104, 60.4],
+  ["Magic Potion", 3277, 58.2],
+  ["Low Rider", 6519, 57.9],
+  ["Swiss Watch", 10480, 56],
+  ["Sharp Tongue", 3793, 46.4],
+  ["Kissed Frog", 7508, 43.5],
+  ["Bonded Ring", 2847, 42.5],
+  ["Vintage Cigar", 8528, 37.7],
+  ["Voodoo Doll", 10752, 37],
+  ["Neko Helmet", 4002, 36.5],
+  ["Genie Lamp", 2623, 36],
+  ["Toy Bear", 29142, 35],
+  ["Signet Ring", 7099, 32.1],
+  ["Diamond Ring", 8179, 31.7],
+  ["Electric Skull", 4191, 28.5],
+  ["Rare Bird", 3348, 27.4],
+  ["Bling Binky", 1959, 26.3],
+  ["Eternal Rose", 5403, 25.6],
+  ["Khabib's Papakha", 3143, 23.5],
+  ["Cupid Charm", 5569, 21],
+  ["Lucky Locket", 0, 18.9],
+  ["Sky Stilettos", 5542, 18.3],
+  ["Mad Pumpkin", 6426, 17],
+  ["Trapped Heart", 9566, 16.4],
+  ["UFC Strike", 5984, 15.5],
+  ["Snoop Cigar", 17056, 14.9],
+  ["Ionic Dryer", 2455, 14.5],
+  ["Love Potion", 6420, 14.1],
+  ["Crystal Ball", 8004, 13.1],
+  ["Flying Broom", 6536, 12.7],
+  ["Valentine Box", 3559, 12.4],
+  ["Skull Flower", 6856, 12.3],
+  ["Record Player", 5214, 11.9],
+  ["Sakura Flower", 13339, 10.8],
+  ["Love Candle", 3012, 10.7],
+  ["Jingle Bells", 7965, 10],
+  ["Top Hat", 8191, 9.82],
+  ["Hanging Star", 6488, 9.44],
+  ["Berry Box", 8623, 8.96],
+  ["Sleigh Bell", 3996, 8.5],
+  ["Fine Pen", 0, 8.23],
+  ["Bunny Muffin", 6223, 8.2],
+  ["Evil Eye", 17803, 8.03],
+  ["Snow Mittens", 4684, 7.91],
+  ["Joyful Bundle", 3568, 7.8],
+  ["Jelly Bunny", 13367, 7.63],
+  ["Jolly Chimp", 13658, 6.98],
+  ["Light Sword", 16012, 6.42],
+  ["Surge Board", 1756, 6.24],
+  ["Input Key", 13025, 6.17],
+  ["Witch Hat", 30548, 6.12],
+  ["Moon Pendant", 12531, 6.01],
+  ["Eternal Candle", 11919, 6],
+  ["Desk Calendar", 32423, 5.99],
+  ["Lush Bouquet", 5797, 5.99],
+  ["Snow Globe", 5979, 5.92],
+  ["Santa Hat", 11705, 5.9],
+  ["Spy Agaric", 28563, 5.72],
+  ["Faith Amulet", 10892, 5.49],
+  ["Spring Basket", 11605, 5.49],
+  ["Snoop Dogg", 52945, 5.43],
+  ["Restless Jar", 8729, 5.26],
+  ["Pretty Posy", 4797, 5.25],
+  ["Bow Tie", 8092, 5.1],
+  ["Swag Bag", 19313, 5.09],
+  ["Homemade Cake", 32643, 5.04],
+  ["Mousse Cake", 6669, 5],
+  ["Liberty Figure", 12499, 4.98],
+  ["Stellar Rocket", 15504, 4.9],
+  ["Cookie Heart", 12779, 4.88],
+  ["Money Pot", 8661, 4.82],
+  ["Jack-in-the-Box", 15807, 4.74],
+  ["Clover Pin", 17449, 4.69],
+  ["Hex Pot", 14095, 4.65],
+  ["B-Day Candle", 23201, 4.64],
+  ["Party Sparkler", 20446, 4.64],
+  ["Winter Wreath", 8926, 4.5],
+  ["Ginger Cookie", 16858, 4.47],
+  ["Timeless Book", 6986, 4.45],
+  ["Victory Medal", 13289, 4.41],
+  ["Mirage Lamp", 0, 4.31],
+  ["Star Notepad", 8443, 4.31],
+  ["Spiced Wine", 11682, 4.21],
+  ["Fresh Socks", 10667, 4.2],
+  ["Mood Pack", 12462, 4.15],
+  ["Holiday Drink", 5923, 4.14],
+  ["Happy Brownie", 9989, 4.08],
+  ["Hypno Lollipop", 8343, 4.01],
+  ["Jester Hat", 11969, 3.92],
+  ["Easter Egg", 25973, 3.88],
+  ["Pet Snake", 10382, 3.88],
+  ["Tama Gadget", 10412, 3.86],
+  ["Candy Cane", 14703, 3.83],
+  ["Ice Cream", 32806, 3.8],
+  ["Whip Cupcake", 13270, 3.75],
+  ["Big Year", 11544, 3.74],
+  ["Vice Cream", 37569, 3.73],
+  ["Pool Float", 12397, 3.71],
+  ["Snake Box", 8755, 3.71],
+  ["Instant Ramen", 21613, 3.7],
+  ["Lunar Snake", 16883, 3.7],
+  ["Xmas Stocking", 13526, 3.7],
+  ["Chill Flame", 35999, 3.68],
+  ["Lol Pop", 65396, 3.67]
+];
+// Свои иконки-заглушки; у остальных коробка-подарок. В продакшене — картинки подарков из Telegram.
+var GIFT_IMG = '/_blob/a64ccb23ba5a5ab0f1f789ab412cf3af';
+var IMG = {
+  'B-Day Candle': '/_blob/ac9e83f513d62d0c7fc3250c8a2d1f89', 'Lol Pop': '/_blob/1f689ff254757e970266197964c5d390',
+  'Desk Calendar': '/_blob/9b7049b84c84b25ce8e457f56c837c42', 'Hypno Lollipop': '/_blob/b4c8d4f914ed6e253c933045ab9e3461',
+  'Jingle Bells': '/_blob/808ef5efdbeb6b276f70430b220f760b', 'Homemade Cake': '/_blob/6ef5ecbeb712d1b1d752a33d1e9c279d',
+  'Snow Globe': '/_blob/6e3628fac94b5266f3b64cea9c5fe7ee', 'Berry Box': '/_blob/c2c0de4f1d0a4ed1dd2df84eff4c7f73',
+  'Bunny Muffin': '/_blob/45ac385132ce7b83da133306d9a330f8', 'Record Player': '/_blob/8f4c023d08704d2319e54c9872a8c46d',
+  'Top Hat': '/_blob/fe01a5a2d2ff76e0192e008ed6267558', 'Diamond Ring': '/_blob/ef580f1649ad89b5e268954da6ea30b2',
+  'Love Potion': '/_blob/5bb7da32fc8a6f8dbe91cf7cedc20c65', 'Eternal Rose': '/_blob/734e25b54462cda990767f69381d8355',
+  'Toy Bear': '/_blob/c02bc9477e447f6f71962df1fc7a399a', 'Signet Ring': '/_blob/4826a2db621709393534f8feae3d3f4a',
+  'Swiss Watch': '/_blob/5efc0b426406d53e3b649c727079f26d', 'Ion Gem': '/_blob/e562d84d61312007f5108ab64cbfe6f9',
+  'Precious Peach': '/_blob/923c4583ef32f1e6549c08d5a1839d4c', "Durov's Cap": '/_blob/500977bc4572974cf066e4c08b276369'
+};
+function rarityColor(p) {
+  if (p < 5) return '#9aa3b5';
+  if (p < 15) return '#5fd4ff';
+  if (p < 60) return '#c77dff';
+  if (p < 500) return '#ff5d73';
+  return '#ffc83d';
+}
+// Цены обновляются раз в сутки, в 00:00 МСК (весь день одинаковые)
+function seeded(str) {
+  var h = 2166136261;
+  for (var i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); }
+  h ^= h >>> 13; h = Math.imul(h, 0x5bd1e995); h ^= h >>> 15;
+  return (h >>> 0) / 4294967296;
+}
+var DAY = Math.floor((Date.now() + 3 * 3600 * 1000) / 86400000);
+function estPrice(supply) { return Math.max(1.5, Math.round(2 * Math.pow(65396 / supply, 1.1) * 100) / 100); }
+function dayPrice(name, base, d) { return Math.round(base * (1 + (seeded(name + ':' + d) * 2 - 1) * 0.03) * 100) / 100; }
+var CAT = {};
+var CAT_LIST = RAW.map(function (r) {
+  var base = r[2] || estPrice(r[1]);
+  var local = IMG[r[0]] || GIFT_IMG;
+  var c = { name: r[0], supply: r[1], base: base, img: window.rkThumb ? window.rkThumb(r[0], local) : local, color: rarityColor(base) };
+  c.price = dayPrice(r[0], base, DAY);
+  c.prev = dayPrice(r[0], base, DAY - 1);
+  CAT[r[0]] = c;
+  return c;
+}).sort(function (a, b) { return a.price - b.price; });
+function chg(c) { return (c.price / c.prev - 1) * 100; }
+function chgText(c) { var v = chg(c); return (v >= 0 ? '▲ ' : '▼ ') + Math.abs(v).toFixed(1) + '%'; }
+function chgColor(c) { return chg(c) >= 0 ? '#2bd46b' : '#ff5d73'; }
+function supplyText(c) { return c.supply ? c.supply.toLocaleString('ru-RU') + ' шт.' : 'новая коллекция'; }
+
+var STARTER = ['B-Day Candle', 'Lol Pop', 'Desk Calendar', 'Homemade Cake', 'Homemade Cake', 'Jingle Bells', 'Hypno Lollipop', 'Snow Globe', 'Berry Box'];
+function rk() { return typeof window !== 'undefined' && window.RK && window.RK.inventory ? window.RK : null; }
+function loadItems() {
+  var R = rk();
+  if (R) return R.inventory.list();
+  return STARTER.map(function (k, i) { return { uid: 'd' + i, key: k, at: Date.now() - i * 1000 }; });
+}
+function fmt(p) { return (Math.round(p * 100) / 100).toFixed(2) + ' TON'; }
+function giftsWord(n) {
+  var m10 = n % 10, m100 = n % 100;
+  if (m10 === 1 && m100 !== 11) return n + ' подарок';
+  if (m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14)) return n + ' подарка';
+  return n + ' подарков';
+}
+function priceOf(it) { return CAT[it.key] ? CAT[it.key].price : 0; }
+
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { items: loadItems(), sel: [], sort: 'new', confirm: false, toast: null, balance: 50 };
+  }
+  componentWillUnmount() { clearTimeout(this.tt); }
+  selected() { var s = this.state; return s.items.filter(function (it) { return s.sel.indexOf(it.uid) !== -1; }); }
+  sell() {
+    var s = this.state, picked = this.selected(), sum = 0;
+    picked.forEach(function (it) { sum += priceOf(it); });
+    sum = Math.round(sum * 100) / 100;
+    var R = rk(), items;
+    if (R) { R.inventory.remove(s.sel); items = R.inventory.list(); }
+    else items = s.items.filter(function (it) { return s.sel.indexOf(it.uid) === -1; });
+    var self = this;
+    this.setState({ items: items, sel: [], confirm: false, balance: Math.round((s.balance + sum) * 100) / 100, toast: 'Продано ' + giftsWord(picked.length) + ' за ' + fmt(sum) });
+    clearTimeout(this.tt); this.tt = setTimeout(function () { self.setState({ toast: null }); }, 2600);
+  }
+  renderVals() {
+    var self = this, s = this.state;
+    var list = s.items.filter(function (it) { return CAT[it.key]; }).slice();
+    if (s.sort === 'price') list.sort(function (a, b) { return priceOf(b) - priceOf(a); });
+    else list.sort(function (a, b) { return (b.at || 0) - (a.at || 0); });
+    var total = 0; list.forEach(function (it) { total += priceOf(it); });
+    var picked = this.selected(), selTotal = 0; picked.forEach(function (it) { selTotal += priceOf(it); });
+    var now = Date.now();
+    return {
+      balanceText: fmt(s.balance),
+      count: list.length, totalText: fmt(total),
+      hasItems: list.length > 0, empty: list.length === 0,
+      items: list.map(function (it) {
+        var c = CAT[it.key], sel = s.sel.indexOf(it.uid) !== -1;
+        return {
+          name: c.name, img: c.img, color: c.color, priceText: fmt(c.price), selected: sel, pressed: sel ? 'true' : 'false',
+          border: sel ? '#2bd46b' : '#222838', checkBorder: sel ? '#2bd46b' : '#3a3f4d', checkBg: sel ? '#2bd46b' : 'transparent',
+          isNew: it.at && now - it.at < 10 * 60 * 1000 && it.uid.charAt(0) === 'g',
+          toggle: function () {
+            var cur = self.state.sel.slice(), i = cur.indexOf(it.uid);
+            if (i === -1) cur.push(it.uid); else cur.splice(i, 1);
+            self.setState({ sel: cur });
+          }
+        };
+      }),
+      sortNew: function () { self.setState({ sort: 'new' }); }, sortPrice: function () { self.setState({ sort: 'price' }); },
+      newPressed: s.sort === 'new' ? 'true' : 'false', pricePressed: s.sort === 'price' ? 'true' : 'false',
+      newBg: s.sort === 'new' ? '#ffc83d' : 'transparent', newColor: s.sort === 'new' ? '#1a1300' : '#a3a8b5',
+      priceBg: s.sort === 'price' ? '#ffc83d' : 'transparent', priceColor: s.sort === 'price' ? '#1a1300' : '#a3a8b5',
+      allText: s.sel.length && s.sel.length === list.length ? 'Снять выбор' : 'Выбрать все',
+      toggleAll: function () { var st = self.state; self.setState({ sel: st.sel.length === list.length ? [] : list.map(function (it) { return it.uid; }) }); },
+      hasSelection: s.sel.length > 0 && !s.confirm,
+      selCount: s.sel.length, selTotal: fmt(selTotal),
+      askSell: function () { self.setState({ confirm: true }); },
+      withdraw: function () { self.setState({ toast: 'Вывод подарков в Telegram появится вместе с сервером' }); clearTimeout(self.tt); self.tt = setTimeout(function () { self.setState({ toast: null }); }, 2600); },
+      showConfirm: s.confirm,
+      confirmText: 'Ты продаёшь ' + giftsWord(picked.length) + '.',
+      confirmItems: picked.slice(0, 6).map(function (it) { return { img: CAT[it.key].img, name: CAT[it.key].name }; }),
+      confirmMore: picked.length > 6, confirmMoreN: picked.length - 6,
+      cancelSell: function () { self.setState({ confirm: false }); },
+      confirmSell: function () { self.sell(); },
+      showToast: !!s.toast, toastText: s.toast || ''
+    };
+  }
+}
+</script>
+</body>
+</html>

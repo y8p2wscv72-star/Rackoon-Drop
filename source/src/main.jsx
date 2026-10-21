@@ -11,6 +11,7 @@ import UpgradeSrc from './screens/Upgrade.dc.html';
 import CasesSrc from './screens/Cases.dc.html';
 import MinesSrc from './screens/Mines.dc.html';
 import PvpSrc from './screens/Pvp.dc.html';
+import InventorySrc from './screens/Inventory.dc.html';
 
 // ---------- Telegram ----------
 const tg = window.Telegram && window.Telegram.WebApp;
@@ -22,7 +23,21 @@ const wallet = {
   },
   set(v) { try { localStorage.setItem('rk_balance', String(Math.round(v * 100) / 100)); } catch (e) {} }
 };
-window.RK = { wallet, user: (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) || null };
+// Общий инвентарь подарков (демо: хранится на устройстве игрока)
+const STARTER_GIFTS = ['B-Day Candle', 'Lol Pop', 'Desk Calendar', 'Homemade Cake', 'Homemade Cake', 'Jingle Bells', 'Hypno Lollipop', 'Snow Globe', 'Berry Box'];
+const inventory = {
+  _load() { try { const v = JSON.parse(localStorage.getItem('rk_inv') || 'null'); return Array.isArray(v) ? v : null; } catch (e) { return null; } },
+  _save(a) { try { localStorage.setItem('rk_inv', JSON.stringify(a)); } catch (e) {} this._mem = a; },
+  list() {
+    let a = this._load() || this._mem;
+    if (!a) { const t = Date.now(); a = STARTER_GIFTS.map((k, i) => ({ uid: 's' + i + '_' + t, key: k, at: t - (i + 1) * 3600000 })); this._save(a); }
+    return a.slice();
+  },
+  add(key) { const a = this.list(); const it = { uid: 'g' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), key, at: Date.now() }; a.unshift(it); this._save(a); return it; },
+  remove(uids) { const set = new Set([].concat(uids)); this._save(this.list().filter((x) => !set.has(x.uid))); },
+  reset() { try { localStorage.removeItem('rk_inv'); } catch (e) {} this._mem = null; return this.list(); }
+};
+window.RK = { wallet, inventory, user: (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) || null };
 
 if (tg) {
   tg.ready();
@@ -222,7 +237,7 @@ class Screen extends React.Component {
 // ---------- Приложение ----------
 const SCREENS = {
   Main: parseScreen('Main', MainSrc), Crash: parseScreen('Crash', CrashSrc),
-  Upgrade: parseScreen('Upgrade', UpgradeSrc), Cases: parseScreen('Cases', CasesSrc), Mines: parseScreen('Mines', MinesSrc), Pvp: parseScreen('Pvp', PvpSrc)
+  Upgrade: parseScreen('Upgrade', UpgradeSrc), Cases: parseScreen('Cases', CasesSrc), Mines: parseScreen('Mines', MinesSrc), Pvp: parseScreen('Pvp', PvpSrc), Inventory: parseScreen('Inventory', InventorySrc)
 };
 const injected = new Set();
 Object.values(SCREENS).forEach((s) => s.head.forEach((h) => {

@@ -144,22 +144,17 @@ a{color:#ffc83d}a:hover{color:#ffe08a}
 </div>
 </sc-if>
 
-<div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 4px">
-<div style="font-size: 17px; font-weight: 700">Мой лут</div>
-<sc-if value="{{hasLoot}}" hint-placeholder-val="{{ false }}">
-<button type="button" onClick="{{sellAll}}" style="height: 40px; border-radius: 12px; border: 1px solid #2bd46b; background: transparent; color: #2bd46b; font-family: Rubik, system-ui, sans-serif; font-size: 13px; font-weight: 700; padding: 0 12px; cursor: pointer">Продать всё · {{lootTotal}}</button>
-</sc-if>
+<a href="Inventory.dc.html" style="text-decoration: none; display: flex; align-items: center; gap: 12px; background: #151821; border: 1px solid #222838; border-radius: 16px; padding: 12px 14px; color: #ffffff; margin-top: 4px">
+<svg width="26" height="26" viewBox="0 0 22 22" aria-hidden="true"><path d="M11 2 L20 6.5 V15.5 L11 20 L2 15.5 V6.5Z M2 6.5 L11 11 L20 6.5 M11 11 V20" fill="none" stroke="#ffc83d" stroke-width="2" stroke-linejoin="round"></path></svg>
+<div style="display: flex; flex-direction: column; gap: 2px; flex-grow: 1">
+<span style="font-size: 15px; font-weight: 700">Мой инвентарь</span>
+<span style="font-size: 12px; color: #a3a8b5">{{invInfo}}</span>
 </div>
-<sc-if value="{{noLoot}}" hint-placeholder-val="{{ true }}">
-<div style="background: #151821; border-radius: 14px; padding: 14px; font-size: 13px; color: #a3a8b5; text-align: center">Открой кейс, и выпавшие NFT появятся здесь</div>
-</sc-if>
-<div style="display: flex; flex-wrap: wrap; gap: 6px">
-<sc-for list="{{loot}}" as="l" hint-placeholder-count="0">
-<span style="display: flex; align-items: center; gap: 6px; background: #151821; border: 1px solid #222838; border-radius: 10px; padding: 4px 10px 4px 4px; font-size: 12px; font-weight: 700">
-<img src="{{l.img}}" alt="" style="width: 24px; height: 24px">{{l.name}} · <span style="color: #ffc83d">{{l.priceText}}</span>
-</span>
-</sc-for>
+<div style="display: flex; gap: 4px">
+<sc-for list="{{loot}}" as="l" hint-placeholder-count="0"><img src="{{l.img}}" alt="" style="width: 30px; height: 30px; border-radius: 8px; background: #0b0d12"></sc-for>
 </div>
+<svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3 L11 8 L6 13" fill="none" stroke="#a3a8b5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+</a>
 
 <sc-if value="{{showOverlay}}" hint-placeholder-val="{{ false }}">
 <div style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; background: rgba(5, 6, 10, 0.8); display: flex; justify-content: center; align-items: flex-start; padding-top: 170px">
@@ -496,7 +491,8 @@ class Component extends DCLogic {
       btnShadow: canOpen ? '0 6px 24px rgba(255,200,61,0.35)' : 'none',
       btnText: !c ? '' : (s.spinning ? 'ОТКРЫВАЕМ...' : (c.free ? (freeLeft > 0 ? 'ЧЕРЕЗ ' + hms(freeLeft) : 'ОТКРЫТЬ БЕСПЛАТНО') : (s.balance >= c.price ? 'ОТКРЫТЬ · ' + fmt(c.price) : 'НЕ ХВАТАЕТ TON'))),
       contents: c ? c.pool.map(function (k, i) { var it = CAT[k]; return { name: it.name, img: it.img, priceText: fmt(it.price), color: it.color, chanceText: fmtChance(c.probs[i]) }; }).reverse() : [],
-      loot: s.loot.map(function (l) { var it = CAT[l.key]; return { name: it.name, img: it.img, priceText: fmt(it.price) }; }),
+      loot: s.loot.slice(0, 3).map(function (l) { var it = CAT[l.key]; return { name: it.name, img: it.img, priceText: fmt(it.price) }; }),
+      invInfo: (function () { var R = typeof window !== 'undefined' && window.RK && window.RK.inventory; var n = R ? R.list().length : s.loot.length; return n ? n + ' шт. · продать или вывести' : 'Забирай дропы, они попадут сюда'; })(),
       hasLoot: s.loot.length > 0, noLoot: s.loot.length === 0, lootTotal: fmt(lootTotal),
       sellAll: function () { var st = self.state, sum = 0; st.loot.forEach(function (l) { sum += CAT[l.key].price; }); self.setState({ loot: [], balance: Math.round((st.balance + sum) * 100) / 100 }); },
       showOverlay: s.overlay && !!won,
@@ -508,7 +504,7 @@ class Component extends DCLogic {
       resMultBg: mult >= 1 || (wonCase && wonCase.free) ? 'rgba(43,212,107,0.16)' : 'rgba(255,93,115,0.16)',
       resMultColor: mult >= 1 || (wonCase && wonCase.free) ? '#2bd46b' : '#ff5d73',
       sellWon: function () { var st = self.state; if (!st.won) return; self.setState({ balance: Math.round((st.balance + CAT[st.won.key].price) * 100) / 100, overlay: false, won: null }); },
-      keepWon: function () { var st = self.state; if (!st.won) return; self.setState({ loot: [{ id: st.nextId, key: st.won.key }].concat(st.loot), nextId: st.nextId + 1, overlay: false, won: null }); }
+      keepWon: function () { var st = self.state; if (!st.won) return; if (typeof window !== 'undefined' && window.RK && window.RK.inventory) window.RK.inventory.add(st.won.key); self.setState({ loot: [{ id: st.nextId, key: st.won.key }].concat(st.loot), nextId: st.nextId + 1, overlay: false, won: null }); }
     };
   }
 }

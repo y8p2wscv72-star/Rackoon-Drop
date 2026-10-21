@@ -350,6 +350,8 @@ var TICKS = (function () {
   }
   return d;
 })();
+function rkInv() { return typeof window !== 'undefined' && window.RK && window.RK.inventory ? window.RK.inventory : null; }
+function loadInv() { var R = rkInv(); return R ? R.list().filter(function (u) { return CAT[u.key]; }) : startInv(); }
 function startInv() {
   var keys = ['B-Day Candle', 'Lol Pop', 'Desk Calendar', 'Homemade Cake', 'Homemade Cake', 'Jingle Bells', 'Hypno Lollipop', 'Snow Globe', 'Berry Box'];
   return keys.map(function (k, i) { return { uid: 'i' + (i + 1), key: k }; });
@@ -367,7 +369,7 @@ class Component extends DCLogic {
   constructor(props) {
     super(props);
     this.state = {
-      inv: startInv(), own: [], target: null, angle: 0, spinning: false,
+      inv: loadInv(), own: [], target: null, angle: 0, spinning: false,
       result: null, overlay: false, lastChance: 0, lastSide: 'right',
       side: 'right', fast: true, history: [], res: null, nextId: 100, q: ''
     };
@@ -402,7 +404,9 @@ class Component extends DCLogic {
       var st = self.state;
       var inv = st.inv.filter(function (u) { return st.own.indexOf(u.uid) === -1; });
       var nextId = st.nextId;
-      if (win) { inv = [{ uid: 'i' + nextId, key: st.target }].concat(inv); nextId += 1; }
+      var R = rkInv();
+      if (R) { R.remove(st.own); if (win) R.add(st.target); inv = loadInv(); }
+      else if (win) { inv = [{ uid: 'i' + nextId, key: st.target }].concat(inv); nextId += 1; }
       var mult = 'x' + (tgt.price / st0.price).toFixed(2);
       var history = [{ mult: mult, win: win }].concat(st.history).slice(0, 10);
       self.setState({
@@ -542,7 +546,7 @@ class Component extends DCLogic {
       btnText: s.spinning ? 'КРУТИМ...' : (valid ? 'АПГРЕЙД · ' + (live * 100).toFixed(1) + '%' : 'АПГРЕЙД'),
       invSub: stake ? 'Выбрано ' + giftsWord(stake.count) + ' на ' + fmt(stake.price) : 'Выбери до 6 подарков',
       clearPick: function () { if (!self.state.spinning) self.setState({ own: [] }); },
-      reset: function () { if (!self.state.spinning) self.setState({ inv: startInv(), own: [], target: null, result: null, lastChance: 0, overlay: false }); },
+      reset: function () { if (!self.state.spinning) self.setState({ inv: rkInv() ? (rkInv().reset(), loadInv()) : startInv(), own: [], target: null, result: null, lastChance: 0, overlay: false }); },
       invEmpty: s.inv.length === 0,
       invList: invList,
       q: s.q,
