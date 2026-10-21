@@ -185,6 +185,7 @@ window.rkThumb = function (name, local) {
 window.addEventListener('error', (e) => {
   const el = e.target;
   if (el && el.tagName === 'IMG') {
+    if (window.RK && window.RK.user && el.getAttribute('src') === window.RK.user.photo_url) { el.setAttribute('src', 'assets/avatar.jpg'); return; }
     const next = IMG_FALLBACK[el.getAttribute('src')];
     if (next) el.setAttribute('src', next);
   }
@@ -293,6 +294,7 @@ function renderNode(node, scope, nav, key) {
       continue;
     } else if (isSvg && name.indexOf('-') !== -1 && !name.startsWith('aria-') && !name.startsWith('data-')) name = camel(name);
     else if (name === 'tabindex') name = 'tabIndex';
+    else if (name === 'referrerpolicy') name = 'referrerPolicy';
     else if (name === 'inputmode') name = 'inputMode';
     else if (name === 'enterkeyhint') name = 'enterKeyHint';
     else if (name === 'autocomplete') name = 'autoComplete';

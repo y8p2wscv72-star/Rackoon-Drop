@@ -19,7 +19,7 @@ a{color:#ffc83d}a:hover{color:#ffe08a}
 <div style="width: 390px; min-height: 1180px; box-sizing: border-box; padding: 20px 16px 20px; display: flex; flex-direction: column; gap: 14px; background: #0d0f14; font-family: Rubik, system-ui, sans-serif; color: #ffffff; position: relative">
 
 <header style="display: flex; align-items: center; gap: 12px; height: 56px">
-<img src="/_blob/661884b648dd965ea69af44ea8c7ee95" alt="Енот-бандит" style="width: 52px; height: 52px; border-radius: 50%; object-fit: cover; flex-shrink: 0; border: 2px solid #ffc83d; box-sizing: border-box">
+<img src="{{avatarUrl}}" alt="{{tgName}}" referrerpolicy="no-referrer" style="width: 52px; height: 52px; border-radius: 50%; object-fit: cover; flex-shrink: 0; border: 2px solid #ffc83d; box-sizing: border-box">
 <div style="display: flex; flex-direction: column; gap: 2px; flex-grow: 1; min-width: 0">
 <div style="font-size: 26px; font-weight: 900; font-style: italic; letter-spacing: 0.5px; line-height: 1">RACK<span style="color: #ffc83d">OON</span></div>
 <div style="font-size: 12px; font-weight: 500; color: #a3a8b5">{{tgName}} · Level 1</div>
@@ -154,6 +154,7 @@ class Component extends DCLogic {
       online: this.state.online,
       balanceText: (window.RK ? window.RK.wallet.get() : 0).toFixed(2) + ' TON',
       tgName: (window.RK && window.RK.user && window.RK.user.first_name) || 'Гость',
+      avatarUrl: (window.RK && window.RK.user && window.RK.user.photo_url) || '/_blob/661884b648dd965ea69af44ea8c7ee95',
       drops: this.state.drops.map(function (d) { return { name: d.name, img: d.img, color: colorOf(d.price), priceText: d.price + ' TON' }; })
     };
   }
