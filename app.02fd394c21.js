@@ -360,7 +360,7 @@ a{color:#ffc83d}a:hover{color:#ffe08a}
 </div>
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":1300}}'>
-var RTP = 0.92, WAIT = 5000, AFTER = 3000, GROWTH = 0.16;
+var RTP = 0.90, WAIT = 5000, AFTER = 3000, GROWTH = 0.16;
 var GIFTS = {
   cake: { name: 'Homemade Cake', price: 5.04, img: '/_blob/6ef5ecbeb712d1b1d752a33d1e9c279d' },
   globe: { name: 'Snow Globe', price: 5.92, img: '/_blob/6e3628fac94b5266f3b64cea9c5fe7ee' },
@@ -911,7 +911,7 @@ function chgColor(c) { return chg(c) >= 0 ? '#2bd46b' : '#ff5d73'; }
 function supplyText(c) { return c.supply ? c.supply.toLocaleString('ru-RU') + ' \u0448\u0442.' : '\u043D\u043E\u0432\u0430\u044F \u043A\u043E\u043B\u043B\u0435\u043A\u0446\u0438\u044F'; }
 
 var QUICK = [1.5, 2, 3, 5, 10, 20];
-var RTP = 0.92, MAX_CHANCE = 0.75, MAX_PICK = 6, SHOW = 15;
+var RTP = 0.98, MAX_CHANCE = 0.75, MAX_PICK = 6, SHOW = 15;
 var R = 112, CIRC = 2 * Math.PI * R;
 var GREEN = '#2bd46b', RED = '#ff5d73';
 var TICKS = (function () {
@@ -1498,7 +1498,7 @@ function chgText(c) { var v = chg(c); return (v >= 0 ? '\u25B2 ' : '\u25BC ') + 
 function chgColor(c) { return chg(c) >= 0 ? '#2bd46b' : '#ff5d73'; }
 function supplyText(c) { return c.supply ? c.supply.toLocaleString('ru-RU') + ' \u0448\u0442.' : '\u043D\u043E\u0432\u0430\u044F \u043A\u043E\u043B\u043B\u0435\u043A\u0446\u0438\u044F'; }
 
-var RTP = 0.92;
+var RTP = 0.90;
 var FREE_COOLDOWN = 24 * 3600 * 1000;
 var CASES = [
   { id: 'c1', name: '\u041A\u0430\u0440\u043C\u0430\u043D\u043D\u0438\u043A', price: 5, color: '#2bbf5a', dark: '#1a8a3e', bg: '#10291a', glow: 'rgba(43,191,90,0.9)', edge: '#1f4a2c', opened: 2591 },
@@ -1785,7 +1785,7 @@ a{color:#ffc83d}a:hover{color:#ffe08a}
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":1180}}'>
 var SIZE = 25;
-var RTP = 0.92;
+var RTP = 0.98;
 var PRESETS = [1, 3, 5, 10, 20];
 
 function multFor(k, m) {
