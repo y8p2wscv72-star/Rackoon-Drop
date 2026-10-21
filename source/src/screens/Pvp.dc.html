@@ -133,7 +133,7 @@ a{color:#ffc83d}a:hover{color:#ffe08a}
 
 <sc-if value="{{showPlayers}}" hint-placeholder-val="{{ true }}">
 <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px">
-<span style="font-size: 20px; font-weight: 500">Участники ({{playersCount}})</span>
+<span style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 20px; font-weight: 500">Участники ({{playersCount}})</span><span style="font-size: 11px; color: #8a90a0">Тёмная зона RACKOON занимает 5% поля</span></span>
 <span style="font-size: 11px; padding: 4px 8px; border-radius: 8px; background: #151821; color: #a3a8b5">Игра #{{gameId}}</span>
 </div>
 <div style="display: flex; flex-direction: column; gap: 8px">
@@ -256,6 +256,14 @@ function regionPts(d) {
   return S + ',0 0,0 0,' + (d - S) + ' ' + (2 * S - d) + ',' + S + ' ' + S + ',' + S;
 }
 function depthOf(x, y) { return (S - x) + y; }
+// Зона казино на арене: открыто занимает HOUSE от поля. Если точка упала в неё — банк забирает RACKOON.
+var HOUSE = 0.05;
+function withHouse(players) {
+  if (!players.length) return players;
+  var pot = 0; players.forEach(function (p) { pot += stakeOf(p); });
+  if (pot <= 0) return players;
+  return players.concat([{ id: 'house', name: 'RACKOON', house: true, me: false, ton: Math.round(pot * HOUSE / (1 - HOUSE) * 100) / 100, gifts: [], color: '#1d2230' }]);
+}
 function bandsFor(players) {
   var list = players.map(function (p) { return { p: p, v: stakeOf(p) }; }).filter(function (b) { return b.v > 0; })
     .sort(function (a, b) { return a.v - b.v; });
@@ -317,8 +325,9 @@ class Component extends DCLogic {
 
   spin() {
     var s = this.state, self = this;
-    var bands = bandsFor(s.players);
-    var total = 0; bands.forEach(function (b) { total += b.v; });
+    var bands = bandsFor(withHouse(s.players));
+    var total = 0; s.players.forEach(function (p) { total += stakeOf(p); });
+    var totalAll = 0; bands.forEach(function (b) { totalAll += b.v; });
     // Победная точка — случайное место на арене
     var fx = 6 + Math.random() * (S - 12), fy = 6 + Math.random() * (S - 12);
     var fd = depthOf(fx, fy), winBand = bands[bands.length - 1];
@@ -331,18 +340,18 @@ class Component extends DCLogic {
       self.later(function () { self.setState({ ball: { x: pt.x, y: pt.y }, ballDur: pt.d }); }, t);
       t += pt.d;
     });
-    this.later(function () { self.finish(winBand.p, total); }, t + 900);
+    this.later(function () { self.finish(winBand.p, total, totalAll); }, t + 900);
   }
 
-  finish(wp, total) {
+  finish(wp, total, totalAll) {
     var s = this.state;
-    var win = r2(total * (1 - FEE));
-    var chance = (stakeOf(wp) / total * 100).toFixed(2) + '%';
+    var win = wp.house ? 0 : r2(total * (1 - FEE));
+    var chance = (stakeOf(wp) / (totalAll || total) * 100).toFixed(2) + '%';
     var tonSum = 0, giftsAll = [];
     s.players.forEach(function (p) { tonSum += p.ton; giftsAll = giftsAll.concat(p.gifts); });
     var upd = {
       phase: 'result', showWinner: true, cam: false,
-      winner: { name: wp.me ? 'Ты' : wp.name, me: wp.me, color: wp.color, chance: chance, win: win, pot: total, gameId: s.gameId },
+      winner: { name: wp.me ? 'Ты' : wp.name, me: wp.me, house: !!wp.house, color: wp.color, chance: chance, win: win, pot: total, gameId: s.gameId },
       history: [{ id: s.gameId, name: wp.me ? 'Ты' : wp.name, chance: chance, win: win.toFixed(2), av: wp.color, time: nowTime(), ton: r2(tonSum), gifts: giftsAll.slice(0, 5) }].concat(s.history).slice(0, 20)
     };
     if (wp.me) upd.balance = r2(s.balance + win);
@@ -394,8 +403,9 @@ class Component extends DCLogic {
 
   renderVals() {
     var self = this, s = this.state;
-    var bands = s.frozen || bandsFor(s.players);
+    var bands = s.frozen || bandsFor(withHouse(s.players));
     var total = 0; s.players.forEach(function (p) { total += stakeOf(p); });
+    var totalAll = 0; bands.forEach(function (b) { totalAll += b.v; });
     var giftsCount = 0; s.players.forEach(function (p) { giftsCount += p.gifts.length; });
     var joinable = s.phase === 'wait' || s.phase === 'count';
     var remain = Math.max(0, (COUNTDOWN - (s.now - s.t0)) / 1000);
@@ -424,7 +434,7 @@ class Component extends DCLogic {
       var st = stakeOf(p);
       return {
         name: p.me ? 'Ты' : p.name, initial: p.name.charAt(0).toUpperCase(), avBg: p.color, isMe: p.me, notMe: !p.me,
-        border: p.me ? '#ffc83d' : '#222838', chance: total ? (st / total * 100).toFixed(2) + '%' : '—', stakeText: st.toFixed(2),
+        border: p.me ? '#ffc83d' : '#222838', chance: totalAll ? (st / totalAll * 100).toFixed(2) + '%' : '—', stakeText: st.toFixed(2),
         hasTon: p.ton > 0, tonText: p.ton.toFixed(2),
         giftImgs: p.gifts.map(function (k) { return { img: GIFTS[k].img, name: GIFTS[k].name }; })
       };
@@ -484,7 +494,7 @@ class Component extends DCLogic {
       showWinner: s.showWinner && !!w,
       winGameId: w ? w.gameId : '', winIsMe: w ? w.me : false, winNotMe: w ? !w.me : true,
       winInitial: w ? w.name.charAt(0).toUpperCase() : '', winAvBg: w ? w.color : '#222838', winName: w ? w.name : '',
-      winBorder: w && w.me ? '#2bd46b' : '#222838', winChance: w ? w.chance : '', winAmount: w ? w.win.toFixed(2) + ' TON' : '', winPot: w ? fmt(w.pot) : '',
+      winBorder: w && w.me ? '#2bd46b' : '#222838', winChance: w ? w.chance : '', winAmount: w ? (w.house ? 'банк казино' : w.win.toFixed(2) + ' TON') : '', winPot: w ? fmt(w.pot) : '',
       closeWinner: function () { self.newRound(); }
     };
   }
