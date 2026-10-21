@@ -52,6 +52,12 @@ a{color:#ffc83d}a:hover{color:#ffe08a}
 
 <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px">
 <sc-for list="{{grid}}" as="c" hint-placeholder-count="6">
+<sc-if value="{{c.hasArt}}" hint-placeholder-val="{{ true }}">
+<button type="button" onClick="{{c.open}}" aria-label="{{c.name}}, {{c.priceText}}" style="position: relative; min-width: 0; border: 0; border-radius: 20px; overflow: hidden; padding: 0; cursor: pointer; background: {{c.bg}}; box-shadow: 0 6px 20px {{c.shadow}}">
+<img src="{{c.art}}" alt="" style="width: 100%; display: block; aspect-ratio: 384 / 418; object-fit: cover">
+</button>
+</sc-if>
+<sc-if value="{{c.noArt}}" hint-placeholder-val="{{ false }}">
 <button type="button" onClick="{{c.open}}" style="position: relative; min-width: 0; height: 176px; border-radius: 22px; border: 1px solid {{c.edge}}; background: {{c.bg}}; overflow: hidden; padding: 0; cursor: pointer; font-family: Rubik, system-ui, sans-serif; color: #ffffff; box-shadow: inset 0 -40px 50px -20px {{c.glow}}">
 <div style="position: absolute; left: 10px; top: 10px; display: flex; gap: 6px; align-items: center; z-index: 2">
 <span style="font-size: 13px; font-weight: 700; padding: 4px 8px; border-radius: 9px; background: rgba(0,0,0,0.45); color: #ffc83d">{{c.priceText}}</span>
@@ -81,11 +87,24 @@ a{color:#ffc83d}a:hover{color:#ffe08a}
 </div>
 </sc-if>
 </button>
+</sc-if>
 </sc-for>
 </div>
 </sc-if>
 
 <sc-if value="{{inDetail}}" hint-placeholder-val="{{ false }}">
+<sc-if value="{{dHasArt}}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; gap: 14px; align-items: stretch; border-radius: 24px; padding: 10px; background: {{dBg}}; border: 1px solid {{dEdge}}; box-shadow: inset 0 -50px 60px -20px {{dGlow}}">
+<img src="{{dArt}}" alt="{{dName}}" style="width: 150px; height: 163px; border-radius: 16px; object-fit: cover; flex-shrink: 0">
+<div style="display: flex; flex-direction: column; justify-content: center; gap: 6px; min-width: 0">
+<div style="font-size: 24px; font-weight: 900; font-style: italic; line-height: 1.05">{{dName}}</div>
+<div style="font-size: 18px; font-weight: 900; color: #ffc83d">{{dPriceText}}</div>
+<div style="font-size: 12px; color: #c9cdd6">{{dOpened}}</div>
+<div style="display: flex; align-items: center; gap: 6px; font-size: 12px; color: #c9cdd6">Главный приз <img src="{{dPrizeImg}}" alt="" style="width: 26px; height: 26px"></div>
+</div>
+</div>
+</sc-if>
+<sc-if value="{{dNoArt}}" hint-placeholder-val="{{ true }}">
 <div style="position: relative; height: 170px; border-radius: 24px; overflow: hidden; background: {{dBg}}; border: 1px solid {{dEdge}}; box-shadow: inset 0 -50px 60px -20px {{dGlow}}">
 <div style="position: absolute; right: 6px; top: 8px; width: 170px; height: 160px; animation: rkBob 2.4s ease-in-out infinite">
 <img src="{{dPrizeImg}}" alt="" style="position: absolute; left: 70px; top: 0; width: 74px; height: 74px; transform: rotate(12deg); filter: drop-shadow(0 4px 10px rgba(0,0,0,0.5))">
@@ -108,6 +127,7 @@ a{color:#ffc83d}a:hover{color:#ffe08a}
 </div>
 </div>
 
+</sc-if>
 <div style="position: relative; height: 128px; border-radius: 18px; background: #11141c; border: 1px solid #1d2230; overflow: hidden">
 <div style="position: absolute; left: 0; top: 14px; display: flex; gap: 6px; {{stripStyle}}">
 <sc-for list="{{strip}}" as="t" hint-placeholder-count="8">
@@ -354,14 +374,14 @@ function supplyText(c) { return c.supply ? c.supply.toLocaleString('ru-RU') + ' 
 var RTP = 0.90;
 var FREE_COOLDOWN = 24 * 3600 * 1000;
 var CASES = [
-  { id: 'c1', name: 'Карманник', price: 5, color: '#2bbf5a', dark: '#1a8a3e', bg: '#10291a', glow: 'rgba(43,191,90,0.9)', edge: '#1f4a2c', opened: 2591 },
-  { id: 'c2', name: 'Конфетный', price: 10, color: '#f2c218', dark: '#b88f00', bg: '#2a240c', glow: 'rgba(242,194,24,0.9)', edge: '#4a4010', opened: 1036, isNew: true },
-  { id: 'c3', name: 'Пиратский', price: 15, color: '#2f86ff', dark: '#1a5ccc', bg: '#0f1d33', glow: 'rgba(47,134,255,0.9)', edge: '#1c3560', opened: 1554 },
-  { id: 'c4', name: 'Налётчик', price: 25, color: '#ff4d4d', dark: '#c02a2a', bg: '#2e1212', glow: 'rgba(255,77,77,0.9)', edge: '#5a2020', opened: 2591, isNew: true },
-  { id: 'c5', name: 'Медвежатник', price: 50, color: '#ff8a1f', dark: '#c45f00', bg: '#2e1c0c', glow: 'rgba(255,138,31,0.9)', edge: '#5a3612', opened: 5181 },
-  { id: 'c6', name: 'Ночной рейд', price: 100, color: '#9b5cff', dark: '#6a32d0', bg: '#1d1233', glow: 'rgba(155,92,255,0.9)', edge: '#3a2460', opened: 311 },
-  { id: 'c7', name: 'Сейф', price: 250, color: '#14c8c8', dark: '#0a8c8c', bg: '#0c2a2a', glow: 'rgba(20,200,200,0.9)', edge: '#164a4a', opened: 518 },
-  { id: 'c8', name: 'Крёстный енот', price: 500, color: '#ffc83d', dark: '#c79400', bg: '#2e250c', glow: 'rgba(255,200,61,0.95)', edge: '#5a4a14', opened: 10362 },
+  { id: 'c1', art: '/_blob/df4463849ba665132f6e7bd980c23a61', name: 'Карманник', price: 5, color: '#2bbf5a', dark: '#1a8a3e', bg: '#10291a', glow: 'rgba(43,191,90,0.9)', edge: '#1f4a2c', opened: 2591 },
+  { id: 'c2', art: '/_blob/589ffaec16a819a12e004c4e04070ae3', name: 'Конфетный', price: 10, color: '#f2c218', dark: '#b88f00', bg: '#2a240c', glow: 'rgba(242,194,24,0.9)', edge: '#4a4010', opened: 1036, isNew: true },
+  { id: 'c3', art: '/_blob/18ead7b29d1f1c4595af83f47c2faa35', name: 'Пиратский', price: 15, color: '#2f86ff', dark: '#1a5ccc', bg: '#0f1d33', glow: 'rgba(47,134,255,0.9)', edge: '#1c3560', opened: 1554 },
+  { id: 'c4', art: '/_blob/5897ec099101379e496fca2bcfbc2720', name: 'Налётчик', price: 25, color: '#ff4d4d', dark: '#c02a2a', bg: '#2e1212', glow: 'rgba(255,77,77,0.9)', edge: '#5a2020', opened: 2591, isNew: true },
+  { id: 'c5', art: '/_blob/1482e4fb63b86b31d6a8d5f8b4ede861', name: 'Медвежатник', price: 50, color: '#ff8a1f', dark: '#c45f00', bg: '#2e1c0c', glow: 'rgba(255,138,31,0.9)', edge: '#5a3612', opened: 5181 },
+  { id: 'c6', art: '/_blob/5548029de6654bdcd3eaa8b05a2b1ead', name: 'Ночной рейд', price: 100, color: '#9b5cff', dark: '#6a32d0', bg: '#1d1233', glow: 'rgba(155,92,255,0.9)', edge: '#3a2460', opened: 311 },
+  { id: 'c7', art: '/_blob/a7d5f037c0659d0beb75979291cff954', name: 'Сейф', price: 250, color: '#14c8c8', dark: '#0a8c8c', bg: '#0c2a2a', glow: 'rgba(20,200,200,0.9)', edge: '#164a4a', opened: 518 },
+  { id: 'c8', art: '/_blob/6696372ede410f1a4283d5e6dcd60c42', name: 'Крёстный енот', price: 500, color: '#ffc83d', dark: '#c79400', bg: '#2e250c', glow: 'rgba(255,200,61,0.95)', edge: '#5a4a14', opened: 10362 },
   { id: 'free', name: 'Ежедневный', price: 0, free: true, color: '#5fd4ff', dark: '#2fa0d0', bg: '#0c2430', glow: 'rgba(95,212,255,0.9)', edge: '#18465a', opened: 8812 },
   { id: 'ref', name: 'За 5 друзей', price: 0, free: true, locked: true, lockText: 'Пригласи 5 друзей', color: '#ff5d9e', dark: '#c02a6c', bg: '#2e1020', glow: 'rgba(255,93,158,0.9)', edge: '#5a1c3a', opened: 412 }
 ];
@@ -475,10 +495,12 @@ class Component extends DCLogic {
         return {
           name: x.name, priceText: x.free ? 'Бесплатно' : fmt(x.price), opened: x.opened.toLocaleString('ru-RU') + ' откр.',
           color: x.color, dark: x.dark, bg: x.bg, glow: x.glow, edge: x.edge, isNew: !!x.isNew,
+          hasArt: !!x.art, noArt: !x.art, art: x.art || '', shadow: x.glow.replace('0.9', '0.35').replace('0.95', '0.35'),
           prizeImg: CAT[x.top].img, locked: !!x.locked || fl, lockText: x.locked ? x.lockText : 'Через ' + hms(freeLeft),
           open: function () { if (!x.locked) self.openCase(x.id); }
         };
       }),
+      dHasArt: !!(c && c.art), dNoArt: !(c && c.art), dArt: c && c.art ? c.art : '',
       dName: c ? c.name : '', dPriceText: c ? (c.free ? 'Бесплатно раз в сутки' : fmt(c.price)) : '',
       dOpened: c ? 'Открыто ' + c.opened.toLocaleString('ru-RU') + ' раз' : '',
       dBg: c ? c.bg : '#151821', dEdge: c ? c.edge : '#222838', dGlow: c ? c.glow : 'transparent',

@@ -70,7 +70,15 @@ const ASSETS = {
   'a64ccb23ba5a5ab0f1f789ab412cf3af': 'pepe.svg', 'bb8c4faf5d5477b7abe934698601360a': 'none.svg',
   '34af5661e80ecf394b0a48aeeb28ab6c': 'r-fire.svg', '7629870dfcd56d08701d6a71de1e83df': 'r-laugh.svg',
   'f5a9ceb49eb8c4c03e26914bcd1e2576': 'r-angry.svg', '89d4ee9117e73bee099492a4ce5c5498': 'r-heart.svg',
-  'c22eeb9eb2c04b336c2c7f989a2a93a7': 'r-party.svg'
+  'c22eeb9eb2c04b336c2c7f989a2a93a7': 'r-party.svg',
+  'df4463849ba665132f6e7bd980c23a61': 'case-c1.jpg',
+  '589ffaec16a819a12e004c4e04070ae3': 'case-c2.jpg',
+  '18ead7b29d1f1c4595af83f47c2faa35': 'case-c3.jpg',
+  '5897ec099101379e496fca2bcfbc2720': 'case-c4.jpg',
+  '1482e4fb63b86b31d6a8d5f8b4ede861': 'case-c5.jpg',
+  '5548029de6654bdcd3eaa8b05a2b1ead': 'case-c6.jpg',
+  'a7d5f037c0659d0beb75979291cff954': 'case-c7.jpg',
+  '6696372ede410f1a4283d5e6dcd60c42': 'case-c8.jpg'
 };
 function fixAssets(src) {
   return src.replace(/\/_blob\/([0-9a-f]{32})/g, (m, id) => ASSETS[id] ? 'assets/' + ASSETS[id] : m);
