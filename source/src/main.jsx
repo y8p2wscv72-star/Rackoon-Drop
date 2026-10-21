@@ -62,6 +62,25 @@ function fixOverlays(src) {
     'position: fixed; left: 0; top: 0; right: 0; bottom: 0; z-index: 50; background: rgba(5, 6, 10, $1); display: flex; justify-content: center; align-items: center; padding: 16px');
 }
 
+// ---------- Картинки NFT: официальные превью коллекций с Fragment ----------
+// Цепочка: превью коллекции → картинка подарка #1 → своя иконка (если Fragment недоступен)
+const IMG_FALLBACK = {};
+window.rkThumb = function (name, local) {
+  const slug = name.toLowerCase().replace(/[^a-z0-9]/g, '');
+  const thumb = 'https://fragment.com/file/gifts/' + slug + '/thumb.webp';
+  const first = 'https://nft.fragment.com/gift/' + slug + '-1.webp';
+  IMG_FALLBACK[thumb] = first;
+  IMG_FALLBACK[first] = local.replace(/\/_blob\/([0-9a-f]{32})/, (m, id) => ASSETS[id] ? 'assets/' + ASSETS[id] : m);
+  return thumb;
+};
+window.addEventListener('error', (e) => {
+  const el = e.target;
+  if (el && el.tagName === 'IMG') {
+    const next = IMG_FALLBACK[el.getAttribute('src')];
+    if (next) el.setAttribute('src', next);
+  }
+}, true);
+
 // ---------- Разбор экрана ----------
 function parseScreen(name, raw) {
   const src = fixOverlays(fixAssets(raw));

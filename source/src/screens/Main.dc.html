@@ -107,6 +107,7 @@ var DROPS = [
   { name: 'Diamond Ring', price: 12, img: '/_blob/ef580f1649ad89b5e268954da6ea30b2' },
   { name: 'Precious Peach', price: 300, img: '/_blob/923c4583ef32f1e6549c08d5a1839d4c' }
 ];
+if (window.rkThumb) DROPS.forEach(function (d) { d.img = window.rkThumb(d.name, d.img); });
 function colorOf(p) {
   if (p < 5) return '#9aa3b5';
   if (p < 15) return '#5fd4ff';

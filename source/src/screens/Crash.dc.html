@@ -192,6 +192,7 @@ var GIFTS = {
   lpotion: { name: 'Love Potion', price: 13, img: '/_blob/5bb7da32fc8a6f8dbe91cf7cedc20c65' },
   bells: { name: 'Jingle Bells', price: 2.5, img: '/_blob/808ef5efdbeb6b276f70430b220f760b' }
 };
+if (window.rkThumb) Object.keys(GIFTS).forEach(function (k) { GIFTS[k].img = window.rkThumb(GIFTS[k].name, GIFTS[k].img); });
 var BOT_GIFTS = ['cake', 'globe', 'record', 'rose', 'bear', 'lpotion', 'bells'];
 var NAMES = ['Bandit_77', 'TonWhale', 'Енотыч', 'lucky_ray', 'Gift Hunter', 'night_owl', 'Мурзик', 'Sasha_K', 'raccoon.eth', 'Vova', 'Polina', 'moonboy', 'Жора', 'kisa_mur'];
 var AV = ['#e5383b', '#2a7fff', '#2bd46b', '#9b5cff', '#ff8a5c', '#00a8a8', '#c77dff', '#e0a800'];

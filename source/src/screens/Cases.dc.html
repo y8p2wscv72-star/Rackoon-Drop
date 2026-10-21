@@ -198,7 +198,8 @@ function dayPrice(name, base, d) { return Math.round(base * (1 + (seeded(name + 
 var CAT = {};
 var CAT_LIST = RAW.map(function (r) {
   var base = r[2] || estPrice(r[1]);
-  var c = { name: r[0], supply: r[1], base: base, img: IMG[r[0]] || GIFT_IMG, color: rarityColor(base) };
+  var local = IMG[r[0]] || GIFT_IMG;
+  var c = { name: r[0], supply: r[1], base: base, img: window.rkThumb ? window.rkThumb(r[0], local) : local, color: rarityColor(base) };
   c.price = dayPrice(r[0], base, DAY);
   c.prev = dayPrice(r[0], base, DAY - 1);
   CAT[r[0]] = c;
