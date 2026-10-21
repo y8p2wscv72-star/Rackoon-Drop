@@ -14,14 +14,22 @@
 body{margin:0;background:#0b0d12}
 a{color:#ffc83d}a:hover{color:#ffe08a}
 @keyframes rkPop{0%{transform:scale(.7);opacity:0}60%{transform:scale(1.06);opacity:1}100%{transform:scale(1)}}
+@keyframes rkBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
 </style>
 </helmet>
 <div style="position: relative; width: 390px; min-height: 1400px; box-sizing: border-box; padding: 20px 16px 32px; display: flex; flex-direction: column; gap: 14px; background: #0b0d12; font-family: Rubik, system-ui, sans-serif; color: #ffffff; overflow: hidden">
 
 <header style="display: flex; align-items: center; gap: 10px; height: 48px">
+<sc-if value="{{inGrid}}" hint-placeholder-val="{{ true }}">
 <a href="Main.dc.html" aria-label="Назад в лобби" style="width: 44px; height: 44px; border-radius: 14px; background: #1a1d27; display: flex; align-items: center; justify-content: center; flex-shrink: 0">
 <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><path d="M13 3 L6 10 L13 17" fill="none" stroke="#ffffff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"></path></svg>
 </a>
+</sc-if>
+<sc-if value="{{inDetail}}" hint-placeholder-val="{{ false }}">
+<button type="button" onClick="{{toGrid}}" aria-label="Ко всем кейсам" style="width: 44px; height: 44px; border-radius: 14px; border: 0; background: #1a1d27; display: flex; align-items: center; justify-content: center; flex-shrink: 0; cursor: pointer; padding: 0">
+<svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><path d="M13 3 L6 10 L13 17" fill="none" stroke="#ffffff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+</button>
+</sc-if>
 <div style="font-size: 26px; font-weight: 900; font-style: italic; flex-grow: 1">CASES</div>
 <div style="height: 44px; box-sizing: border-box; border-radius: 14px; background: #1a1d27; padding: 0 12px; display: flex; align-items: center; font-size: 14px; font-weight: 700; color: #ffc83d">{{balanceText}}</div>
 <button type="button" onClick="{{toggleFast}}" aria-pressed="{{fastPressed}}" aria-label="Быстрое открытие" style="width: 44px; height: 44px; border-radius: 14px; border: 2px solid {{fastBorder}}; background: #1a1d27; color: {{fastColor}}; display: flex; align-items: center; justify-content: center; cursor: pointer; padding: 0">
@@ -29,30 +37,75 @@ a{color:#ffc83d}a:hover{color:#ffe08a}
 </button>
 </header>
 
-<div style="position: relative; height: 150px; border-radius: 24px; overflow: hidden; background: #0a4cc0">
-<img src="/_blob/88b023f22e2d3006641849bb168e073d" alt="" style="position: absolute; right: 0; top: 0; width: 240px; height: 150px; object-fit: cover; object-position: 60% 45%; -webkit-mask-image: linear-gradient(to right, transparent 0%, #000 40%); mask-image: linear-gradient(to right, transparent 0%, #000 40%)">
-<div style="position: relative; height: 100%; box-sizing: border-box; padding: 18px 20px; display: flex; flex-direction: column; justify-content: space-between; align-items: flex-start">
-<span style="background: #ffffff; color: #1a4fb8; font-size: 13px; font-weight: 700; padding: 5px 10px; border-radius: 9px">{{caseTier}}</span>
-<div style="display: flex; flex-direction: column; gap: 2px">
-<div style="font-size: 28px; font-weight: 900; font-style: italic; line-height: 1.05; text-shadow: 0 3px 8px rgba(0,0,0,0.45)">{{caseName}}</div>
-<div style="font-size: 16px; font-weight: 900; color: #ffc83d; text-shadow: 0 2px 6px rgba(0,0,0,0.5)">{{casePriceText}}</div>
-</div>
-</div>
+<sc-if value="{{inGrid}}" hint-placeholder-val="{{ true }}">
+<div style="display: flex; gap: 6px; overflow: hidden; align-items: center">
+<span style="flex-shrink: 0; font-size: 10px; font-weight: 900; color: #2bd46b; writing-mode: vertical-rl; transform: rotate(180deg)">LIVE</span>
+<sc-for list="{{liveDrops}}" as="d" hint-placeholder-count="6">
+<div style="flex-shrink: 0; width: 48px; height: 48px; border-radius: 12px; background: #151821; border-bottom: 3px solid {{d.color}}; display: flex; align-items: center; justify-content: center"><img src="{{d.img}}" alt="{{d.name}}" style="width: 36px; height: 36px"></div>
+</sc-for>
 </div>
 
-<div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px">
-<sc-for list="{{caseList}}" as="c" hint-placeholder-count="4">
-<button type="button" onClick="{{c.pick}}" aria-pressed="{{c.pressed}}" style="background: #151821; border: 2px solid {{c.border}}; border-radius: 14px; padding: 10px 4px; display: flex; flex-direction: column; align-items: center; gap: 4px; cursor: pointer; font-family: Rubik, system-ui, sans-serif; color: #ffffff">
-<svg width="40" height="32" viewBox="0 0 40 32" aria-hidden="true">
-<path d="M4 12 L36 12 L33 3 L7 3Z" fill="{{c.lid}}"></path>
-<rect x="3" y="11" width="34" height="20" rx="4" fill="{{c.color}}"></rect>
-<rect x="3" y="11" width="34" height="5" fill="#000000" fill-opacity="0.2"></rect>
-<rect x="17" y="15" width="6" height="8" rx="1.5" fill="#ffc83d"></rect>
+<div role="tablist" style="display: flex; gap: 18px; align-items: baseline">
+<button type="button" role="tab" onClick="{{tabPaid}}" aria-selected="{{paidSel}}" style="border: 0; background: transparent; padding: 6px 0; font-family: Rubik, system-ui, sans-serif; font-size: 20px; font-weight: 700; cursor: pointer; color: {{paidColor}}">Платные</button>
+<button type="button" role="tab" onClick="{{tabFree}}" aria-selected="{{freeSel}}" style="border: 0; background: transparent; padding: 6px 0; font-family: Rubik, system-ui, sans-serif; font-size: 20px; font-weight: 700; cursor: pointer; color: {{freeColor}}">Бесплатные</button>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px">
+<sc-for list="{{grid}}" as="c" hint-placeholder-count="6">
+<button type="button" onClick="{{c.open}}" style="position: relative; min-width: 0; height: 176px; border-radius: 22px; border: 1px solid {{c.edge}}; background: {{c.bg}}; overflow: hidden; padding: 0; cursor: pointer; font-family: Rubik, system-ui, sans-serif; color: #ffffff; box-shadow: inset 0 -40px 50px -20px {{c.glow}}">
+<div style="position: absolute; left: 10px; top: 10px; display: flex; gap: 6px; align-items: center; z-index: 2">
+<span style="font-size: 13px; font-weight: 700; padding: 4px 8px; border-radius: 9px; background: rgba(0,0,0,0.45); color: #ffc83d">{{c.priceText}}</span>
+<span style="font-size: 11px; font-weight: 700; color: #c9cdd6">{{c.opened}}</span>
+</div>
+<sc-if value="{{c.isNew}}" hint-placeholder-val="{{ false }}">
+<span style="position: absolute; left: -30px; bottom: 16px; width: 110px; transform: rotate(45deg); background: #e5383b; font-size: 10px; font-weight: 900; text-align: center; padding: 3px 0; z-index: 2">NEW</span>
+</sc-if>
+<div style="position: absolute; left: 0; right: 0; top: 34px; height: 130px; animation: rkBob 2.4s ease-in-out infinite">
+<img src="{{c.prizeImg}}" alt="" style="position: absolute; left: 50%; top: 2px; width: 62px; height: 62px; transform: translateX(-30%) rotate(12deg); filter: drop-shadow(0 4px 10px rgba(0,0,0,0.5))">
+<svg width="150" height="110" viewBox="0 0 150 110" aria-hidden="true" style="position: absolute; left: 50%; top: 22px; transform: translateX(-50%)">
+<path d="M20 40 L75 22 L130 40 L75 58Z" fill="{{c.dark}}"></path>
+<path d="M20 40 L75 58 L75 106 L20 86Z" fill="{{c.color}}"></path>
+<path d="M130 40 L75 58 L75 106 L130 86Z" fill="{{c.dark}}"></path>
+<path d="M14 30 L72 14 L62 -2 L6 14Z" fill="{{c.color}}" transform="rotate(-14 40 20)"></path>
+<path d="M44 32 L52 30 L104 46 L96 49Z" fill="#ffc83d" fill-opacity="0.9"></path>
+<path d="M47 66 L55 69 L55 101 L47 98Z" fill="#ffc83d" fill-opacity="0.9"></path>
+<path d="M30 66 L42 70 L36 78 L44 82 L32 84Z" fill="#ffffff" fill-opacity="0.85"></path>
+<path d="M75 58 L130 40 L130 46 L75 64Z" fill="#000000" fill-opacity="0.18"></path>
 </svg>
-<span style="font-size: 11px; font-weight: 700; white-space: nowrap">{{c.short}}</span>
-<span style="font-size: 12px; font-weight: 900; color: #ffc83d">{{c.priceText}}</span>
+</div>
+<span style="position: absolute; left: 0; right: 0; bottom: 8px; font-size: 13px; font-weight: 900; font-style: italic; text-shadow: 0 2px 6px rgba(0,0,0,0.7); z-index: 2">{{c.name}}</span>
+<sc-if value="{{c.locked}}" hint-placeholder-val="{{ false }}">
+<div style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; background: rgba(5,6,10,0.6); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; z-index: 3">
+<svg width="26" height="26" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2" fill="#ffffff"></rect><path d="M8 11 V8 a4 4 0 0 1 8 0 V11" fill="none" stroke="#ffffff" stroke-width="2.2"></path></svg>
+<span style="font-size: 12px; font-weight: 700">{{c.lockText}}</span>
+</div>
+</sc-if>
 </button>
 </sc-for>
+</div>
+</sc-if>
+
+<sc-if value="{{inDetail}}" hint-placeholder-val="{{ false }}">
+<div style="position: relative; height: 170px; border-radius: 24px; overflow: hidden; background: {{dBg}}; border: 1px solid {{dEdge}}; box-shadow: inset 0 -50px 60px -20px {{dGlow}}">
+<div style="position: absolute; right: 6px; top: 8px; width: 170px; height: 160px; animation: rkBob 2.4s ease-in-out infinite">
+<img src="{{dPrizeImg}}" alt="" style="position: absolute; left: 70px; top: 0; width: 74px; height: 74px; transform: rotate(12deg); filter: drop-shadow(0 4px 10px rgba(0,0,0,0.5))">
+<svg width="170" height="125" viewBox="0 0 150 110" aria-hidden="true" style="position: absolute; left: 0; top: 30px">
+<path d="M20 40 L75 22 L130 40 L75 58Z" fill="{{dDark}}"></path>
+<path d="M20 40 L75 58 L75 106 L20 86Z" fill="{{dColor}}"></path>
+<path d="M130 40 L75 58 L75 106 L130 86Z" fill="{{dDark}}"></path>
+<path d="M14 30 L72 14 L62 -2 L6 14Z" fill="{{dColor}}" transform="rotate(-14 40 20)"></path>
+<path d="M44 32 L52 30 L104 46 L96 49Z" fill="#ffc83d" fill-opacity="0.9"></path>
+<path d="M47 66 L55 69 L55 101 L47 98Z" fill="#ffc83d" fill-opacity="0.9"></path>
+<path d="M30 66 L42 70 L36 78 L44 82 L32 84Z" fill="#ffffff" fill-opacity="0.85"></path>
+</svg>
+</div>
+<div style="position: relative; height: 100%; box-sizing: border-box; padding: 18px 20px; display: flex; flex-direction: column; justify-content: space-between; align-items: flex-start">
+<span style="background: rgba(0,0,0,0.45); color: #ffffff; font-size: 12px; font-weight: 700; padding: 5px 10px; border-radius: 9px">{{dOpened}}</span>
+<div style="display: flex; flex-direction: column; gap: 2px; max-width: 180px">
+<div style="font-size: 26px; font-weight: 900; font-style: italic; line-height: 1.05; text-shadow: 0 3px 8px rgba(0,0,0,0.5)">{{dName}}</div>
+<div style="font-size: 16px; font-weight: 900; color: #ffc83d; text-shadow: 0 2px 6px rgba(0,0,0,0.5)">{{dPriceText}}</div>
+</div>
+</div>
 </div>
 
 <div style="position: relative; height: 128px; border-radius: 18px; background: #11141c; border: 1px solid #1d2230; overflow: hidden">
@@ -74,6 +127,23 @@ a{color:#ffc83d}a:hover{color:#ffe08a}
 
 <button type="button" onClick="{{open}}" disabled="{{openDisabled}}" style="height: 60px; border: 0; border-radius: 18px; font-family: Rubik, system-ui, sans-serif; font-size: 20px; font-weight: 900; font-style: italic; letter-spacing: 0.5px; cursor: pointer; background: {{btnBg}}; color: {{btnColor}}; box-shadow: {{btnShadow}}">{{btnText}}</button>
 
+<div style="display: flex; flex-direction: column; gap: 2px; margin-top: 6px">
+<div style="font-size: 17px; font-weight: 700">Что внутри</div>
+<div style="font-size: 12px; font-weight: 500; color: #a3a8b5">Шанс выпадения и флор-цена</div>
+</div>
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px">
+<sc-for list="{{contents}}" as="item" hint-placeholder-count="12">
+<div style="position: relative; min-width: 0; background: #151821; border: 1px solid #222838; border-radius: 14px; padding: 12px 6px 10px; display: flex; flex-direction: column; align-items: center; gap: 3px; overflow: hidden">
+<span style="position: absolute; left: 0; top: 0; right: 0; height: 3px; background: {{item.color}}"></span>
+<img src="{{item.img}}" alt="" style="width: 48px; height: 48px">
+<span style="max-width: 100%; font-size: 12px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{item.name}}</span>
+<span style="font-size: 13px; font-weight: 700; color: #ffc83d">{{item.priceText}}</span>
+<span style="font-size: 11px; font-weight: 700; color: #a3a8b5">{{item.chanceText}}</span>
+</div>
+</sc-for>
+</div>
+</sc-if>
+
 <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 4px">
 <div style="font-size: 17px; font-weight: 700">Мой лут</div>
 <sc-if value="{{hasLoot}}" hint-placeholder-val="{{ false }}">
@@ -91,29 +161,12 @@ a{color:#ffc83d}a:hover{color:#ffe08a}
 </sc-for>
 </div>
 
-<div style="display: flex; flex-direction: column; gap: 2px; margin-top: 6px">
-<div style="font-size: 17px; font-weight: 700">Что внутри</div>
-<div style="font-size: 12px; font-weight: 500; color: #a3a8b5">Шанс выпадения и цена, обновляются раз в день</div>
-</div>
-<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px">
-<sc-for list="{{contents}}" as="item" hint-placeholder-count="12">
-<div style="position: relative; min-width: 0; background: #151821; border: 1px solid #222838; border-radius: 14px; padding: 12px 6px 10px; display: flex; flex-direction: column; align-items: center; gap: 3px; overflow: hidden">
-<span style="position: absolute; left: 0; top: 0; right: 0; height: 3px; background: {{item.color}}"></span>
-<img src="{{item.img}}" alt="" style="width: 48px; height: 48px">
-<span style="max-width: 100%; font-size: 12px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{item.name}}</span>
-<span style="font-size: 13px; font-weight: 700; color: #ffc83d">{{item.priceText}}</span>
-<span style="font-size: 11px; font-weight: 700; color: {{item.chgColor}}">{{item.chgText}}</span>
-<span style="font-size: 11px; font-weight: 700; color: #a3a8b5">{{item.chanceText}}</span>
-</div>
-</sc-for>
-</div>
-
 <sc-if value="{{showOverlay}}" hint-placeholder-val="{{ false }}">
 <div style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; background: rgba(5, 6, 10, 0.8); display: flex; justify-content: center; align-items: flex-start; padding-top: 170px">
 <div role="dialog" aria-label="Выпал NFT" style="width: 320px; box-sizing: border-box; background: #151821; border: 2px solid {{resColor}}; border-radius: 28px; padding: 24px; display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; animation: rkPop 0.45s ease-out; box-shadow: 0 0 60px {{resGlow}}">
 <div style="font-size: 14px; font-weight: 700; color: #a3a8b5">{{resHead}}</div>
 <img src="{{resImg}}" alt="" style="width: 120px; height: 120px">
-<div style="font-size: 30px; font-weight: 900; font-style: italic; line-height: 1.05">{{resName}}</div>
+<div style="font-size: 28px; font-weight: 900; font-style: italic; line-height: 1.05">{{resName}}</div>
 <div style="display: flex; gap: 8px; align-items: center">
 <span style="font-size: 20px; font-weight: 900; color: #ffc83d">{{resPrice}}</span>
 <span style="font-size: 13px; font-weight: 700; padding: 4px 8px; border-radius: 8px; background: {{resMultBg}}; color: {{resMultColor}}">{{resMult}}</span>
@@ -304,153 +357,158 @@ function chgColor(c) { return chg(c) >= 0 ? '#2bd46b' : '#ff5d73'; }
 function supplyText(c) { return c.supply ? c.supply.toLocaleString('ru-RU') + ' шт.' : 'новая коллекция'; }
 
 var RTP = 0.96;
+var FREE_COOLDOWN = 24 * 3600 * 1000;
 var CASES = [
-  { id: 'c1', name: 'Карманник', short: 'Карман', tier: 'Для старта', price: 5, color: '#6b7280', lid: '#4b5160' },
-  { id: 'c2', name: 'Налётчик', short: 'Налёт', tier: 'Популярный', price: 15, color: '#2a7fff', lid: '#1a5fd0' },
-  { id: 'c3', name: 'Медвежатник', short: 'Медвеж.', tier: 'Для смелых', price: 60, color: '#9b5cff', lid: '#7a3fe0' },
-  { id: 'c4', name: 'Крёстный енот', short: 'Крёстный', tier: 'Хайроллер', price: 400, color: '#e0a800', lid: '#b88a00' }
+  { id: 'c1', name: 'Карманник', price: 5, color: '#2bbf5a', dark: '#1a8a3e', bg: '#10291a', glow: 'rgba(43,191,90,0.9)', edge: '#1f4a2c', opened: 2591 },
+  { id: 'c2', name: 'Конфетный', price: 10, color: '#f2c218', dark: '#b88f00', bg: '#2a240c', glow: 'rgba(242,194,24,0.9)', edge: '#4a4010', opened: 1036, isNew: true },
+  { id: 'c3', name: 'Пиратский', price: 15, color: '#2f86ff', dark: '#1a5ccc', bg: '#0f1d33', glow: 'rgba(47,134,255,0.9)', edge: '#1c3560', opened: 1554 },
+  { id: 'c4', name: 'Налётчик', price: 25, color: '#ff4d4d', dark: '#c02a2a', bg: '#2e1212', glow: 'rgba(255,77,77,0.9)', edge: '#5a2020', opened: 2591, isNew: true },
+  { id: 'c5', name: 'Медвежатник', price: 50, color: '#ff8a1f', dark: '#c45f00', bg: '#2e1c0c', glow: 'rgba(255,138,31,0.9)', edge: '#5a3612', opened: 5181 },
+  { id: 'c6', name: 'Ночной рейд', price: 100, color: '#9b5cff', dark: '#6a32d0', bg: '#1d1233', glow: 'rgba(155,92,255,0.9)', edge: '#3a2460', opened: 311 },
+  { id: 'c7', name: 'Сейф', price: 250, color: '#14c8c8', dark: '#0a8c8c', bg: '#0c2a2a', glow: 'rgba(20,200,200,0.9)', edge: '#164a4a', opened: 518 },
+  { id: 'c8', name: 'Крёстный енот', price: 500, color: '#ffc83d', dark: '#c79400', bg: '#2e250c', glow: 'rgba(255,200,61,0.95)', edge: '#5a4a14', opened: 10362 },
+  { id: 'free', name: 'Ежедневный', price: 0, free: true, color: '#5fd4ff', dark: '#2fa0d0', bg: '#0c2430', glow: 'rgba(95,212,255,0.9)', edge: '#18465a', opened: 8812 },
+  { id: 'ref', name: 'За 5 друзей', price: 0, free: true, locked: true, lockText: 'Пригласи 5 друзей', color: '#ff5d9e', dark: '#c02a6c', bg: '#2e1020', glow: 'rgba(255,93,158,0.9)', edge: '#5a1c3a', opened: 412 }
 ];
-// Состав кейса собирается из каталога: 12 NFT от ~¼ до ~40 цен кейса
+// Состав кейса: 12 NFT от ~¼ до ~40 цен кейса. У бесплатных — самые дешёвые подарки.
 function buildPool(P) {
   var cand = CAT_LIST.filter(function (c) { return c.price >= 0.25 * P && c.price <= 40 * P; });
   var n = 12, out = [];
   for (var i = 0; i < n && i < cand.length; i++) {
     var idx = Math.round(i * (cand.length - 1) / Math.max(1, n - 1));
-    var nm = cand[idx].name;
-    if (out.indexOf(nm) === -1) out.push(nm);
+    if (out.indexOf(cand[idx].name) === -1) out.push(cand[idx].name);
   }
   return out;
 }
-// Вероятности подбираются так, чтобы средний дроп = 96% цены кейса
 CASES.forEach(function (c) {
-  c.pool = buildPool(c.price);
-  var prices = c.pool.map(function (k) { return CAT[k].price; });
-  var target = c.price * RTP;
-  function ev(a) {
-    var S = 0, E = 0;
-    prices.forEach(function (p) { var w = Math.pow(p, -a); S += w; E += w * p; });
-    return E / S;
+  if (c.free) { c.pool = CAT_LIST.slice(0, 6).map(function (x) { return x.name; }); c.probs = c.pool.map(function () { return 1 / c.pool.length; }); }
+  else {
+    c.pool = buildPool(c.price);
+    var prices = c.pool.map(function (k) { return CAT[k].price; });
+    var target = c.price * RTP;
+    var ev = function (a) { var S = 0, E = 0; prices.forEach(function (p) { var w = Math.pow(p, -a); S += w; E += w * p; }); return E / S; };
+    var lo = -5, hi = 12;
+    for (var i = 0; i < 80; i++) { var mid = (lo + hi) / 2; if (ev(mid) > target) lo = mid; else hi = mid; }
+    var a = (lo + hi) / 2, Ssum = 0;
+    var w = prices.map(function (p) { var x = Math.pow(p, -a); Ssum += x; return x; });
+    c.probs = w.map(function (x) { return x / Ssum; });
   }
-  var lo = -5, hi = 12;
-  for (var i = 0; i < 80; i++) { var mid = (lo + hi) / 2; if (ev(mid) > target) lo = mid; else hi = mid; }
-  var a = (lo + hi) / 2, S = 0;
-  var w = prices.map(function (p) { var x = Math.pow(p, -a); S += x; return x; });
-  c.probs = w.map(function (x) { return x / S; });
+  c.top = c.pool.reduce(function (best, k) { return !best || CAT[k].price > CAT[best].price ? k : best; }, null);
 });
 
 var TILE = 92, GAP = 6, STEP = TILE + GAP, N = 44, WIN_IDX = 38, CENTER = 179;
 function caseById(id) { return CASES.filter(function (c) { return c.id === id; })[0]; }
 function fmt(p) { return (Math.round(p * 100) / 100) + ' TON'; }
-function roll(c) {
-  var r = Math.random(), acc = 0;
-  for (var i = 0; i < c.pool.length; i++) { acc += c.probs[i]; if (r < acc) return c.pool[i]; }
-  return c.pool[c.pool.length - 1];
-}
+function roll(c) { var r = Math.random(), acc = 0; for (var i = 0; i < c.pool.length; i++) { acc += c.probs[i]; if (r < acc) return c.pool[i]; } return c.pool[c.pool.length - 1]; }
 function previewStrip(c) { var s = []; for (var i = 0; i < N; i++) s.push(c.pool[i % c.pool.length]); return s; }
-function fmtChance(p) {
-  var v = p * 100;
-  if (v >= 10) return v.toFixed(1) + '%';
-  if (v >= 1) return v.toFixed(2) + '%';
-  return v.toFixed(3) + '%';
-}
+function fmtChance(p) { var v = p * 100; return v >= 10 ? v.toFixed(1) + '%' : (v >= 1 ? v.toFixed(2) + '%' : v.toFixed(3) + '%'); }
+function getFreeAt() { try { return parseInt(localStorage.getItem('rk_free_at') || '0', 10) || 0; } catch (e) { return 0; } }
+function setFreeAt(t) { try { localStorage.setItem('rk_free_at', String(t)); } catch (e) {} }
+function hms(ms) { var s = Math.ceil(ms / 1000), h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), x = s % 60; return h + ':' + ('0' + m).slice(-2) + ':' + ('0' + x).slice(-2); }
+function randomDrop() { var i = Math.floor(Math.pow(Math.random(), 2.2) * CAT_LIST.length); return CAT_LIST[i]; }
 
 class Component extends DCLogic {
   constructor(props) {
     super(props);
-    var c = CASES[1];
+    var drops = []; for (var i = 0; i < 7; i++) drops.push(randomDrop().name);
     this.state = {
-      caseId: c.id, balance: 500, fast: true, spinning: false,
-      strip: previewStrip(c), offset: 2 * STEP + TILE / 2 - CENTER, anim: false,
-      won: null, overlay: false, loot: [], nextId: 1
+      caseId: null, tab: 'paid', balance: 500, fast: true, spinning: false,
+      strip: [], offset: 0, anim: false, won: null, overlay: false, loot: [], nextId: 1,
+      freeAt: getFreeAt(), now: Date.now(), drops: drops
     };
   }
-  componentWillUnmount() { clearTimeout(this.t1); clearTimeout(this.t2); }
-
-  pickCase(id) {
-    if (this.state.spinning) return;
-    var c = caseById(id);
-    this.setState({ caseId: id, strip: previewStrip(c), offset: 2 * STEP + TILE / 2 - CENTER, anim: false, overlay: false });
+  componentDidMount() {
+    var self = this;
+    this.iv = setInterval(function () {
+      var s = self.state, upd = { now: Date.now() };
+      if (Math.random() < 0.35) upd.drops = [randomDrop().name].concat(s.drops).slice(0, 7);
+      self.setState(upd);
+    }, 1500);
   }
+  componentWillUnmount() { clearTimeout(this.t1); clearTimeout(this.t2); clearInterval(this.iv); }
+
+  openCase(id) {
+    var c = caseById(id);
+    if (!c || c.locked || this.state.spinning) return;
+    this.setState({ caseId: id, strip: previewStrip(c), offset: 2 * STEP + TILE / 2 - CENTER, anim: false, overlay: false });
+    if (typeof window !== 'undefined' && window.scrollTo) window.scrollTo(0, 0);
+  }
+  freeLeft() { return Math.max(0, this.state.freeAt + FREE_COOLDOWN - this.state.now); }
 
   open() {
-    var s = this.state;
-    var c = caseById(s.caseId);
-    if (s.spinning || s.balance < c.price) return;
-    var won = roll(c);
-    var strip = [];
+    var s = this.state, c = caseById(s.caseId);
+    if (!c || s.spinning) return;
+    if (c.free) { if (this.freeLeft() > 0) return; }
+    else if (s.balance < c.price) return;
+    var won = roll(c), strip = [];
     for (var i = 0; i < N; i++) strip.push(i === WIN_IDX ? won : roll(c));
-    var jitter = (Math.random() - 0.5) * (TILE - 20);
-    var finalOffset = WIN_IDX * STEP + TILE / 2 - CENTER + jitter;
-    var dur = s.fast ? 1100 : 4800;
-    var self = this;
-    this.setState({ balance: Math.round((s.balance - c.price) * 100) / 100, spinning: true, strip: strip, offset: 2 * STEP + TILE / 2 - CENTER, anim: false, overlay: false, won: null });
+    var finalOffset = WIN_IDX * STEP + TILE / 2 - CENTER + (Math.random() - 0.5) * (TILE - 20);
+    var dur = s.fast ? 1100 : 4800, self = this;
+    var upd = { spinning: true, strip: strip, offset: 2 * STEP + TILE / 2 - CENTER, anim: false, overlay: false, won: null };
+    if (c.free) { var t = Date.now(); setFreeAt(t); upd.freeAt = t; } else upd.balance = Math.round((s.balance - c.price) * 100) / 100;
+    this.setState(upd);
     this.t1 = setTimeout(function () {
       self.setState({ offset: finalOffset, anim: true });
-      self.t2 = setTimeout(function () { self.setState({ spinning: false, won: { key: won, caseId: c.id }, overlay: true }); }, dur + 120);
+      self.t2 = setTimeout(function () { self.setState({ spinning: false, won: { key: won, caseId: c.id }, overlay: true, drops: [won].concat(self.state.drops).slice(0, 7) }); }, dur + 120);
     }, 40);
   }
 
   renderVals() {
-    var self = this;
-    var s = this.state;
-    var c = caseById(s.caseId);
+    var self = this, s = this.state;
+    var c = s.caseId ? caseById(s.caseId) : null;
     var dur = s.fast ? 1.1 : 4.8;
-    var canOpen = !s.spinning && s.balance >= c.price;
-    var lootTotal = 0;
-    s.loot.forEach(function (l) { lootTotal += CAT[l.key].price; });
+    var freeLeft = this.freeLeft();
+    var canOpen = c && !s.spinning && (c.free ? freeLeft === 0 : s.balance >= c.price);
+    var lootTotal = 0; s.loot.forEach(function (l) { lootTotal += CAT[l.key].price; });
     var won = s.won ? CAT[s.won.key] : null;
     var wonCase = s.won ? caseById(s.won.caseId) : null;
-    var mult = won ? won.price / wonCase.price : 0;
+    var mult = won && wonCase && wonCase.price ? won.price / wonCase.price : 0;
+    var list = CASES.filter(function (x) { return s.tab === 'free' ? x.free : !x.free; });
 
     return {
       balanceText: fmt(s.balance),
       toggleFast: function () { if (!self.state.spinning) self.setState({ fast: !self.state.fast }); },
-      fastPressed: s.fast ? 'true' : 'false',
-      fastBorder: s.fast ? '#ffc83d' : '#1a1d27',
-      fastColor: s.fast ? '#ffc83d' : '#a3a8b5',
-      caseName: c.name, caseTier: c.tier, casePriceText: fmt(c.price),
-      caseList: CASES.map(function (x) {
-        var sel = x.id === s.caseId;
-        return { short: x.short, priceText: fmt(x.price), color: x.color, lid: x.lid, border: sel ? '#ffc83d' : '#222838', pressed: sel ? 'true' : 'false', pick: function () { self.pickCase(x.id); } };
+      fastPressed: s.fast ? 'true' : 'false', fastBorder: s.fast ? '#ffc83d' : '#1a1d27', fastColor: s.fast ? '#ffc83d' : '#a3a8b5',
+      inGrid: !c, inDetail: !!c,
+      toGrid: function () { if (!self.state.spinning) self.setState({ caseId: null, overlay: false }); },
+      liveDrops: s.drops.map(function (k) { var it = CAT[k]; return { name: it.name, img: it.img, color: it.color }; }),
+      tabPaid: function () { self.setState({ tab: 'paid' }); }, tabFree: function () { self.setState({ tab: 'free' }); },
+      paidSel: s.tab === 'paid' ? 'true' : 'false', freeSel: s.tab === 'free' ? 'true' : 'false',
+      paidColor: s.tab === 'paid' ? '#ffffff' : '#6c7282', freeColor: s.tab === 'free' ? '#ffffff' : '#6c7282',
+      grid: list.map(function (x) {
+        var fl = x.free && !x.locked && freeLeft > 0;
+        return {
+          name: x.name, priceText: x.free ? 'Бесплатно' : fmt(x.price), opened: x.opened.toLocaleString('ru-RU') + ' откр.',
+          color: x.color, dark: x.dark, bg: x.bg, glow: x.glow, edge: x.edge, isNew: !!x.isNew,
+          prizeImg: CAT[x.top].img, locked: !!x.locked || fl, lockText: x.locked ? x.lockText : 'Через ' + hms(freeLeft),
+          open: function () { if (!x.locked) self.openCase(x.id); }
+        };
       }),
+      dName: c ? c.name : '', dPriceText: c ? (c.free ? 'Бесплатно раз в сутки' : fmt(c.price)) : '',
+      dOpened: c ? 'Открыто ' + c.opened.toLocaleString('ru-RU') + ' раз' : '',
+      dBg: c ? c.bg : '#151821', dEdge: c ? c.edge : '#222838', dGlow: c ? c.glow : 'transparent',
+      dColor: c ? c.color : '#3a3f4d', dDark: c ? c.dark : '#2a2e3a', dPrizeImg: c ? CAT[c.top].img : GIFT_IMG,
       strip: s.strip.map(function (k) { var it = CAT[k]; return { name: it.name, img: it.img, priceText: fmt(it.price), color: it.color }; }),
       stripStyle: 'transform: translateX(' + (-s.offset) + 'px); transition: ' + (s.anim ? 'transform ' + dur + 's cubic-bezier(0.08, 0.7, 0.12, 1)' : 'none'),
       open: function () { self.open(); },
       openDisabled: !canOpen,
-      btnBg: canOpen ? '#ffc83d' : '#1d2230',
-      btnColor: canOpen ? '#1a1300' : '#6c7282',
+      btnBg: canOpen ? '#ffc83d' : '#1d2230', btnColor: canOpen ? '#1a1300' : '#6c7282',
       btnShadow: canOpen ? '0 6px 24px rgba(255,200,61,0.35)' : 'none',
-      btnText: s.spinning ? 'ОТКРЫВАЕМ...' : (s.balance >= c.price ? 'ОТКРЫТЬ · ' + fmt(c.price) : 'НЕ ХВАТАЕТ TON'),
-      contents: c.pool.map(function (k, i) { var it = CAT[k]; return { name: it.name, img: it.img, priceText: fmt(it.price), color: it.color, chanceText: fmtChance(c.probs[i]), chgText: chgText(it), chgColor: chgColor(it) }; }).reverse(),
+      btnText: !c ? '' : (s.spinning ? 'ОТКРЫВАЕМ...' : (c.free ? (freeLeft > 0 ? 'ЧЕРЕЗ ' + hms(freeLeft) : 'ОТКРЫТЬ БЕСПЛАТНО') : (s.balance >= c.price ? 'ОТКРЫТЬ · ' + fmt(c.price) : 'НЕ ХВАТАЕТ TON'))),
+      contents: c ? c.pool.map(function (k, i) { var it = CAT[k]; return { name: it.name, img: it.img, priceText: fmt(it.price), color: it.color, chanceText: fmtChance(c.probs[i]) }; }).reverse() : [],
       loot: s.loot.map(function (l) { var it = CAT[l.key]; return { name: it.name, img: it.img, priceText: fmt(it.price) }; }),
-      hasLoot: s.loot.length > 0,
-      noLoot: s.loot.length === 0,
-      lootTotal: fmt(lootTotal),
-      sellAll: function () {
-        var st = self.state, sum = 0;
-        st.loot.forEach(function (l) { sum += CAT[l.key].price; });
-        self.setState({ loot: [], balance: Math.round((st.balance + sum) * 100) / 100 });
-      },
+      hasLoot: s.loot.length > 0, noLoot: s.loot.length === 0, lootTotal: fmt(lootTotal),
+      sellAll: function () { var st = self.state, sum = 0; st.loot.forEach(function (l) { sum += CAT[l.key].price; }); self.setState({ loot: [], balance: Math.round((st.balance + sum) * 100) / 100 }); },
       showOverlay: s.overlay && !!won,
       resHead: wonCase ? 'Из кейса «' + wonCase.name + '» выпало' : '',
-      resName: won ? won.name : '',
-      resImg: won ? won.img : GIFT_IMG,
-      resPrice: won ? fmt(won.price) : '',
+      resName: won ? won.name : '', resImg: won ? won.img : GIFT_IMG, resPrice: won ? fmt(won.price) : '',
       resColor: won ? won.color : '#9aa3b5',
-      resGlow: won ? (mult >= 1 ? 'rgba(255,200,61,0.35)' : 'rgba(0,0,0,0.4)') : 'transparent',
-      resMult: won ? 'x' + mult.toFixed(2) : '',
-      resMultBg: mult >= 1 ? 'rgba(43,212,107,0.16)' : 'rgba(255,93,115,0.16)',
-      resMultColor: mult >= 1 ? '#2bd46b' : '#ff5d73',
-      sellWon: function () {
-        var st = self.state;
-        if (!st.won) return;
-        self.setState({ balance: Math.round((st.balance + CAT[st.won.key].price) * 100) / 100, overlay: false, won: null });
-      },
-      keepWon: function () {
-        var st = self.state;
-        if (!st.won) return;
-        self.setState({ loot: [{ id: st.nextId, key: st.won.key }].concat(st.loot), nextId: st.nextId + 1, overlay: false, won: null });
-      }
+      resGlow: won ? (mult >= 1 || (wonCase && wonCase.free) ? 'rgba(255,200,61,0.35)' : 'rgba(0,0,0,0.4)') : 'transparent',
+      resMult: won ? (wonCase && wonCase.free ? 'бесплатно' : 'x' + mult.toFixed(2)) : '',
+      resMultBg: mult >= 1 || (wonCase && wonCase.free) ? 'rgba(43,212,107,0.16)' : 'rgba(255,93,115,0.16)',
+      resMultColor: mult >= 1 || (wonCase && wonCase.free) ? '#2bd46b' : '#ff5d73',
+      sellWon: function () { var st = self.state; if (!st.won) return; self.setState({ balance: Math.round((st.balance + CAT[st.won.key].price) * 100) / 100, overlay: false, won: null }); },
+      keepWon: function () { var st = self.state; if (!st.won) return; self.setState({ loot: [{ id: st.nextId, key: st.won.key }].concat(st.loot), nextId: st.nextId + 1, overlay: false, won: null }); }
     };
   }
 }

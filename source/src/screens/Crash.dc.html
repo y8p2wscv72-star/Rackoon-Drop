@@ -20,6 +20,8 @@ a{color:#ffc83d}a:hover{color:#ffe08a}
 @keyframes rkRing{0%{transform:scale(.2);opacity:1}100%{transform:scale(2.2);opacity:0}}
 @keyframes rkRays{0%{transform:scale(.3) rotate(0deg);opacity:1}100%{transform:scale(1.5) rotate(25deg);opacity:0}}
 @keyframes rkBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+@keyframes rkWarp{0%{transform:translateY(-260px)}100%{transform:translateY(520px)}}
+@keyframes rkShake{0%,100%{transform:translate(0,0)}25%{transform:translate(-1.5px,1px)}50%{transform:translate(1px,-1px)}75%{transform:translate(1.5px,1.5px)}}
 @keyframes rkS0{0%{transform:translate(0,0);opacity:1}100%{transform:translate(0px,-80px);opacity:0}}
 @keyframes rkS1{0%{transform:translate(0,0);opacity:1}100%{transform:translate(56px,-56px);opacity:0}}
 @keyframes rkS2{0%{transform:translate(0,0);opacity:1}100%{transform:translate(80px,0px);opacity:0}}
@@ -44,6 +46,11 @@ a{color:#ffc83d}a:hover{color:#ffe08a}
 <img src="/_blob/29f965541d768edadf1aad890a105f4f" alt="" style="position: absolute; left: 0; top: 0; width: 100%; height: 100%; object-fit: cover">
 <div style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; background: radial-gradient(circle at 70% 30%, rgba(170,20,45,0.55), rgba(60,5,20,0.75)); opacity: {{tintOpacity}}; transition: opacity 0.35s"></div>
 
+<div aria-hidden="true" style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; overflow: hidden; opacity: {{speedOp}}; transition: opacity 0.6s">
+<sc-for list="{{warp}}" as="w" hint-placeholder-count="0">
+<span style="position: absolute; top: 0; left: {{w.x}}px; width: {{w.wd}}px; height: {{w.h}}px; border-radius: 2px; background: linear-gradient(to bottom, rgba(255,255,255,0), {{w.c}}); animation: rkWarp {{w.d}}ms linear infinite; animation-delay: -{{w.delay}}ms"></span>
+</sc-for>
+</div>
 <svg width="358" height="400" viewBox="0 0 358 400" aria-hidden="true" style="position: absolute; left: 0; top: 0; filter: drop-shadow(0 0 6px {{trailColor}})">
 <path d="{{trailD}}" fill="none" stroke="{{trailColor}}" stroke-opacity="0.25" stroke-width="12" stroke-linecap="round"></path>
 <path d="{{trailD}}" fill="none" stroke="{{trailColor}}" stroke-width="4" stroke-linecap="round"></path>
@@ -56,7 +63,7 @@ a{color:#ffc83d}a:hover{color:#ffe08a}
 </div>
 
 <sc-if value="{{showRocket}}" hint-placeholder-val="{{ false }}">
-<img src="/_blob/a8d1e2a1f1626c9b8edd4755d9c32150" alt="Енот на ракете" style="position: absolute; width: 110px; height: 121px; {{rocketStyle}}">
+<div style="position: absolute; width: 110px; height: 121px; {{rocketBox}}"><img src="/_blob/a8d1e2a1f1626c9b8edd4755d9c32150" alt="Енот на ракете" style="width: 110px; height: 121px; display: block; {{rocketAnim}}"></div>
 </sc-if>
 
 <sc-if value="{{isWait}}" hint-placeholder-val="{{ true }}">
@@ -70,7 +77,7 @@ a{color:#ffc83d}a:hover{color:#ffe08a}
 </sc-if>
 
 <sc-if value="{{isFly}}" hint-placeholder-val="{{ false }}">
-<div style="position: absolute; left: 0; right: 0; top: 150px; text-align: center; font-size: 64px; font-weight: 900; line-height: 1; font-variant-numeric: tabular-nums; text-shadow: 0 2px 20px rgba(0,0,0,0.7)">{{multText}}</div>
+<div style="position: absolute; left: 0; right: 0; top: 28px; text-align: center; font-size: 46px; font-weight: 900; line-height: 1; font-variant-numeric: tabular-nums; text-shadow: 0 2px 20px rgba(0,0,0,0.7)">{{multText}}</div>
 </sc-if>
 
 <sc-if value="{{isCrash}}" hint-placeholder-val="{{ false }}">
@@ -198,6 +205,21 @@ var NAMES = ['Bandit_77', 'TonWhale', 'Енотыч', 'lucky_ray', 'Gift Hunter'
 var AV = ['#e5383b', '#2a7fff', '#2bd46b', '#9b5cff', '#ff8a5c', '#00a8a8', '#c77dff', '#e0a800'];
 
 function r2(x) { return Math.round(x * 100) / 100; }
+// Полёт ракеты: вылетает из левого нижнего угла по диагонали, выходит в центр
+// и разворачивается носом вверх; дальше — эффект скорости (полосы звёзд)
+function rocketPos(el, m) {
+  var e = Math.min(1, el / 1800); e = 1 - Math.pow(1 - e, 3);
+  var x = 70 + (179 - 70) * e, y = 300 + (215 - 300) * e;
+  var turn = Math.min(1, Math.max(0, (m - 1.3) / 1.0));
+  return { x: x, y: y, rot: -45 * turn };
+}
+var WARP = (function () {
+  var out = [], cols = ['rgba(255,255,255,0.75)', 'rgba(120,170,255,0.7)', 'rgba(255,120,140,0.6)'];
+  for (var i = 0; i < 26; i++) {
+    out.push({ x: Math.round(Math.random() * 356), wd: Math.random() < 0.3 ? 2 : 1, h: Math.round(80 + Math.random() * 180), c: cols[i % 3], d: Math.round(450 + Math.random() * 500), delay: Math.round(Math.random() * 900) });
+  }
+  return out;
+})();
 function fmt(x) { return (Math.floor(x * 100) / 100).toFixed(2); }
 function crashPoint() {
   var u = Math.random();
@@ -243,7 +265,8 @@ class Component extends DCLogic {
       if (m >= s.crashAt) {
         var me = s.me;
         if (me && !me.cashed) me = Object.assign({}, me, { lost: true });
-        this.setState({ phase: 'crash', t0: now, now: now, m: s.crashAt, me: me, history: [s.crashAt].concat(s.history).slice(0, 12) });
+        var bp = rocketPos(el, s.crashAt);
+        this.setState({ phase: 'crash', boom: bp, t0: now, now: now, m: s.crashAt, me: me, history: [s.crashAt].concat(s.history).slice(0, 12) });
         return;
       }
       var bots = s.bots.map(function (b) { return !b.cashed && m >= b.target ? Object.assign({}, b, { cashed: true, at: b.target }) : b; });
@@ -292,9 +315,8 @@ class Component extends DCLogic {
     var timerColor = remain > 3 ? '#2bd46b' : (remain > 1.5 ? '#ffc83d' : '#ff5d73');
     var timerText = (remain < 10 ? '0' : '') + remain.toFixed(2);
     var m = s.phase === 'wait' ? 1 : s.m;
-    var p = s.phase === 'wait' ? 0 : 1 - 1 / (1 + Math.log(m) * 1.3);
-    var sx = 42, sy = 318;
-    var rx = sx + p * 214, ry = sy - p * 196;
+    var rp = s.phase === 'fly' ? rocketPos(el, m) : (s.phase === 'crash' && s.boom ? s.boom : { x: 70, y: 300, rot: 0 });
+    var rx = rp.x, ry = rp.y;
 
     var top = Math.max(2, m * 1.3), scale = [];
     for (var i = 4; i >= 0; i--) scale.push({ label: (1 + (top - 1) * i / 4).toFixed(1) + 'x' });
@@ -334,15 +356,18 @@ class Component extends DCLogic {
       balanceText: fmt(s.balance) + ' TON',
       tintOpacity: s.phase === 'crash' ? '1' : '0',
       trailColor: s.phase === 'crash' ? '#ff3b55' : '#3d8bff',
-      trailD: s.phase === 'wait' ? 'M 0 0' : 'M ' + sx + ' ' + (sy + 4) + ' Q ' + (sx + (rx - sx) * 0.6).toFixed(1) + ' ' + (sy + 4) + ' ' + rx.toFixed(1) + ' ' + ry.toFixed(1),
+      trailD: 'M 0 0',
+      warp: WARP,
+      speedOp: s.phase === 'fly' ? Math.min(1, Math.max(0, (m - 1.25) / 1.2)).toFixed(2) : '0',
       scale: scale,
       isWait: s.phase === 'wait', isFly: s.phase === 'fly', isCrash: s.phase === 'crash',
       timerText: timerText, timerColor: timerColor, timerPct: (remain / (WAIT / 1000)) * 100,
       multText: m.toFixed(2) + 'x',
       crashText: s.crashAt.toFixed(2) + 'x',
       showRocket: s.phase !== 'crash',
-      rocketStyle: 'left: ' + (rx - 36).toFixed(1) + 'px; top: ' + (ry - 103).toFixed(1) + 'px; opacity: ' + (s.phase === 'wait' ? '0.85' : '1') + '; animation: rkBob 0.6s ease-in-out infinite; filter: drop-shadow(0 0 14px rgba(61,139,255,0.45))',
-      boomPos: 'left: ' + (rx + 28).toFixed(1) + 'px; top: ' + (ry - 44).toFixed(1) + 'px',
+      rocketBox: 'left: ' + (rx - 55).toFixed(1) + 'px; top: ' + (ry - 60).toFixed(1) + 'px; transform: rotate(' + rp.rot.toFixed(1) + 'deg); transition: transform 0.25s linear; opacity: ' + (s.phase === 'wait' ? '0.85' : '1'),
+      rocketAnim: 'animation: ' + (s.phase === 'fly' && m > 1.6 ? 'rkShake 0.12s linear infinite' : 'rkBob 0.6s ease-in-out infinite') + '; filter: drop-shadow(0 0 16px rgba(255,160,40,0.55))',
+      boomPos: 'left: ' + rx.toFixed(1) + 'px; top: ' + ry.toFixed(1) + 'px',
       history: s.history.map(function (h) {
         return { label: h.toFixed(2) + 'x', bg: h >= 10 ? 'rgba(255,200,61,0.18)' : (h >= 2 ? 'rgba(42,127,255,0.2)' : 'rgba(255,255,255,0.08)'), color: h >= 10 ? '#ffc83d' : (h >= 2 ? '#7fb2ff' : '#c9cdd6') };
       }),
