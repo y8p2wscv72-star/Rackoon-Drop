@@ -238,6 +238,7 @@ var REACTIONS = [
 ];
 
 function r2(x) { return Math.round(x * 100) / 100; }
+function rkTrack(o) { try { if (window.RK && window.RK.track) window.RK.track(o); } catch (e) {} }
 function rkStore() { return typeof window !== 'undefined' && window.RK && window.RK.store ? window.RK.store : null; }
 function pvpHistLoad(def) { var S = rkStore(); var v = S ? S.getJSON('rk_pvp_hist', null) : null; return Array.isArray(v) && v.length ? v : def; }
 function pvpHistSave(h) { var S = rkStore(); if (S) S.setJSON('rk_pvp_hist', h); }
@@ -345,6 +346,8 @@ class Component extends DCLogic {
       history: [{ id: s.gameId, name: wp.me ? 'Ты' : wp.name, chance: chance, win: win.toFixed(2), av: wp.color, time: nowTime(), ton: r2(tonSum), gifts: giftsAll.slice(0, 5) }].concat(s.history).slice(0, 20)
     };
     if (wp.me) upd.balance = r2(s.balance + win);
+    var mine = s.players.filter(function (p) { return p.me; })[0];
+    if (mine) rkTrack({ game: 'pvp', bet: stakeOf(mine), win: wp.me ? win : 0, round: true });
     pvpHistSave(upd.history);
     this.setState(upd);
   }

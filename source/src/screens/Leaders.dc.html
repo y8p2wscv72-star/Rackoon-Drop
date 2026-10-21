@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>RACKOON — Лидеры</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Rubik:ital,wght@0,500;0,700;0,900;1,900&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#0b0d12}
+a{color:#ffc83d}a:hover{color:#ffe08a}
+</style>
+</helmet>
+<div style="position: relative; width: 390px; min-height: 1200px; box-sizing: border-box; padding: 20px 16px 110px; display: flex; flex-direction: column; gap: 14px; background: #0b0d12; font-family: Rubik, system-ui, sans-serif; color: #ffffff">
+
+<header style="display: flex; align-items: center; gap: 10px; height: 48px">
+<a href="Main.dc.html" aria-label="Назад в лобби" style="width: 44px; height: 44px; border-radius: 14px; background: #1a1d27; display: flex; align-items: center; justify-content: center; flex-shrink: 0">
+<svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><path d="M13 3 L6 10 L13 17" fill="none" stroke="#ffffff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+</a>
+<div style="font-size: 24px; font-weight: 900; font-style: italic; flex-grow: 1">ЛИДЕРЫ</div>
+</header>
+
+<div role="tablist" style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; background: #151821; border-radius: 14px; padding: 4px">
+<sc-for list="{{tabs}}" as="tb" hint-placeholder-count="3">
+<button type="button" role="tab" onClick="{{tb.pick}}" aria-selected="{{tb.sel}}" style="height: 40px; border: 0; border-radius: 11px; font-family: Rubik, system-ui, sans-serif; font-size: 14px; font-weight: 700; cursor: pointer; background: {{tb.bg}}; color: {{tb.color}}">{{tb.label}}</button>
+</sc-for>
+</div>
+
+<div style="border-radius: 18px; background: #2a2208; border: 1px solid #5a4a14; padding: 12px 14px; display: flex; align-items: center; gap: 10px">
+<svg width="28" height="28" viewBox="0 0 22 22" aria-hidden="true"><path d="M6 3 H16 V8 C16 11 14 13 11 13 C8 13 6 11 6 8Z M6 5 H3 C3 8 4 9 6 9 M16 5 H19 C19 8 18 9 16 9 M11 13 V17 M7 19 H15" fill="none" stroke="#ffc83d" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<div style="display: flex; flex-direction: column; gap: 2px; flex-grow: 1">
+<span style="font-size: 14px; font-weight: 700">{{prizeTitle}}</span>
+<span style="font-size: 12px; color: #e6d7a8">{{prizeText}}</span>
+</div>
+</div>
+
+<div style="display: grid; grid-template-columns: 1fr 1.15fr 1fr; gap: 8px; align-items: end; margin-top: 8px">
+<sc-for list="{{podium}}" as="p" hint-placeholder-count="3">
+<div style="display: flex; flex-direction: column; align-items: center; gap: 6px; min-width: 0">
+<div style="position: relative; width: {{p.size}}px; height: {{p.size}}px; border-radius: 50%; border: 3px solid {{p.ring}}; box-sizing: border-box; background: {{p.avBg}}; display: flex; align-items: center; justify-content: center; font-size: {{p.fs}}px; font-weight: 900; overflow: hidden">
+<sc-if value="{{p.isMe}}" hint-placeholder-val="{{ false }}"><img src="/_blob/661884b648dd965ea69af44ea8c7ee95" alt="" style="width: 100%; height: 100%; object-fit: cover"></sc-if>
+<sc-if value="{{p.notMe}}" hint-placeholder-val="{{ true }}">{{p.initial}}</sc-if>
+</div>
+<span style="max-width: 100%; font-size: 13px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{p.name}}</span>
+<span style="font-size: 12px; font-weight: 900; color: #ffc83d">{{p.value}}</span>
+<div style="width: 100%; height: {{p.h}}px; border-radius: 14px 14px 0 0; background: {{p.base}}; display: flex; align-items: flex-start; justify-content: center; padding-top: 8px; box-sizing: border-box; font-size: 26px; font-weight: 900; color: #0b0d12">{{p.place}}</div>
+</div>
+</sc-for>
+</div>
+
+<div style="display: flex; justify-content: space-between; font-size: 12px; color: #8a90a0; padding: 0 4px"><span>Игрок</span><span>{{metricLabel}}</span></div>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<sc-for list="{{rows}}" as="r" hint-placeholder-count="7">
+<div style="display: flex; align-items: center; gap: 10px; background: #151821; border: 1px solid {{r.border}}; border-radius: 14px; padding: 10px 12px">
+<span style="width: 24px; font-size: 13px; font-weight: 700; color: #8a90a0; text-align: center; flex-shrink: 0">{{r.place}}</span>
+<div style="width: 34px; height: 34px; border-radius: 10px; background: {{r.avBg}}; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 900; flex-shrink: 0; overflow: hidden">
+<sc-if value="{{r.isMe}}" hint-placeholder-val="{{ false }}"><img src="/_blob/661884b648dd965ea69af44ea8c7ee95" alt="" style="width: 100%; height: 100%; object-fit: cover"></sc-if>
+<sc-if value="{{r.notMe}}" hint-placeholder-val="{{ true }}">{{r.initial}}</sc-if>
+</div>
+<span style="flex-grow: 1; min-width: 0; font-size: 14px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{r.name}}</span>
+<span style="font-size: 14px; font-weight: 900; color: #ffc83d">{{r.value}}</span>
+</div>
+</sc-for>
+</div>
+
+<div style="position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; display: flex; justify-content: center; padding: 10px 16px 18px; background: linear-gradient(to top, #0b0d12 70%, rgba(11,13,18,0))">
+<div style="width: 100%; max-width: 358px; box-sizing: border-box; display: flex; align-items: center; gap: 10px; background: #2a2208; border: 1px solid #ffc83d; border-radius: 16px; padding: 10px 12px">
+<span style="min-width: 24px; font-size: 13px; font-weight: 900; color: #ffc83d; text-align: center">{{mePlace}}</span>
+<img src="/_blob/661884b648dd965ea69af44ea8c7ee95" alt="" style="width: 34px; height: 34px; border-radius: 10px; object-fit: cover">
+<div style="display: flex; flex-direction: column; flex-grow: 1; min-width: 0">
+<span style="font-size: 14px; font-weight: 700">{{meName}}</span>
+<span style="font-size: 11px; color: #e6d7a8">{{meHint}}</span>
+</div>
+<span style="font-size: 14px; font-weight: 900; color: #ffc83d">{{meValue}}</span>
+</div>
+</div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":1200}}'>
+var NAMES = ['hill_best', 'TonWhale', 'Investor_Belarus', 'vova_tushlek', 'Eugeneer', 'cntgf52', 'Bandit_77', 'Енотыч', 'lucky_ray', 'night_owl', 'Мурзик', 'kisa_mur', 'moonboy', 'Жора', 'Polina', 'Kamil', 'Sasha_K', 'raccoon.eth', 'Gift Hunter', 'Vova'];
+var COLORS = ['#13a58a', '#c41a78', '#2a6fe0', '#d9730a', '#7c3fe0', '#c92a2d', '#078a8a', '#9a7a00', '#3a8a2a', '#b0368f'];
+var TABS = [{ id: 'day', label: 'День', mult: 1, days: 1 }, { id: 'week', label: 'Неделя', mult: 6, days: 7 }, { id: 'all', label: 'Всё время', mult: 40, days: 0 }];
+var PRIZES = { day: 'Топ-3 дня: 10 · 5 · 2 TON', week: 'Топ-3 недели: 50 · 25 · 10 TON', all: 'Легенды RACKOON за всё время' };
+function today() { return new Date(Date.now() + 3 * 3600 * 1000).toISOString().slice(0, 10); }
+function seeded(str) { var h = 2166136261; for (var i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); } h ^= h >>> 13; h = Math.imul(h, 0x5bd1e995); h ^= h >>> 15; return (h >>> 0) / 4294967296; }
+function fmt(x) { return x >= 1000 ? (Math.round(x / 10) / 100).toFixed(2) + 'K' : (Math.round(x * 100) / 100).toFixed(2); }
+function R() { return typeof window !== 'undefined' && window.RK ? window.RK : null; }
+function myValue(tab) {
+  var r = R(); if (!r || !r.stats) return 0;
+  if (tab.id === 'day') return r.stats.day().wagered || 0;
+  if (tab.id === 'week') return r.stats.range(7).wagered || 0;
+  return r.stats.total().wagered || 0;
+}
+// Таблица по обороту (сумме ставок). Соперники в демо — сгенерированные игроки.
+function board(tab) {
+  var key = tab.id === 'all' ? 'all' : (tab.id + ':' + today());
+  var bots = NAMES.map(function (n, i) {
+    var v = Math.pow(seeded(key + n), 3) * 900 * tab.mult + 5 * tab.mult;
+    return { name: n, value: Math.round(v * 100) / 100, me: false, color: COLORS[i % COLORS.length] };
+  });
+  var r = R(), meName = (r && r.user && (r.user.username || r.user.first_name)) || 'Ты';
+  var me = { name: meName, value: Math.round(myValue(tab) * 100) / 100, me: true, color: '#ffc83d' };
+  return bots.concat([me]).sort(function (a, b) { return b.value - a.value; });
+}
+
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { tab: 'day' }; }
+  renderVals() {
+    var self = this, s = this.state;
+    var tab = TABS.filter(function (t) { return t.id === s.tab; })[0];
+    var list = board(tab);
+    var meIdx = 0; list.forEach(function (x, i) { if (x.me) meIdx = i; });
+    var me = list[meIdx];
+    var top = list.slice(0, 3);
+    var order = [top[1], top[0], top[2]];
+    var meta = [{ place: 2, h: 70, size: 64, ring: '#c9d1e0', base: '#c9d1e0' }, { place: 1, h: 96, size: 82, ring: '#ffc83d', base: '#ffc83d' }, { place: 3, h: 54, size: 60, ring: '#d98a4a', base: '#d98a4a' }];
+    var ahead = meIdx > 0 ? list[meIdx - 1] : null;
+    return {
+      tabs: TABS.map(function (t) { var sel = t.id === s.tab; return { label: t.label, sel: sel ? 'true' : 'false', bg: sel ? '#ffc83d' : 'transparent', color: sel ? '#1a1300' : '#a3a8b5', pick: function () { self.setState({ tab: t.id }); } }; }),
+      prizeTitle: tab.id === 'all' ? 'Зал славы' : 'Призы лидерам',
+      prizeText: PRIZES[tab.id],
+      metricLabel: 'Оборот, TON',
+      podium: order.map(function (p, i) {
+        var m = meta[i];
+        return { name: p.name, value: fmt(p.value) + ' TON', initial: p.name.charAt(0).toUpperCase(), avBg: p.color, isMe: p.me, notMe: !p.me, place: m.place, h: m.h, size: m.size, fs: Math.round(m.size * 0.4), ring: m.ring, base: m.base };
+      }),
+      rows: list.slice(3, 20).map(function (p, i) {
+        return { place: i + 4, name: p.name, value: fmt(p.value), initial: p.name.charAt(0).toUpperCase(), avBg: p.color, isMe: p.me, notMe: !p.me, border: p.me ? '#ffc83d' : '#222838' };
+      }),
+      mePlace: meIdx + 1,
+      meName: me.name === 'Ты' ? 'Ты' : me.name + ' (ты)',
+      meValue: fmt(me.value),
+      meHint: ahead ? 'До ' + (meIdx) + ' места: ' + fmt(ahead.value - me.value + 0.01) + ' TON' : 'Ты на первом месте!'
+    };
+  }
+}
+</script>
+</body>
+</html>

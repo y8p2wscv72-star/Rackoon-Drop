@@ -205,6 +205,7 @@ var NAMES = ['Bandit_77', 'TonWhale', 'Енотыч', 'lucky_ray', 'Gift Hunter'
 var AV = ['#e5383b', '#2a7fff', '#2bd46b', '#9b5cff', '#ff8a5c', '#00a8a8', '#c77dff', '#e0a800'];
 
 function r2(x) { return Math.round(x * 100) / 100; }
+function rkTrack(o) { try { if (window.RK && window.RK.track) window.RK.track(o); } catch (e) {} }
 // Полёт ракеты: вылетает из левого нижнего угла по диагонали, выходит в центр
 // и разворачивается носом вверх; дальше — эффект скорости (полосы звёзд)
 function rocketPos(el, m) {
@@ -288,6 +289,7 @@ class Component extends DCLogic {
     var s = this.state;
     if (s.phase === 'wait') {
       if (s.me || s.bet > s.balance || !(s.bet >= 0.1)) return;
+      rkTrack({ game: 'crash', bet: s.bet, round: true });
       this.setState({ balance: r2(s.balance - s.bet), me: { amount: s.bet, gift: null, cashed: false } });
     } else {
       if (!(s.bet >= 0.1)) return;
@@ -299,13 +301,14 @@ class Component extends DCLogic {
     var inv = s.inv.slice(); var i = inv.indexOf(k);
     if (i === -1) return;
     inv.splice(i, 1);
-    if (s.phase === 'wait' && !s.me) this.setState({ inv: inv, giftPick: false, me: { amount: GIFTS[k].price, gift: k, cashed: false } });
+    if (s.phase === 'wait' && !s.me) { rkTrack({ game: 'crash', bet: GIFTS[k].price, round: true }); this.setState({ inv: inv, giftPick: false, me: { amount: GIFTS[k].price, gift: k, cashed: false } }); }
     else this.setState({ inv: inv, giftPick: false, queued: { gift: k } });
   }
   cashout() {
     var s = this.state;
     if (s.phase !== 'fly' || !s.me || s.me.cashed) return;
     var pay = Math.floor(s.me.amount * s.m * 100) / 100;
+    rkTrack({ game: 'crash', win: pay });
     this.setState({ balance: r2(s.balance + pay), me: Object.assign({}, s.me, { cashed: true, at: Math.floor(s.m * 100) / 100, pay: pay }) });
   }
   setBet(v) { this.setState({ betStr: null, bet: r2(Math.max(0.1, Math.min(v, Math.max(0.1, this.state.balance)))) }); }

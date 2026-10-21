@@ -136,6 +136,7 @@ function multFor(k, m) {
 }
 function fmt(p) { return (Math.floor(p * 100) / 100) + ' TON'; }
 function fmtMult(x) { return 'x' + (x >= 100 ? x.toFixed(0) : x.toFixed(2)); }
+function rkTrack(o) { try { if (window.RK && window.RK.track) window.RK.track(o); } catch (e) {} }
 function round2(x) { return Math.round(x * 100) / 100; }
 
 class Component extends DCLogic {
@@ -150,6 +151,7 @@ class Component extends DCLogic {
   start() {
     var s = this.state;
     if (s.phase === 'playing' || s.bet > s.balance || !(s.bet >= 0.1)) return;
+    rkTrack({ game: 'mines', bet: s.bet, round: true });
     var idx = [];
     for (var i = 0; i < SIZE; i++) idx.push(i);
     for (var j = idx.length - 1; j > 0; j--) { var r = Math.floor(Math.random() * (j + 1)); var t = idx[j]; idx[j] = idx[r]; idx[r] = t; }
@@ -187,6 +189,7 @@ class Component extends DCLogic {
     if (s.phase !== 'playing' || k === 0) return;
     var m = multFor(k, s.mines);
     var win = Math.floor(s.bet * m * 100) / 100;
+    rkTrack({ game: 'mines', win: win });
     this.setState({ phase: 'won', balance: round2(s.balance + win), overlay: true, res: { win: true, amount: win, mult: m } });
   }
 

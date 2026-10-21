@@ -12,6 +12,8 @@ import CasesSrc from './screens/Cases.dc.html';
 import MinesSrc from './screens/Mines.dc.html';
 import PvpSrc from './screens/Pvp.dc.html';
 import InventorySrc from './screens/Inventory.dc.html';
+import TasksSrc from './screens/Tasks.dc.html';
+import LeadersSrc from './screens/Leaders.dc.html';
 
 // ---------- Telegram ----------
 const tg = window.Telegram && window.Telegram.WebApp;
@@ -20,7 +22,7 @@ const START_BALANCE = 100;
 // ---------- Сохранение: на устройстве + в облаке Telegram (CloudStorage) ----------
 // Облако Telegram привязано к аккаунту игрока и боту: данные не пропадут,
 // даже если Telegram почистит кэш или игрок зайдёт с другого телефона.
-const SYNC_KEYS = ['rk_balance', 'rk_inv', 'rk_free_at', 'rk_pvp_hist', 'rk_crash_hist', 'rk_upg_hist'];
+const SYNC_KEYS = ['rk_balance', 'rk_inv', 'rk_free_at', 'rk_pvp_hist', 'rk_crash_hist', 'rk_upg_hist', 'rk_stats', 'rk_tasks'];
 const CHUNK = 3900;
 const cloud = (() => {
   try { return tg && tg.CloudStorage && (!tg.isVersionAtLeast || tg.isVersionAtLeast('6.9')) ? tg.CloudStorage : null; } catch (e) { return null; }
@@ -91,7 +93,33 @@ const inventory = {
   remove(uids) { const set = new Set([].concat(uids)); this._save(this.list().filter((x) => !set.has(x.uid))); },
   reset() { store.remove('rk_inv'); this._mem = null; return this.list(); }
 };
-window.RK = { wallet, inventory, store, user: (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) || null };
+// Статистика игрока: для заданий и таблицы лидеров
+const mskDay = (t) => new Date((t || Date.now()) + 3 * 3600 * 1000).toISOString().slice(0, 10);
+const EMPTY_DAY = () => ({ cases: 0, crash: 0, pvp: 0, upgrade: 0, mines: 0, wagered: 0, won: 0 });
+const stats = {
+  _get() { const v = store.getJSON('rk_stats', null); return v && v.days ? v : { total: EMPTY_DAY(), days: {} }; },
+  day() { return Object.assign(EMPTY_DAY(), this._get().days[mskDay()] || {}); },
+  range(n) {
+    const v = this._get(), out = EMPTY_DAY();
+    for (let i = 0; i < n; i++) { const d = v.days[mskDay(Date.now() - i * 86400000)]; if (d) Object.keys(out).forEach((k) => { out[k] += d[k] || 0; }); }
+    return out;
+  },
+  total() { return Object.assign(EMPTY_DAY(), this._get().total); }
+};
+function track(o) {
+  const v = stats._get(), key = mskDay();
+  const d = Object.assign(EMPTY_DAY(), v.days[key] || {});
+  const t = Object.assign(EMPTY_DAY(), v.total || {});
+  [d, t].forEach((x) => {
+    if (o.round && o.game in x) x[o.game] += 1;
+    x.wagered = Math.round((x.wagered + (o.bet || 0)) * 100) / 100;
+    x.won = Math.round((x.won + (o.win || 0)) * 100) / 100;
+  });
+  v.days[key] = d; v.total = t;
+  Object.keys(v.days).sort().slice(0, -8).forEach((k) => { delete v.days[k]; });
+  store.setJSON('rk_stats', v);
+}
+window.RK = { wallet, inventory, store, stats, track, botName: '', user: (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) || null };
 
 if (tg) {
   tg.ready();
@@ -125,14 +153,14 @@ const ASSETS = {
   '34af5661e80ecf394b0a48aeeb28ab6c': 'r-fire.svg', '7629870dfcd56d08701d6a71de1e83df': 'r-laugh.svg',
   'f5a9ceb49eb8c4c03e26914bcd1e2576': 'r-angry.svg', '89d4ee9117e73bee099492a4ce5c5498': 'r-heart.svg',
   'c22eeb9eb2c04b336c2c7f989a2a93a7': 'r-party.svg',
-  'df4463849ba665132f6e7bd980c23a61': 'case-c1.jpg',
-  '589ffaec16a819a12e004c4e04070ae3': 'case-c2.jpg',
-  '18ead7b29d1f1c4595af83f47c2faa35': 'case-c3.jpg',
-  '5897ec099101379e496fca2bcfbc2720': 'case-c4.jpg',
-  '1482e4fb63b86b31d6a8d5f8b4ede861': 'case-c5.jpg',
-  '5548029de6654bdcd3eaa8b05a2b1ead': 'case-c6.jpg',
-  'a7d5f037c0659d0beb75979291cff954': 'case-c7.jpg',
-  '6696372ede410f1a4283d5e6dcd60c42': 'case-c8.jpg'
+  'fcf5bf14ee8b1ae499c387610e4d1977': 'case-c1.jpg',
+  '06ce572b9077b276c1d8a7b06b5e8713': 'case-c2.jpg',
+  '9e1537bfc41c71475ce556a1aaf4884f': 'case-c3.jpg',
+  'c0847d0dc5fbcb1a68d80763032f0675': 'case-c4.jpg',
+  'db1a02051117bc41aa898a143cdc3d48': 'case-c5.jpg',
+  '72f77fc4af6bf75c8e7d10aa33580007': 'case-c6.jpg',
+  'b289144243be3c7e4e7176e3a0070caa': 'case-c7.jpg',
+  '313d5daa64736bbfb70ecfcd97ed3141': 'case-c8.jpg'
 };
 function fixAssets(src) {
   return src.replace(/\/_blob\/([0-9a-f]{32})/g, (m, id) => ASSETS[id] ? 'assets/' + ASSETS[id] : m);
@@ -274,7 +302,7 @@ function renderNode(node, scope, nav, key) {
   }
   // Переходы между экранами
   if (tag === 'a') {
-    const href = node.getAttribute('href') || '';
+    const href = String(props.href || node.getAttribute('href') || '');
     const m = href.match(/([A-Za-z]+)\.dc\.html$/);
     props.href = '#';
     props.onClick = (e) => { e.preventDefault(); if (m) nav(m[1]); };
@@ -303,7 +331,7 @@ class Screen extends React.Component {
 // ---------- Приложение ----------
 const SCREENS = {
   Main: parseScreen('Main', MainSrc), Crash: parseScreen('Crash', CrashSrc),
-  Upgrade: parseScreen('Upgrade', UpgradeSrc), Cases: parseScreen('Cases', CasesSrc), Mines: parseScreen('Mines', MinesSrc), Pvp: parseScreen('Pvp', PvpSrc), Inventory: parseScreen('Inventory', InventorySrc)
+  Upgrade: parseScreen('Upgrade', UpgradeSrc), Cases: parseScreen('Cases', CasesSrc), Mines: parseScreen('Mines', MinesSrc), Pvp: parseScreen('Pvp', PvpSrc), Inventory: parseScreen('Inventory', InventorySrc), Tasks: parseScreen('Tasks', TasksSrc), Leaders: parseScreen('Leaders', LeadersSrc)
 };
 const injected = new Set();
 Object.values(SCREENS).forEach((s) => s.head.forEach((h) => {

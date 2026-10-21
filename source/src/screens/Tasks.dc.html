@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>RACKOON — Задания</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Rubik:ital,wght@0,500;0,700;0,900;1,900&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#0b0d12}
+a{color:#ffc83d}a:hover{color:#ffe08a}
+@keyframes rkToast{0%{transform:translateY(-20px);opacity:0}15%{transform:translateY(0);opacity:1}85%{opacity:1}100%{opacity:0}}
+@keyframes rkGlow{0%,100%{box-shadow:0 0 0 0 rgba(255,200,61,.0)}50%{box-shadow:0 0 22px 2px rgba(255,200,61,.45)}}
+</style>
+</helmet>
+<div style="position: relative; width: 390px; min-height: 1250px; box-sizing: border-box; padding: 20px 16px 32px; display: flex; flex-direction: column; gap: 14px; background: #0b0d12; font-family: Rubik, system-ui, sans-serif; color: #ffffff">
+
+<header style="display: flex; align-items: center; gap: 10px; height: 48px">
+<a href="Main.dc.html" aria-label="Назад в лобби" style="width: 44px; height: 44px; border-radius: 14px; background: #1a1d27; display: flex; align-items: center; justify-content: center; flex-shrink: 0">
+<svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><path d="M13 3 L6 10 L13 17" fill="none" stroke="#ffffff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+</a>
+<div style="font-size: 24px; font-weight: 900; font-style: italic; flex-grow: 1">ЗАДАНИЯ</div>
+<div style="height: 44px; box-sizing: border-box; border-radius: 14px; background: #1a1d27; padding: 0 12px; display: flex; align-items: center; font-size: 14px; font-weight: 700; color: #ffc83d">{{balanceText}}</div>
+</header>
+
+<sc-if value="{{showToast}}" hint-placeholder-val="{{ false }}">
+<div role="status" style="position: fixed; left: 0; right: 0; margin: 0 auto; top: 16px; z-index: 60; width: 340px; box-sizing: border-box; border-radius: 14px; background: #123d22; border: 1px solid #2bd46b; padding: 12px 14px; font-size: 14px; font-weight: 700; text-align: center; animation: rkToast 2.6s ease forwards">{{toastText}}</div>
+</sc-if>
+
+<div style="position: relative; overflow: hidden; border-radius: 24px; background: #2a2208; border: 1px solid #5a4a14; padding: 18px; display: flex; align-items: center; gap: 14px; animation: {{bonusAnim}}">
+<img src="/_blob/661884b648dd965ea69af44ea8c7ee95" alt="" style="width: 72px; height: 72px; border-radius: 50%; object-fit: cover; border: 3px solid #ffc83d; box-sizing: border-box; flex-shrink: 0">
+<div style="display: flex; flex-direction: column; gap: 4px; flex-grow: 1; min-width: 0">
+<div style="font-size: 18px; font-weight: 900">Ежедневный бонус</div>
+<div style="font-size: 13px; color: #e6d7a8">Заходи каждый день и забирай {{bonusAmount}}</div>
+</div>
+<button type="button" onClick="{{claimBonus}}" disabled="{{bonusDisabled}}" style="height: 44px; border-radius: 12px; border: 0; padding: 0 14px; font-family: Rubik, system-ui, sans-serif; font-size: 14px; font-weight: 900; cursor: pointer; flex-shrink: 0; background: {{bonusBg}}; color: {{bonusColor}}">{{bonusText}}</button>
+</div>
+
+<div style="display: flex; justify-content: space-between; align-items: baseline; margin-top: 4px">
+<span style="font-size: 20px; font-weight: 700">Задания дня</span>
+<span style="font-size: 12px; color: #8a90a0">обновятся через {{resetIn}}</span>
+</div>
+<div style="display: flex; flex-direction: column; gap: 8px">
+<sc-for list="{{daily}}" as="t" hint-placeholder-count="5">
+<div style="background: #151821; border: 1px solid {{t.border}}; border-radius: 16px; padding: 12px; display: flex; align-items: center; gap: 12px">
+<div style="width: 42px; height: 42px; border-radius: 12px; background: {{t.iconBg}}; display: flex; align-items: center; justify-content: center; flex-shrink: 0">
+<img src="{{t.icon}}" alt="" style="width: 28px; height: 28px; border-radius: 6px; object-fit: cover">
+</div>
+<div style="display: flex; flex-direction: column; gap: 6px; flex-grow: 1; min-width: 0">
+<div style="display: flex; justify-content: space-between; gap: 8px">
+<span style="font-size: 14px; font-weight: 700">{{t.title}}</span>
+<span style="font-size: 13px; font-weight: 900; color: #ffc83d; white-space: nowrap">+{{t.reward}}</span>
+</div>
+<div style="height: 6px; border-radius: 3px; background: #0b0d12; overflow: hidden"><div style="height: 6px; border-radius: 3px; background: {{t.barColor}}; width: {{t.pct}}%"></div></div>
+<span style="font-size: 11px; color: #8a90a0">{{t.progressText}}</span>
+</div>
+<sc-if value="{{t.canClaim}}" hint-placeholder-val="{{ false }}">
+<button type="button" onClick="{{t.claim}}" style="height: 40px; border-radius: 12px; border: 0; padding: 0 12px; background: #2bd46b; color: #06210f; font-family: Rubik, system-ui, sans-serif; font-size: 13px; font-weight: 900; cursor: pointer; flex-shrink: 0">Забрать</button>
+</sc-if>
+<sc-if value="{{t.goPlay}}" hint-placeholder-val="{{ true }}">
+<a href="{{t.href}}" style="text-decoration: none; height: 40px; border-radius: 12px; padding: 0 12px; background: #1d2230; color: #ffffff; display: flex; align-items: center; font-size: 13px; font-weight: 700; flex-shrink: 0">Играть</a>
+</sc-if>
+<sc-if value="{{t.done}}" hint-placeholder-val="{{ false }}">
+<span style="height: 40px; display: flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 700; color: #2bd46b; flex-shrink: 0"><svg width="16" height="16" viewBox="0 0 12 12" aria-hidden="true"><path d="M2 6 L5 9 L10 3" fill="none" stroke="#2bd46b" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"></path></svg>Готово</span>
+</sc-if>
+</div>
+</sc-for>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 2px; margin-top: 8px">
+<span style="font-size: 20px; font-weight: 700">Приглашай друзей</span>
+<span style="font-size: 12px; color: #8a90a0">Награда за каждого друга, который зайдёт по твоей ссылке</span>
+</div>
+<div style="display: flex; flex-direction: column; gap: 8px">
+<sc-for list="{{refs}}" as="r" hint-placeholder-count="3">
+<div style="background: #151821; border: 1px solid #3a1530; border-radius: 16px; padding: 12px; display: flex; align-items: center; gap: 12px">
+<div style="width: 42px; height: 42px; border-radius: 12px; background: #3a1530; display: flex; align-items: center; justify-content: center; flex-shrink: 0">
+<svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true"><circle cx="9" cy="7" r="3.6" fill="none" stroke="#ff5d9e" stroke-width="2"></circle><path d="M2.5 19 C2.5 13.5 15.5 13.5 15.5 19" fill="none" stroke="#ff5d9e" stroke-width="2" stroke-linecap="round"></path><path d="M18 6 V12 M15 9 H21" stroke="#ff5d9e" stroke-width="2" stroke-linecap="round"></path></svg>
+</div>
+<div style="display: flex; flex-direction: column; gap: 4px; flex-grow: 1; min-width: 0">
+<span style="font-size: 14px; font-weight: 700">{{r.title}}</span>
+<span style="font-size: 11px; color: #8a90a0">{{r.count}}</span>
+</div>
+<div style="display: flex; flex-direction: column; align-items: flex-end; gap: 6px; flex-shrink: 0">
+<span style="font-size: 12px; font-weight: 900; padding: 3px 8px; border-radius: 8px; background: #123d22; color: #2bd46b">+{{r.reward}}</span>
+<button type="button" onClick="{{invite}}" style="height: 32px; border-radius: 10px; border: 0; padding: 0 12px; background: #1d2230; color: #ffffff; font-family: Rubik, system-ui, sans-serif; font-size: 12px; font-weight: 700; cursor: pointer">Пригласить ↗</button>
+</div>
+</div>
+</sc-for>
+</div>
+
+<button type="button" onClick="{{copyLink}}" style="height: 52px; border-radius: 16px; border: 2px dashed #3a3f4d; background: transparent; color: #c9cdd6; font-family: Rubik, system-ui, sans-serif; font-size: 13px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 0 12px; overflow: hidden">
+<span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{refLink}}</span>
+<span style="color: #ffc83d; flex-shrink: 0">Копировать</span>
+</button>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":1250}}'>
+var BONUS = 1;
+var AV = '/_blob/661884b648dd965ea69af44ea8c7ee95';
+var DAILY = [
+  { id: 'cases3', title: 'Открой 3 кейса', key: 'cases', goal: 3, reward: 0.5, href: 'Cases.dc.html', icon: '/_blob/88b023f22e2d3006641849bb168e073d', iconBg: '#0f1d33' },
+  { id: 'crash5', title: 'Сыграй 5 раундов в Crash', key: 'crash', goal: 5, reward: 0.5, href: 'Crash.dc.html', icon: '/_blob/16b8be03ec4054a9ad560c5be1c9ab9e', iconBg: '#2e1212' },
+  { id: 'pvp3', title: 'Сыграй 3 игры на PvP арене', key: 'pvp', goal: 3, reward: 0.5, href: 'Pvp.dc.html', icon: AV, iconBg: '#2e250c' },
+  { id: 'upg3', title: 'Сделай 3 апгрейда', key: 'upgrade', goal: 3, reward: 0.3, href: 'Upgrade.dc.html', icon: '/_blob/63c10368990e8788e655de65d5a9b515', iconBg: '#10291a' },
+  { id: 'mines3', title: 'Сыграй 3 раунда в Минах', key: 'mines', goal: 3, reward: 0.3, href: 'Mines.dc.html', icon: '/_blob/b81dc491ff982e1892b4eeeb94570e3c', iconBg: '#0f1a44' },
+  { id: 'wager20', title: 'Поставь в сумме 20 TON', key: 'wagered', goal: 20, reward: 1, href: 'Crash.dc.html', icon: '/_blob/a8d1e2a1f1626c9b8edd4755d9c32150', iconBg: '#1d1233' }
+];
+var REFS = [
+  { title: 'Пригласи друга', reward: '0.2 TON' },
+  { title: 'Друг сыграл на 10 TON', reward: '1 TON' },
+  { title: 'Друг сыграл на 100 TON', reward: '5 TON' }
+];
+function R() { return typeof window !== 'undefined' && window.RK ? window.RK : null; }
+function today() { var d = new Date(Date.now() + 3 * 3600 * 1000); return d.toISOString().slice(0, 10); }
+function fmt(x) { return (Math.round(x * 100) / 100).toFixed(2) + ' TON'; }
+function hm(ms) { var m = Math.ceil(ms / 60000), h = Math.floor(m / 60); return h + ' ч ' + (m % 60) + ' мин'; }
+function loadClaims() {
+  var r = R(), v = r && r.store ? r.store.getJSON('rk_tasks', null) : null;
+  if (!v || v.date !== today()) v = { date: today(), claimed: [] };
+  return v;
+}
+function dayStats() { var r = R(); return r && r.stats ? r.stats.day() : { cases: 0, crash: 0, pvp: 0, upgrade: 0, mines: 0, wagered: 0, won: 0 }; }
+
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { balance: 50, claims: loadClaims(), toast: null, now: Date.now() };
+  }
+  componentDidMount() { var self = this; this.iv = setInterval(function () { self.setState({ now: Date.now(), claims: loadClaims() }); }, 30000); }
+  componentWillUnmount() { clearInterval(this.iv); clearTimeout(this.tt); }
+  toast(t) { var self = this; this.setState({ toast: t }); clearTimeout(this.tt); this.tt = setTimeout(function () { self.setState({ toast: null }); }, 2600); }
+  claim(id, amount, label) {
+    var c = loadClaims();
+    if (c.claimed.indexOf(id) !== -1) return;
+    c.claimed.push(id);
+    var r = R(); if (r && r.store) r.store.setJSON('rk_tasks', c);
+    this.setState({ claims: c, balance: Math.round((this.state.balance + amount) * 100) / 100 });
+    this.toast('+' + fmt(amount) + ' · ' + label);
+  }
+  refLink() {
+    var r = R(), uid = r && r.user && r.user.id ? r.user.id : 'guest';
+    var bot = r && r.botName ? r.botName : 'rackoon_bot';
+    return 'https://t.me/' + bot + '?start=ref_' + uid;
+  }
+  renderVals() {
+    var self = this, s = this.state, st = dayStats();
+    var gotBonus = s.claims.claimed.indexOf('bonus') !== -1;
+    var midnight = new Date(today() + 'T00:00:00+03:00').getTime() + 86400000;
+    var link = this.refLink();
+    return {
+      balanceText: fmt(s.balance),
+      showToast: !!s.toast, toastText: s.toast || '',
+      bonusAmount: fmt(BONUS),
+      bonusDisabled: gotBonus,
+      bonusBg: gotBonus ? '#1d2230' : '#ffc83d', bonusColor: gotBonus ? '#8a90a0' : '#1a1300',
+      bonusText: gotBonus ? 'Завтра' : 'Забрать',
+      bonusAnim: gotBonus ? 'none' : 'rkGlow 2s ease-in-out infinite',
+      claimBonus: function () { self.claim('bonus', BONUS, 'ежедневный бонус'); },
+      resetIn: hm(Math.max(0, midnight - s.now)),
+      daily: DAILY.map(function (t) {
+        var have = Math.min(t.goal, Math.round((st[t.key] || 0) * 100) / 100);
+        var claimed = s.claims.claimed.indexOf(t.id) !== -1, complete = have >= t.goal;
+        return {
+          title: t.title, reward: fmt(t.reward), icon: t.icon, iconBg: t.iconBg, href: t.href,
+          pct: Math.round(have / t.goal * 100), barColor: complete ? '#2bd46b' : '#ffc83d',
+          progressText: (t.key === 'wagered' ? have.toFixed(2) + ' / ' + t.goal + ' TON' : have + ' / ' + t.goal),
+          border: complete && !claimed ? '#2bd46b' : '#222838',
+          canClaim: complete && !claimed, goPlay: !complete, done: claimed,
+          claim: function () { self.claim(t.id, t.reward, t.title.toLowerCase()); }
+        };
+      }),
+      refs: REFS.map(function (r) { return { title: r.title, reward: r.reward, count: '0 из ∞' }; }),
+      refLink: link,
+      invite: function () {
+        var url = 'https://t.me/share/url?url=' + encodeURIComponent(link) + '&text=' + encodeURIComponent('Залетай в RACKOON: кейсы, краш и PvP на NFT-подарки 🦝');
+        var tg = window.Telegram && window.Telegram.WebApp;
+        try { if (tg && tg.openTelegramLink) { tg.openTelegramLink(url); return; } } catch (e) {}
+        try { window.open(url, '_blank'); } catch (e) {}
+      },
+      copyLink: function () {
+        try { navigator.clipboard.writeText(link).then(function () { self.toast('Ссылка скопирована'); }, function () { self.toast(link); }); }
+        catch (e) { self.toast(link); }
+      }
+    };
+  }
+}
+</script>
+</body>
+</html>

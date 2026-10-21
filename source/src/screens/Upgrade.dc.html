@@ -405,6 +405,7 @@ class Component extends DCLogic {
       var inv = st.inv.filter(function (u) { return st.own.indexOf(u.uid) === -1; });
       var nextId = st.nextId;
       var R = rkInv();
+      try { if (window.RK && window.RK.track) window.RK.track({ game: 'upgrade', bet: st0.price, win: win ? tgt.price : 0, round: true }); } catch (e) {}
       if (R) { R.remove(st.own); if (win) R.add(st.target); inv = loadInv(); }
       else if (win) { inv = [{ uid: 'i' + nextId, key: st.target }].concat(inv); nextId += 1; }
       var mult = 'x' + (tgt.price / st0.price).toFixed(2);
