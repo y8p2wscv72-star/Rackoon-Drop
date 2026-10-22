@@ -165,6 +165,7 @@ const net = (() => {
       if (m.t === 'pong') { const now = Date.now(); api.offset = m.now - (m.c + now) / 2; return; }
       if (m.t === 'res') { const f = pending[m.rid]; if (f) { delete pending[m.rid]; f(m); } return; }
       if (m.t === 'welcome') {
+        if (window.rkLoaderDone) window.rkLoaderDone();
         api.me = m.me; api.online = m.online; api.deposit = m.deposit || null; api.cryptobot = m.cryptobot || null; api.gifts = m.gifts || null; api.connected = true;
         api.feed = m.feed || [];
         if (m.acct) applyAcct(m.acct);
