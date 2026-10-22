@@ -48,6 +48,9 @@ a{color:#ffc83d}a:hover{color:#ffe08a}
 {{online}} онлайн · последние выигрыши
 </div>
 <div style="display: flex; gap: 8px; overflow: hidden">
+<sc-if value="{{noDrops}}" hint-placeholder-val="{{ false }}">
+<div style="flex-grow: 1; height: 70px; box-sizing: border-box; border-radius: 14px; border: 1px dashed #2c3244; display: flex; align-items: center; justify-content: center; font-size: 12px; color: #8a90a0">Здесь появятся выигрыши игроков</div>
+</sc-if>
 <sc-for list="{{drops}}" as="d" hint-placeholder-count="6">
 <div style="flex-shrink: 0; width: 58px; height: 70px; box-sizing: border-box; border-radius: 14px; background: #151821; border-bottom: 3px solid {{d.color}}; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px">
 <img src="{{d.img}}" alt="{{d.name}}" style="width: 40px; height: 40px">
@@ -304,13 +307,6 @@ function colorOf(p) {
   if (p < 500) return '#ff5d73';
   return '#ffc83d';
 }
-function pickDrop() {
-  // дешёвые выпадают чаще
-  var w = DROPS.map(function (d) { return 1 / Math.sqrt(d.price); });
-  var S = w.reduce(function (a, b) { return a + b; }, 0), x = Math.random() * S;
-  for (var i = 0; i < DROPS.length; i++) { x -= w[i]; if (x <= 0) return DROPS[i]; }
-  return DROPS[0];
-}
 // Окно депозита (демо: только внешний вид, деньги не принимаются)
 // Валюты для оплаты через @CryptoBot (сеть выбирать не нужно — её выбирает CryptoBot)
 var CURS = [
@@ -329,6 +325,7 @@ function wdNfts() { var R = window.RK; if (!R || !R.inventory) return []; return
 function wdTime(t) { var d = new Date(t + 3 * 3600 * 1000); return ('0' + d.getUTCDate()).slice(-2) + '.' + ('0' + (d.getUTCMonth() + 1)).slice(-2) + ' ' + ('0' + d.getUTCHours()).slice(-2) + ':' + ('0' + d.getUTCMinutes()).slice(-2); }
 function openTgLink(url) {
   var tg = window.Telegram && window.Telegram.WebApp;
+  try { if (tg && tg.openTelegramLink && /^https:\/\/t\.me\//.test(url)) { tg.openTelegramLink(url); return; } } catch (e) {}
   try { if (tg && tg.openTelegramLink && /^https:\/\/t\.me\//.test(url)) { tg.openTelegramLink(url); return; } } catch (e) {}
   try { if (tg && tg.openLink) { tg.openLink(url); return; } } catch (e) {}
   window.open(url, '_blank');
@@ -357,13 +354,12 @@ class Component extends DCLogic {
   constructor(props) {
     super(props);
     var list = [];
-    for (var i = 0; i < 8; i++) list.push(pickDrop());
-    this.state = { drops: list, online: 934, dep: false, depTab: 'ton', depAmount: '', depCur: 0, depNet: 0, depCryptoAmount: '', depToast: 0, depMode: 'dep', wdSel: {}, toast: null, wdKind: 'nft', wdAmount: '', wdAddress: (function () { try { return (window.RK && window.RK.store.get('rk_wd_addr')) || ''; } catch (e) { return ''; } })() };
+    this.state = { online: 0, dep: false, depTab: 'ton', depAmount: '', depCur: 0, depNet: 0, depCryptoAmount: '', depToast: 0, depMode: 'dep', wdSel: {}, toast: null, wdKind: 'nft', wdAmount: '', wdAddress: (function () { try { return (window.RK && window.RK.store.get('rk_wd_addr')) || ''; } catch (e) { return ''; } })() };
   }
   componentDidMount() {
     var self = this, net = window.RK && window.RK.net;
     if (net) this.offCredit = net.on('credit', function (m) {
-      if (m.dup || (m.game !== 'deposit' && m.game !== 'admin')) return;
+      if (m.game !== 'deposit' && m.game !== 'admin' && m.game !== 'refund') return;
       self.setState({ waitingDeposit: 0, cbWaiting: 0 });
       self.showToast(m.amount > 0 ? { icon: '✅', text: (m.game === 'deposit' ? 'Пополнение: +' : 'Начислено: +') + m.amount + ' TON', ok: true } : { icon: '➖', text: 'Списано ' + m.amount + ' TON' });
     });
@@ -376,7 +372,7 @@ class Component extends DCLogic {
     document.addEventListener('visibilitychange', this.onVis);
     this.iv = setInterval(function () {
       var s = self.state;
-      self.setState({ drops: [pickDrop()].concat(s.drops).slice(0, 8), online: Math.max(800, s.online + Math.round((Math.random() - 0.5) * 8)) });
+      self.setState({ tick: (s.tick || 0) + 1 }); // лента и онлайн приходят с сервера
     }, 2200);
   }
   componentWillUnmount() { clearInterval(this.iv); clearTimeout(this.tt); if (this.offCredit) this.offCredit(); if (this.offCb1) this.offCb1(); if (this.offCb2) this.offCb2(); document.removeEventListener('visibilitychange', this.onVis); }
@@ -399,15 +395,14 @@ class Component extends DCLogic {
       if (!WD_ADDR_RE.test(addr)) return this.showToast({ icon: '⚠️', text: 'Проверь адрес кошелька — он начинается с UQ или EQ и длиной 48 символов' });
       try { R.store.set('rk_wd_addr', addr); } catch (e) {}
       w = { id: id, kind: 'ton', amount: amt, address: addr, gifts: [], fee: 0, at: Date.now() };
-      R.addBalance(-amt);
+
     } else {
       var items = wdNfts().filter(function (it) { return s.wdSel[it.uid]; });
       if (!items.length) return this.showToast({ icon: '⚠️', text: 'Выбери NFT для вывода' });
       if (items.length > 10) return this.showToast({ icon: '⚠️', text: 'За раз можно вывести до 10 NFT' });
       if (bal < 0.1) return this.showToast({ icon: '⚠️', text: 'Нужно 0.1 TON на балансе для комиссии' });
-      w = { id: id, kind: 'nft', amount: 0, address: '', gifts: items.map(function (it) { return it.key; }), fee: 0.1, at: Date.now() };
-      R.inventory.remove(items.map(function (it) { return it.uid; }));
-      R.addBalance(-0.1);
+      // сервер сам заберёт эти подарки из инвентаря и комиссию с баланса
+      w = { id: id, kind: 'nft', items: items.map(function (it) { return it.uid; }) };
     }
     net.withdraw(w);
     this.setState({ wdAmount: '', wdSel: {} });
@@ -446,7 +441,9 @@ class Component extends DCLogic {
       n2.send({ t: 'cb.create', asset: CURS[s.depCur].code, amount: a2 });
       return;
     }
-    this.showToast({ icon: '🚧', text: 'Это демо-версия: пополнение скоро будет доступно' });
+    var ga = window.RK && window.RK.net && window.RK.net.gifts;
+    if (s.depTab === 'gift' && ga && ga.username) { openLink('https://t.me/' + ga.username); return; }
+    this.showToast({ icon: '🚧', text: 'Приём NFT-подарков скоро будет доступен' });
   }
   renderVals() {
     var self = this, s = this.state;
@@ -455,6 +452,7 @@ class Component extends DCLogic {
     var myWd = s.dep && window.RK && window.RK.net && window.RK.net.withdrawals ? window.RK.net.withdrawals() : [];
     var wdCount = 0; inv.forEach(function (it) { if (s.wdSel[it.uid]) wdCount++; });
     var tgUser = window.RK && window.RK.user;
+    var giftAcc = window.RK && window.RK.net && window.RK.net.gifts && window.RK.net.gifts.username ? window.RK.net.gifts : null;
     var testOn = TEST_TOPUP && s.depMode === 'dep' && s.depTab === 'ton';
     var depInfo = window.RK && window.RK.net && window.RK.net.deposit;
     var liveTon = !TEST_TOPUP && s.depMode === 'dep' && s.depTab === 'ton';
@@ -482,9 +480,13 @@ class Component extends DCLogic {
       }),
       depCryptoAmount: s.depCryptoAmount, depOnCryptoAmount: function (e) { self.setState({ depCryptoAmount: cleanNum(e && e.target && e.target.value) }); },
       depGiftImgs: DROPS.slice(0, 4).map(function (d) { return { img: d.img, color: colorOf(d.price) }; }),
-      depGiftSteps: [
-        { n: 1, text: 'Открой бота @RackoonDropBot в Telegram' },
-        { n: 2, text: 'Отправь ему любой NFT-подарок' },
+      depGiftSteps: giftAcc ? [
+        { n: 1, text: 'Открой профиль @' + giftAcc.username + ' в Telegram' },
+        { n: 2, text: 'Нажми «Подарить» и выбери NFT из своих подарков' },
+        { n: 3, text: 'Через ~20 секунд такой же NFT появится в инвентаре' }
+      ] : [
+        { n: 1, text: 'Приём NFT-подарков скоро заработает' },
+        { n: 2, text: 'Ты сможешь подарить NFT аккаунту игры' },
         { n: 3, text: 'Подарок появится в твоём инвентаре' }
       ],
       depTitle: s.depMode === 'wd' ? 'ВЫВОД' : 'ДЕПОЗИТ',
@@ -493,7 +495,7 @@ class Component extends DCLogic {
       modeDepSel: s.depMode === 'dep' ? 'true' : 'false', modeWdSel: s.depMode === 'wd' ? 'true' : 'false',
       modeDepBg: s.depMode === 'dep' ? '#ffc83d' : 'transparent', modeDepColor: s.depMode === 'dep' ? '#1a1300' : '#a3a8b5',
       modeWdBg: s.depMode === 'wd' ? '#ffc83d' : 'transparent', modeWdColor: s.depMode === 'wd' ? '#1a1300' : '#a3a8b5',
-      badgeText: s.depMode === 'wd' ? 'Вывод NFT по заявке · проверяет администратор' : testOn ? 'ТЕСТ · сумма сразу зачисляется на баланс' : (liveTon ? 'Оплата через Tonkeeper · зачисление автоматически' : liveCb ? 'Оплата через @CryptoBot · зачисление автоматически' : 'ДЕМО · ' + (s.depMode === 'wd' ? 'вывод' : 'пополнение') + ' скоро будет доступно'),
+      badgeText: s.depMode === 'wd' ? 'Вывод NFT по заявке · проверяет администратор' : testOn ? 'ТЕСТ · сумма сразу зачисляется на баланс' : (liveTon ? 'Оплата через Tonkeeper · зачисление автоматически' : liveCb ? 'Оплата через @CryptoBot · зачисление автоматически' : (s.depMode === 'dep' && s.depTab === 'gift' && giftAcc) ? 'NFT зачисляется автоматически' : 'ДЕМО · ' + (s.depMode === 'wd' ? 'вывод' : 'пополнение') + ' скоро будет доступно'),
       badgeColor: s.depMode === 'wd' || testOn || liveTon || liveCb ? '#2bd46b' : '#ffc83d', badgeBg: s.depMode === 'wd' || testOn || liveTon || liveCb ? 'rgba(43,212,107,0.12)' : 'rgba(255,200,61,0.12)', badgeBorder: s.depMode === 'wd' || testOn || liveTon || liveCb ? 'rgba(43,212,107,0.4)' : 'rgba(255,200,61,0.35)',
       depComment: depInfo ? depInfo.comment : '', hasDepComment: !!depInfo,
       waiting: !!s.waitingDeposit && s.depTab === 'ton',
@@ -507,7 +509,7 @@ class Component extends DCLogic {
       wdHasItems: inv.length > 0, wdEmpty: inv.length === 0,
       wdInfo: wdCount ? 'выбрано ' + wdCount + ' из ' + inv.length : inv.length + ' шт. в инвентаре',
       wdTo: tgUser && tgUser.username ? '@' + tgUser.username : ((tgUser && tgUser.first_name) || 'твой Telegram-аккаунт'),
-      depBtnText: s.depMode === 'wd' ? (s.wdKind === 'ton' ? (parseFloat(s.wdAmount) > 0 ? 'Вывести ' + s.wdAmount + ' TON' : 'Вывести TON') : (wdCount ? 'Вывести ' + wdCount + ' NFT' : 'Выбери NFT')) : (s.depTab === 'gift' ? 'Открыть бота' : 'Пополнить'),
+      depBtnText: s.depMode === 'wd' ? (s.wdKind === 'ton' ? (parseFloat(s.wdAmount) > 0 ? 'Вывести ' + s.wdAmount + ' TON' : 'Вывести TON') : (wdCount ? 'Вывести ' + wdCount + ' NFT' : 'Выбери NFT')) : (s.depTab === 'gift' ? (giftAcc ? 'Открыть @' + giftAcc.username : 'Скоро') : 'Пополнить'),
       depBtnDisabled: s.depMode === 'wd' && s.wdKind === 'nft' && !wdCount,
       depBtnBg: s.depMode === 'wd' && s.wdKind === 'nft' && !wdCount ? '#3a3420' : '#ffc83d',
       wdIsTon: s.wdKind === 'ton', wdIsNft: s.wdKind === 'nft',
@@ -527,11 +529,16 @@ class Component extends DCLogic {
       toastIcon: s.toast ? s.toast.icon : '', toastText: s.toast ? s.toast.text : '', toastBorder: s.toast && s.toast.ok ? '#2bd46b' : '#ffc83d',
       depSubmit: function () { self.depSubmit(); },
       depToast: !!s.depToast,
-      online: (window.RK && window.RK.net && window.RK.net.connected && window.RK.net.online) || this.state.online,
+      online: (window.RK && window.RK.net && window.RK.net.online) || 0,
       balanceText: (window.RK ? window.RK.wallet.get() : 0).toFixed(2) + ' TON',
       tgName: (window.RK && window.RK.user && window.RK.user.first_name) || 'Гость',
       avatarUrl: (window.RK && window.RK.user && window.RK.user.photo_url) || '/_blob/661884b648dd965ea69af44ea8c7ee95',
-      drops: this.state.drops.map(function (d) { return { name: d.name, img: d.img, color: colorOf(d.price), priceText: d.price + ' TON' }; })
+      // последние выигрыши — настоящие (кейсы, апгрейды, краш, PvP, мины), присылает сервер
+      drops: ((window.RK && window.RK.net && window.RK.net.feed) || []).slice(0, 8).map(function (f) {
+        var g = f.key ? (f.key.indexOf('TON_') === 0 ? { img: 'assets/ton.svg' } : window.RK.gift(f.key)) : null;
+        return { name: f.name, img: g ? g.img : 'assets/ton.svg', color: colorOf(f.amount), priceText: (Math.round(f.amount * 100) / 100) + ' TON' };
+      }),
+      noDrops: !((window.RK && window.RK.net && window.RK.net.feed) || []).length
     };
   }
 }

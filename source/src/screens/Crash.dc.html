@@ -368,11 +368,8 @@ class Component extends DCLogic {
       this.offs.push(net.on('crash', function (m) { self.onRound(m); }));
       this.offs.push(net.on('crash.ok', function (m) { rkTrack({ game: 'crash', bet: m.amount, round: true }); self.setState({ sending: false, err: '' }); }));
       this.offs.push(net.on('crash.err', function (m) {
-        // ставка не прошла — возвращаем деньги / подарок
-        var s = self.state, upd = { sending: false, err: m.msg || 'Ошибка' };
-        if (m.gift) { var I = INV(); if (I && G(m.gift)) I.add(G(m.gift).name); upd.invTick = s.invTick + 1; } // подарок вернулся в инвентарь
-        else if (m.amount) upd.balance = r2(s.balance + Number(m.amount));
-        self.setState(upd);
+        // ставка не прошла — сервер ничего не списал
+        self.setState({ sending: false, err: m.msg || 'Ошибка' });
       }));
       this.offs.push(net.on('status', function () { self.setState({ conn: net.connected }); }));
       net.sub('crash');
@@ -417,13 +414,12 @@ class Component extends DCLogic {
       // gift = uid предмета из инвентаря: списываем его и ставим
       var I = INV(), item = I ? I.list().filter(function (it) { return it.uid === gift; })[0] : null;
       if (!item || !G(item.key)) { this.setState({ giftPick: false, err: 'Этого подарка больше нет в инвентаре' }); return; }
-      I.remove(item.uid);
-      this.setState({ sending: true, giftPick: false, invTick: s.invTick + 1 });
-      net.send({ t: 'crash.bet', gift: item.key });
+      this.setState({ sending: true, giftPick: false });
+      net.send({ t: 'crash.bet', item: item.uid }); // сервер сам заберёт подарок из инвентаря
     } else {
       if (!(amount >= 0.1) || amount > s.balance) return;
-      this.setState({ balance: r2(s.balance - amount), sending: true });
-      net.send({ t: 'crash.bet', amount: amount });
+      this.setState({ sending: true });
+      net.send({ t: 'crash.bet', amount: amount }); // сервер сам спишет ставку
     }
   }
   placeTon() {

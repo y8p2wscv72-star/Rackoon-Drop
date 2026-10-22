@@ -143,24 +143,31 @@ class Component extends DCLogic {
   constructor(props) {
     super(props);
     this.state = {
-      balance: 50, bet: 1, mines: 3, phase: 'idle',
+      balance: 0, bet: 1, mines: 3, phase: 'idle',
       mineMap: [], revealed: [], hit: -1, overlay: false, res: null
     };
   }
 
+  // Мины расставляет сервер — до конца раунда игра не знает, где они. Каждая клетка проверяется на сервере.
+  componentDidMount() {
+    var self = this;
+    window.RK.net.req('mines.state').then(function (r) { // незаконченная игра (например, закрыл приложение) — продолжаем
+      if (r.ok && r.data.game) self.applyGame(r.data.game, 'playing');
+    });
+  }
+  applyGame(g, phase, extra) {
+    var map = g.map || []; var mineMap = []; for (var i = 0; i < SIZE; i++) mineMap.push(!!map[i]);
+    this.setState(Object.assign({ phase: phase, bet: g.bet, mines: g.mines, revealed: g.revealed.slice(), mineMap: mineMap, hit: g.hit }, extra || {}));
+  }
   start() {
-    var s = this.state;
-    if (s.phase === 'playing' || s.bet > s.balance || !(s.bet >= 0.1)) return;
-    rkTrack({ game: 'mines', bet: s.bet, round: true });
-    var idx = [];
-    for (var i = 0; i < SIZE; i++) idx.push(i);
-    for (var j = idx.length - 1; j > 0; j--) { var r = Math.floor(Math.random() * (j + 1)); var t = idx[j]; idx[j] = idx[r]; idx[r] = t; }
-    var mineMap = [];
-    for (var n = 0; n < SIZE; n++) mineMap.push(false);
-    for (var q = 0; q < s.mines; q++) mineMap[idx[q]] = true;
-    var revealed = [];
-    for (var z = 0; z < SIZE; z++) revealed.push(false);
-    this.setState({ balance: round2(s.balance - s.bet), phase: 'playing', mineMap: mineMap, revealed: revealed, hit: -1, overlay: false, res: null });
+    var s = this.state, self = this;
+    if (s.phase === 'playing' || this.busy || s.bet > s.balance || !(s.bet >= 0.1)) return;
+    this.busy = true;
+    window.RK.net.req('mines.start', { bet: s.bet, mines: s.mines }).then(function (r) {
+      self.busy = false;
+      if (!r.ok) { window.RK.toast(r.err, false); return; }
+      self.applyGame(r.data.game, 'playing', { overlay: false, res: null });
+    });
   }
 
   safeCount() {
@@ -168,29 +175,28 @@ class Component extends DCLogic {
   }
 
   reveal(i) {
-    var s = this.state;
-    if (s.phase !== 'playing' || s.revealed[i]) return;
-    if (s.mineMap[i]) {
-      this.setState({ phase: 'lost', hit: i, overlay: true, res: { win: false, amount: s.bet, mult: multFor(this.safeCount(), s.mines) } });
-      return;
-    }
-    var revealed = s.revealed.slice();
-    revealed[i] = true;
-    var k = revealed.filter(function (v) { return v; }).length;
-    var self = this;
-    this.setState({ revealed: revealed }, function () {
-      if (k === SIZE - s.mines) self.cashout();
+    var s = this.state, self = this;
+    if (s.phase !== 'playing' || s.revealed[i] || this.busy) return;
+    this.busy = true;
+    window.RK.net.req('mines.reveal', { i: i }).then(function (r) {
+      self.busy = false;
+      if (!r.ok) { window.RK.toast(r.err, false); return; }
+      var d = r.data, g = d.game;
+      if (d.boom) self.applyGame(g, 'lost', { hit: i, overlay: true, res: { win: false, amount: g.bet, mult: g.mult } });
+      else if (d.auto) self.applyGame(g, 'won', { overlay: true, res: { win: true, amount: d.win, mult: d.mult } });
+      else self.applyGame(g, 'playing');
     });
   }
 
   cashout() {
-    var s = this.state;
-    var k = this.safeCount();
-    if (s.phase !== 'playing' || k === 0) return;
-    var m = multFor(k, s.mines);
-    var win = Math.floor(s.bet * m * 100) / 100;
-    rkTrack({ game: 'mines', win: win });
-    this.setState({ phase: 'won', balance: round2(s.balance + win), overlay: true, res: { win: true, amount: win, mult: m } });
+    var s = this.state, self = this;
+    if (s.phase !== 'playing' || this.safeCount() === 0 || this.busy) return;
+    this.busy = true;
+    window.RK.net.req('mines.cashout').then(function (r) {
+      self.busy = false;
+      if (!r.ok) { window.RK.toast(r.err, false); return; }
+      self.applyGame(r.data.game, 'won', { overlay: true, res: { win: true, amount: r.data.win, mult: r.data.mult } });
+    });
   }
 
   randomPick() {
