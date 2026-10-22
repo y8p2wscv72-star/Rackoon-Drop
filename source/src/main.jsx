@@ -170,6 +170,9 @@ const net = (() => {
         api.feed = m.feed || [];
         if (m.acct) applyAcct(m.acct);
         if (m.me && m.me.tg) raw({ t: 'wd.list' });
+        // PIN админки: после переподключения отправляем заново (хранится только в памяти до закрытия игры)
+        api.pinOk = !!(m.me && m.me.admin && !m.me.needPin);
+        if (m.me && m.me.admin && m.me.needPin && api.adminPin) raw({ t: 'admin.pin', pin: api.adminPin });
         emit('status', api);
       }
       if (m.t === 'acct') { applyAcct(m); }
@@ -180,6 +183,8 @@ const net = (() => {
       if (m.t === 'wd.ok' || m.t === 'wd.update') { api.wd = [m.w].concat(api.wd.filter((w) => w.id !== m.w.id)).sort((x, y) => y.at - x.at); }
       if (m.t === 'wd.err') showToast(m.msg, false);
       if (m.t === 'auth.expired') api.expired = true;
+      if (m.t === 'admin.pinOk') api.pinOk = true;
+      if (m.t === 'admin.pinBad') api.adminPin = '';
       if (m.t === 'banned') { api.expired = true; api.banned = true; showBanned(m.reason); }
       emit(m.t, m);
     };

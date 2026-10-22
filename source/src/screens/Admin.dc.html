@@ -29,6 +29,18 @@ body{margin:0;background:#0d0f14}
 <div style="background: #151821; border: 1px solid #3a1d26; border-radius: 18px; padding: 22px 16px; text-align: center; font-size: 14px; color: #ff8a9a">{{noAccessText}}</div>
 </sc-if>
 
+<sc-if value="{{needPin}}" hint-placeholder-val="{{ false }}">
+<div style="background: #151821; border: 1px solid #222838; border-radius: 20px; padding: 22px 16px; display: flex; flex-direction: column; align-items: center; gap: 14px; text-align: center">
+<div style="font-size: 40px" aria-hidden="true">🔐</div>
+<div style="font-size: 18px; font-weight: 700">Введи PIN админки</div>
+<label style="width: 100%; max-width: 240px; height: 56px; border-radius: 14px; background: #0d0f14; border: 1px solid {{pinBorder}}; display: flex; align-items: center; padding: 0 14px; cursor: text">
+<input type="password" inputmode="numeric" autocomplete="off" enterkeyhint="go" aria-label="PIN админки" placeholder="••••" value="{{pin}}" onInput="{{onPin}}" onKeyDown="{{onPinKey}}" style="flex-grow: 1; min-width: 0; height: 100%; border: 0; outline: none; background: transparent; text-align: center; font-family: Rubik, system-ui, sans-serif; font-size: 24px; font-weight: 900; letter-spacing: 8px; color: #ffffff">
+</label>
+<button type="button" onClick="{{sendPin}}" style="width: 100%; max-width: 240px; height: 52px; border-radius: 14px; border: 0; background: #ffc83d; color: #1a1300; font-family: Rubik, system-ui, sans-serif; font-size: 16px; font-weight: 900; cursor: pointer">Войти</button>
+<sc-if value="{{hasPinMsg}}" hint-placeholder-val="{{ false }}"><div role="status" style="font-size: 13px; font-weight: 600; color: #ff8a9a">{{pinMsg}}</div></sc-if>
+</div>
+</sc-if>
+
 <sc-if value="{{hasAccess}}" hint-placeholder-val="{{ true }}">
 <div style="display: flex; justify-content: space-between; align-items: center">
 <span style="display: flex; align-items: center; gap: 8px; font-size: 17px; font-weight: 700">Заявки на вывод<sc-if value="{{hasPending}}" hint-placeholder-val="{{ false }}"><span style="min-width: 22px; height: 22px; border-radius: 11px; background: #ff5d73; color: #ffffff; font-size: 12px; font-weight: 900; display: inline-flex; align-items: center; justify-content: center; padding: 0 6px; box-sizing: border-box">{{pendingCount}}</span></sc-if></span>
@@ -179,7 +191,7 @@ body{margin:0;background:#0d0f14}
 </sc-for>
 </div>
 <div style="display: flex; justify-content: space-between; align-items: baseline; margin-top: 6px">
-<span style="font-size: 17px; font-weight: 700">Пополнения TON</span>
+<span style="font-size: 17px; font-weight: 700">Пополнения</span>
 <button type="button" onClick="{{refresh}}" style="height: 32px; border-radius: 10px; border: 1px solid #262b3a; background: #1b1e27; color: #a3a8b5; font-family: Rubik, system-ui, sans-serif; font-size: 12px; font-weight: 700; padding: 0 10px; cursor: pointer">Обновить</button>
 </div>
 <div style="display: flex; flex-direction: column; gap: 6px">
@@ -232,7 +244,7 @@ function hm(t) { var d = new Date(t + 3 * 3600 * 1000); return ('0' + d.getUTCDa
 class Component extends DCLogic {
   constructor(props) {
     super(props);
-    this.state = { username: '', amount: '', user: null, msg: null, log: [], busy: false, tick: 0, wds: [], confirmRej: null, copied: null, banReason: '', confirmBan: false, bcText: '', bcBtn: true, bcConfirm: false, bc: null, bcHist: [] };
+    this.state = { pin: '', pinMsg: '', username: '', amount: '', user: null, msg: null, log: [], busy: false, tick: 0, wds: [], confirmRej: null, copied: null, banReason: '', confirmBan: false, bcText: '', bcBtn: true, bcConfirm: false, bc: null, bcHist: [] };
     this.offs = [];
   }
   componentDidMount() {
@@ -258,12 +270,21 @@ class Component extends DCLogic {
         self.setState({ wds: list, busy: false });
       }));
       this.offs.push(net.on('admin.bc', function (m) { var st = { bc: m.bc }; if (m.history) st.bcHist = m.history; self.setState(st); }));
-      this.offs.push(net.on('status', function () { self.forceUpdate(); if (net.connected) { net.send({ t: 'admin.log' }); net.send({ t: 'admin.bcStatus' }); } }));
-      if (net.connected) { net.send({ t: 'admin.log' }); net.send({ t: 'admin.bcStatus' }); }
+      var load = function () { if (net.connected && net.pinOk) { net.send({ t: 'admin.log' }); net.send({ t: 'admin.bcStatus' }); } };
+      this.offs.push(net.on('admin.pinOk', function () { self.setState({ pin: '', pinMsg: '' }); load(); }));
+      this.offs.push(net.on('admin.pinBad', function (m) { self.setState({ pin: '', pinMsg: 'Неверный PIN. Осталось попыток: ' + m.left }); }));
+      this.offs.push(net.on('status', function () { self.forceUpdate(); load(); }));
+      load();
     }
     this.iv = setInterval(function () { self.setState({ tick: self.state.tick + 1 }); }, 1000);
   }
   componentWillUnmount() { clearInterval(this.iv); clearTimeout(this.rt); this.offs.forEach(function (f) { f(); }); }
+  sendPin() {
+    var net = NET(), pin = this.state.pin;
+    if (!pin) return this.setState({ pinMsg: 'Введи PIN' });
+    if (!net || !net.connected) return this.setState({ pinMsg: 'Нет связи с сервером' });
+    net.adminPin = pin; net.send({ t: 'admin.pin', pin: pin });
+  }
   find() {
     var net = NET(), u = this.state.username;
     if (!u) return this.setState({ msg: { ok: false, text: 'Введи юзернейм игрока' } });
@@ -281,13 +302,19 @@ class Component extends DCLogic {
   }
   renderVals() {
     var self = this, s = this.state, net = NET();
-    var conn = !!(net && net.connected), admin = !!(net && net.me && net.me.admin);
+    var conn = !!(net && net.connected), isAdminUser = !!(net && net.me && net.me.admin), admin = isAdminUser && !!net.pinOk;
+    var stale = !!(net && net.me && net.me.adminStale);
     var u = s.user, ready = conn && admin && !s.busy;
     var pend = (s.wds || []).filter(function (w) { return w.status === 'pending'; }).length;
     return {
       connText: conn ? 'online' : 'нет связи', connBg: conn ? 'rgba(43,212,107,0.14)' : 'rgba(255,93,115,0.14)', connColor: conn ? '#2bd46b' : '#ff5d73',
-      noAccess: !admin, hasAccess: admin,
-      noAccessText: conn ? 'Нет доступа. Админка доступна только администратору.' : 'Подключаемся к серверу...',
+      noAccess: !admin && !(conn && isAdminUser), hasAccess: admin,
+      noAccessText: !conn ? 'Подключаемся к серверу...' : stale ? 'Для безопасности админка открывается только в свежем запуске игры. Закрой мини-апп полностью и открой заново.' : 'Нет доступа. Админка доступна только администратору.',
+      needPin: conn && isAdminUser && !net.pinOk,
+      pin: s.pin, pinBorder: s.pinMsg ? '#ff5d73' : '#262b3a', hasPinMsg: !!s.pinMsg, pinMsg: s.pinMsg,
+      onPin: function (e) { self.setState({ pin: String((e && e.target && e.target.value) || '').replace(/\s/g, '').slice(0, 32), pinMsg: '' }); },
+      onPinKey: function (e) { if (e && e.key === 'Enter') { if (e.target && e.target.blur) e.target.blur(); self.sendPin(); } },
+      sendPin: function () { self.sendPin(); },
       username: s.username,
       onUsername: function (e) { self.setState({ username: cleanUser(e && e.target && e.target.value), user: null, confirmBan: false }); },
       onUserKey: function (e) { if (e && e.key === 'Enter') { if (e.target && e.target.blur) e.target.blur(); self.find(); } },
@@ -341,7 +368,8 @@ class Component extends DCLogic {
       deps: (s.deps || []).map(function (d) {
         var u = d.username ? '@' + d.username : (d.uid && d.uid.indexOf('tg') === 0 ? 'id ' + d.uid.slice(2) : (d.comment ? '«' + d.comment + '»' : 'без комментария'));
         var ok = String(d.status || '').indexOf('зачислено') === 0;
-        return { who: u + (d.gift ? ' · 🎁 ' + d.gift : ''), time: hm(d.at), ton: d.ton, status: d.status, statusColor: ok ? '#2bd46b' : '#ff8a5c', border: ok ? '#222838' : 'rgba(255,138,92,0.45)' };
+        var kind = d.gift ? '🎁 NFT ' + d.gift : d.from === 'CryptoBot' ? '💳 Crypto · ' + d.comment : '💎 TON';
+        return { who: u + ' · ' + kind, time: hm(d.at), ton: d.ton, status: d.status, statusColor: ok ? '#2bd46b' : '#ff8a5c', border: ok ? '#222838' : 'rgba(255,138,92,0.45)' };
       }),
       noDeps: !(s.deps && s.deps.length),
       hasPending: pend > 0, pendingCount: pend,
