@@ -22,6 +22,106 @@
 </head>
 <body>
 <div id="app"></div>
+<!-- Экран загрузки: показывается, пока игра подключается к серверу (убирает window.rkLoaderDone) -->
+<style>
+  #rkl { position: fixed; inset: 0; z-index: 1000; background: #0b0d12; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 26px; padding: 24px; box-sizing: border-box;
+    font-family: Rubik, 'Inter', system-ui, sans-serif; color: #fff; transition: opacity .4s ease; }
+  #rkl.rkl-out { opacity: 0; pointer-events: none; }
+  #rkl * { box-sizing: border-box; }
+  .rkl-rays { position: absolute; left: 50%; top: 38%; width: 900px; height: 900px; margin: -450px 0 0 -450px;
+    background: repeating-conic-gradient(from 0deg, rgba(255,200,61,.07) 0deg 10deg, transparent 10deg 20deg);
+    -webkit-mask: radial-gradient(circle, #000 0, transparent 60%); mask: radial-gradient(circle, #000 0, transparent 60%); animation: rkl-spin 40s linear infinite; }
+  .rkl-coin { position: absolute; top: -60px; opacity: .85; animation: rkl-fall linear infinite; }
+  .rkl-coin img { width: 100%; height: 100%; animation: rkl-flip 1.2s linear infinite; }
+  .rkl-stage { position: relative; width: 250px; height: 250px; display: flex; align-items: center; justify-content: center; }
+  .rkl-halo { position: absolute; inset: 30px; border-radius: 50%; background: radial-gradient(circle, rgba(255,200,61,.45), transparent 70%); animation: rkl-pulse 1.6s ease-in-out infinite; }
+  .rkl-ring { position: absolute; inset: 52px; border-radius: 50%; border: 3px dashed rgba(255,200,61,.55); animation: rkl-spin 8s linear infinite reverse; }
+  .rkl-av { position: relative; width: 132px; height: 132px; border-radius: 50%; overflow: hidden; border: 4px solid #ffc83d;
+    box-shadow: 0 0 0 6px rgba(255,200,61,.15), 0 12px 40px rgba(255,159,28,.45); animation: rkl-bob 2s ease-in-out infinite; }
+  .rkl-av img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .rkl-orbit { position: absolute; inset: 0; animation: rkl-spin 6s linear infinite; }
+  .rkl-gift { position: absolute; left: 50%; top: 50%; width: 44px; height: 44px; margin: -22px; border-radius: 14px; background: #1b1e27;
+    display: flex; align-items: center; justify-content: center; box-shadow: 0 6px 18px rgba(0,0,0,.5); }
+  .rkl-gift img { width: 32px; height: 32px; animation: rkl-spin 6s linear infinite reverse; }
+  .rkl-loot { position: absolute; font-size: 26px; font-weight: 900; color: #ffc83d; text-shadow: 0 2px 10px rgba(255,159,28,.8); opacity: 0; animation: rkl-loot 2.4s ease-out infinite; }
+  .rkl-logo { font-size: 46px; font-weight: 900; font-style: italic; letter-spacing: 1px; line-height: 1; display: flex; }
+  .rkl-logo span { display: inline-block; background: linear-gradient(180deg, #fff3c4, #ffc83d 45%, #ff9f1c); -webkit-background-clip: text; background-clip: text; color: transparent;
+    filter: drop-shadow(0 3px 0 #7a4b00); animation: rkl-wave 1.8s ease-in-out infinite; }
+  .rkl-tag { margin-top: -14px; font-size: 13px; font-weight: 700; letter-spacing: 4px; color: #8a90a0; }
+  .rkl-bar { position: relative; width: min(300px, 82vw); height: 14px; border-radius: 7px; background: #151821; border: 1px solid #262b3a; }
+  .rkl-fill { position: absolute; left: 0; top: 0; bottom: 0; width: 0; border-radius: 7px; overflow: hidden; background: linear-gradient(90deg, #ff5d73, #ff9f1c, #ffc83d); box-shadow: 0 0 16px rgba(255,159,28,.6); }
+  .rkl-fill::after { content: ''; position: absolute; inset: 0; background: repeating-linear-gradient(-45deg, rgba(255,255,255,.22) 0 8px, transparent 8px 16px); animation: rkl-stripes .6s linear infinite; }
+  .rkl-rocket { position: absolute; top: 50%; left: 0; width: 42px; height: 42px; margin: -24px 0 0 -20px; transform: rotate(45deg); filter: drop-shadow(0 0 8px rgba(255,159,28,.8)); animation: rkl-shake .15s linear infinite; }
+  .rkl-pct { font-size: 15px; font-weight: 900; color: #ffc83d; font-variant-numeric: tabular-nums; }
+  .rkl-tip { height: 20px; font-size: 14px; font-weight: 500; color: #c9cdd6; text-align: center; transition: opacity .3s; }
+  @keyframes rkl-spin { to { transform: rotate(360deg); } }
+  @keyframes rkl-pulse { 50% { transform: scale(1.12); opacity: .6; } }
+  @keyframes rkl-bob { 50% { transform: translateY(-8px) rotate(-3deg); } }
+  @keyframes rkl-wave { 0%, 50%, 100% { transform: translateY(0); } 25% { transform: translateY(-7px); } }
+  @keyframes rkl-fall { to { transform: translateY(calc(100vh + 120px)) rotate(200deg); } }
+  @keyframes rkl-flip { 50% { transform: scaleX(.15); } }
+  @keyframes rkl-stripes { to { background-position: 22px 0; } }
+  @keyframes rkl-shake { 50% { margin-top: -25px; } }
+  @keyframes rkl-loot { 0% { opacity: 0; transform: translate(0, 10px) scale(.6); } 20% { opacity: 1; } 100% { opacity: 0; transform: translate(var(--dx), -70px) scale(1.2); } }
+  @media (prefers-reduced-motion: reduce) { #rkl *, #rkl *::before, #rkl *::after { animation-duration: .001s !important; animation-iteration-count: 1 !important; } }
+</style>
+<div id="rkl" role="status" aria-live="polite" aria-label="Загрузка игры">
+  <div class="rkl-rays" aria-hidden="true"></div>
+  <div id="rkl-coins" aria-hidden="true"></div>
+  <div class="rkl-stage" aria-hidden="true">
+    <div class="rkl-halo"></div><div class="rkl-ring"></div><div class="rkl-orbit" id="rkl-orbit"></div>
+    <div class="rkl-av"><img src="assets/avatar.jpg" alt=""></div>
+    <div class="rkl-loot" style="--dx:-60px; left: 40px; top: 70px">+5 TON</div>
+    <div class="rkl-loot" style="--dx:50px; right: 30px; top: 90px; animation-delay: 1.2s">NFT!</div>
+  </div>
+  <div style="display: flex; flex-direction: column; align-items: center; gap: 16px">
+    <div class="rkl-logo" id="rkl-logo" aria-label="RACKOON"></div>
+    <div class="rkl-tag">DROP · CRASH · PVP</div>
+  </div>
+  <div style="display: flex; flex-direction: column; align-items: center; gap: 12px; margin-top: 10px">
+    <div class="rkl-bar"><div class="rkl-fill" id="rkl-fill"></div><img class="rkl-rocket" id="rkl-rocket" src="assets/rocket.png" alt=""></div>
+    <div class="rkl-pct" id="rkl-pct">0%</div>
+    <div class="rkl-tip" id="rkl-tip">Енот надевает маску…</div>
+  </div>
+</div>
+<script>
+(function () {
+  var root = document.getElementById('rkl'), logo = document.getElementById('rkl-logo'), orbit = document.getElementById('rkl-orbit'), coins = document.getElementById('rkl-coins');
+  'RACKOON'.split('').forEach(function (ch, i) { var s = document.createElement('span'); s.textContent = ch; s.style.animationDelay = (i * 0.09) + 's'; logo.appendChild(s); });
+  [['pepe', '#ff5d73'], ['watch', '#c77dff'], ['rose', '#5fd4ff'], ['cake', '#9aa3b5'], ['tophat', '#c77dff'], ['dring', '#ffc83d']].forEach(function (g, i, all) {
+    var a = i / all.length * Math.PI * 2, d = document.createElement('div');
+    d.className = 'rkl-gift'; d.style.borderBottom = '3px solid ' + g[1];
+    d.style.transform = 'translate(' + Math.cos(a) * 108 + 'px,' + Math.sin(a) * 108 + 'px)';
+    d.innerHTML = '<img src="assets/' + g[0] + '.svg" alt="">'; orbit.appendChild(d);
+  });
+  for (var i = 0; i < 14; i++) {
+    var c = document.createElement('div'), sz = 18 + Math.random() * 20; c.className = 'rkl-coin';
+    c.style.left = (Math.random() * 100) + 'vw'; c.style.width = c.style.height = sz + 'px';
+    c.style.animationDuration = (4 + Math.random() * 4) + 's'; c.style.animationDelay = (-Math.random() * 8) + 's';
+    c.innerHTML = '<img src="assets/ton.svg" alt="">'; coins.appendChild(c);
+  }
+  var tips = ['Енот надевает маску…', 'Взламываем сейф с NFT…', 'Заправляем ракету…', 'Пересчитываем TON…', 'Прячем мешок с подарками…', 'Почти готово!'];
+  var fill = document.getElementById('rkl-fill'), rocket = document.getElementById('rkl-rocket'), pct = document.getElementById('rkl-pct'), tip = document.getElementById('rkl-tip');
+  var t0 = Date.now(), ready = 0, shown = 0, gone = false;
+  function frame() {
+    if (gone) return;
+    var el = (Date.now() - t0) / 1000;
+    var p = 92 * (1 - Math.exp(-el / 1.4));                 // пока ждём сервер — ползём к 92%
+    if (ready) p = shown + (100 - shown) * Math.min(1, (Date.now() - ready) / 350); // готово — добегаем до 100%
+    else shown = p;
+    fill.style.width = p + '%'; rocket.style.left = p + '%'; pct.textContent = Math.floor(p) + '%';
+    var t = tips[Math.min(tips.length - 1, Math.floor(p / (100 / tips.length)))];
+    if (tip.textContent !== t) tip.textContent = t;
+    if (ready && p >= 100) { gone = true; root.className = 'rkl-out'; setTimeout(function () { if (root.parentNode) root.parentNode.removeChild(root); }, 450); return; }
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+  // игра зовёт, когда подключилась к серверу; показываем экран хотя бы ~1 с, чтобы не мигал
+  window.rkLoaderDone = function () { if (ready) return; var wait = Math.max(0, 1000 - (Date.now() - t0)); setTimeout(function () { if (!ready) ready = Date.now(); }, wait); };
+  setTimeout(window.rkLoaderDone, 10000); // сервер долго не отвечает — всё равно пускаем в игру
+})();
+</script>
+
 <script src="app.js"></script>
 </body>
 </html>
