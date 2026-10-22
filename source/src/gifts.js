@@ -141,6 +141,15 @@ var IMG = {
   'Swiss Watch': '/_blob/5efc0b426406d53e3b649c727079f26d', 'Ion Gem': '/_blob/e562d84d61312007f5108ab64cbfe6f9',
   'Precious Peach': '/_blob/923c4583ef32f1e6549c08d5a1839d4c', "Durov's Cap": '/_blob/500977bc4572974cf066e4c08b276369'
 };
+// Обычные (не NFT) подарки Telegram за звёзды. Цена в TON = звёзды × STAR_TON.
+// 1 ⭐ ≈ $0.015, TON(GRAM) ≈ $1.34 (22.10.2026) → 1 ⭐ ≈ 0.011 TON. Поменяй STAR_TON, если курс сильно изменится.
+var STAR_TON = 0.011;
+var STARS = [
+  ['Heart', 15, '💝'], ['Teddy Bear', 15, '🧸'], ['Gift Box', 25, '🎁'], ['Rose', 25, '🌹'],
+  ['Cake', 50, '🎂'], ['Bouquet', 50, '💐'], ['Trophy', 100, '🏆'], ['Ring', 100, '💍'], ['Diamond', 100, '💎']
+];
+var STAR = {};
+STARS.forEach(function (r) { STAR[r[0]] = { name: r[0], stars: r[1], emoji: r[2], price: Math.round(r[1] * STAR_TON * 100) / 100 }; });
 // Старые короткие ключи демо-подарков → названия (для совместимости)
 var ALIAS = { cake: 'Homemade Cake', globe: 'Snow Globe', record: 'Record Player', rose: 'Eternal Rose', bear: 'Toy Bear', lpotion: 'Love Potion', bells: 'Jingle Bells', signet: 'Signet Ring' };
 function seeded(str) {
@@ -154,9 +163,10 @@ function estPrice(supply) { return Math.max(1.5, Math.round(2 * Math.pow(65396 /
 function dayPrice(name, base, d) { return Math.round(base * (1 + (seeded(name + ':' + d) * 2 - 1) * 0.03) * 100) / 100; }
 var BASE = {};
 RAW.forEach(function (r) { BASE[r[0]] = r[2] || estPrice(r[1]); });
-function canon(name) { name = String(name || ''); return BASE[name] ? name : (ALIAS[name] || null); }
+function canon(name) { name = String(name || ''); return BASE[name] || STAR[name] ? name : (ALIAS[name] || null); }
 // Цена подарка на сегодня (или null, если такого подарка нет в каталоге)
-function priceOf(name, t) { var n = canon(name); return n ? dayPrice(n, BASE[n], mskDay(t)) : null; }
+function priceOf(name, t) { var n = canon(name); if (!n) return null; return STAR[n] ? STAR[n].price : dayPrice(n, BASE[n], mskDay(t)); }
+function isStar(name) { return !!STAR[name]; }
 function rarityColor(p) {
   if (p < 5) return '#9aa3b5';
   if (p < 15) return '#5fd4ff';
@@ -170,6 +180,7 @@ function ladder(t) {
   var d = mskDay(t);
   if (_ladder.day !== d) {
     _ladder = { day: d, list: RAW.map(function (r) { return { name: r[0], price: dayPrice(r[0], BASE[r[0]], d) }; })
+      .concat(STARS.map(function (r) { return { name: r[0], price: STAR[r[0]].price }; }))
       .sort(function (a, b) { return a.price - b.price || (a.name < b.name ? -1 : 1); }) };
   }
   return _ladder.list;
@@ -178,4 +189,4 @@ function ladder(t) {
 function bestFor(value, t) { var L = ladder(t), best = null; for (var i = 0; i < L.length && L[i].price <= value + 1e-9; i++) best = L[i]; return best; }
 // Следующий подарок дороже, чем price (или null, если дороже нет)
 function nextAbove(price, t) { var L = ladder(t); for (var i = 0; i < L.length; i++) if (L[i].price > price + 1e-9) return L[i]; return null; }
-module.exports = { RAW: RAW, IMG: IMG, GIFT_IMG: GIFT_IMG, ALIAS: ALIAS, canon: canon, priceOf: priceOf, rarityColor: rarityColor, ladder: ladder, bestFor: bestFor, nextAbove: nextAbove };
+module.exports = { RAW: RAW, IMG: IMG, GIFT_IMG: GIFT_IMG, ALIAS: ALIAS, STAR: STAR, STARS: STARS, STAR_TON: STAR_TON, isStar: isStar, canon: canon, priceOf: priceOf, rarityColor: rarityColor, ladder: ladder, bestFor: bestFor, nextAbove: nextAbove };
