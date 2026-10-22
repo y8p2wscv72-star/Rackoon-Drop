@@ -131,7 +131,7 @@ a{color:#ffc83d}a:hover{color:#ffe08a}
 </div>
 <div role="tablist" aria-label="\u041F\u043E\u043F\u043E\u043B\u043D\u0438\u0442\u044C \u0438\u043B\u0438 \u0432\u044B\u0432\u0435\u0441\u0442\u0438" style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px; background: #0d0f14; border: 1px solid #262b3a; border-radius: 16px; padding: 4px">
 <button type="button" role="tab" aria-selected="{{modeDepSel}}" onClick="{{modeDep}}" style="height: 40px; border-radius: 12px; border: 0; background: {{modeDepBg}}; color: {{modeDepColor}}; font-family: Rubik, system-ui, sans-serif; font-size: 15px; font-weight: 900; cursor: pointer">\u041F\u043E\u043F\u043E\u043B\u043D\u0438\u0442\u044C</button>
-<button type="button" role="tab" aria-selected="{{modeWdSel}}" onClick="{{modeWd}}" style="height: 40px; border-radius: 12px; border: 0; background: {{modeWdBg}}; color: {{modeWdColor}}; font-family: Rubik, system-ui, sans-serif; font-size: 15px; font-weight: 900; cursor: pointer">\u0412\u044B\u0432\u0435\u0441\u0442\u0438</button>
+<button type="button" role="tab" aria-selected="{{modeWdSel}}" onClick="{{modeWd}}" style="height: 40px; border-radius: 12px; border: 0; background: {{modeWdBg}}; color: {{modeWdColor}}; font-family: Rubik, system-ui, sans-serif; font-size: 15px; font-weight: 900; cursor: pointer">\u0412\u044B\u0432\u0435\u0441\u0442\u0438 NFT</button>
 </div>
 <div style="align-self: center; font-size: 11px; font-weight: 700; color: {{badgeColor}}; background: {{badgeBg}}; border: 1px solid {{badgeBorder}}; border-radius: 999px; padding: 5px 10px">{{badgeText}}</div>
 <sc-if value="{{isDepMode}}" hint-placeholder-val="{{ true }}">
@@ -226,25 +226,7 @@ a{color:#ffc83d}a:hover{color:#ffe08a}
 </sc-if>
 
 <sc-if value="{{isWdMode}}" hint-placeholder-val="{{ false }}">
-<div role="tablist" style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px">
-<button type="button" role="tab" aria-selected="{{wdTonSel}}" onClick="{{wdPickTon}}" style="height: 44px; border-radius: 14px; border: 1.5px solid {{wdTonBorder}}; background: {{wdTonBg}}; color: #ffffff; font-family: Rubik, system-ui, sans-serif; font-size: 15px; font-weight: 700; cursor: pointer">\u{1F48E} TON</button>
-<button type="button" role="tab" aria-selected="{{wdNftSel}}" onClick="{{wdPickNft}}" style="height: 44px; border-radius: 14px; border: 1.5px solid {{wdNftBorder}}; background: {{wdNftBg}}; color: #ffffff; font-family: Rubik, system-ui, sans-serif; font-size: 15px; font-weight: 700; cursor: pointer">\u{1F381} NFT</button>
-</div>
-
-<sc-if value="{{wdIsTon}}" hint-placeholder-val="{{ true }}">
-<label style="height: 64px; border-radius: 18px; background: #0d0f14; border: 1px solid #262b3a; display: flex; align-items: center; gap: 10px; padding: 0 16px; cursor: text">
-<input type="text" inputmode="decimal" enterkeyhint="done" autocomplete="off" aria-label="\u0421\u0443\u043C\u043C\u0430 \u0432\u044B\u0432\u043E\u0434\u0430 \u0432 TON" placeholder="1" value="{{wdAmount}}" onInput="{{onWdAmount}}" style="flex-grow: 1; min-width: 0; height: 100%; border: 0; outline: none; background: transparent; font-family: Rubik, system-ui, sans-serif; font-size: 26px; font-weight: 900; color: #ffffff">
-<button type="button" onClick="{{wdAll}}" style="height: 32px; border-radius: 10px; border: 1px solid #262b3a; background: #1f2330; color: #ffc83d; font-family: Rubik, system-ui, sans-serif; font-size: 12px; font-weight: 700; padding: 0 10px; cursor: pointer">\u0412\u0441\u0451</button>
-<span style="font-size: 14px; font-weight: 700; color: #8a90a0">TON</span>
-</label>
-<label style="height: 52px; border-radius: 16px; background: #0d0f14; border: 1px solid {{wdAddrBorder}}; display: flex; align-items: center; gap: 10px; padding: 0 14px; cursor: text">
-<svg width="18" height="18" viewBox="0 0 26 26" aria-hidden="true" style="flex-shrink: 0"><path d="M4 8 H22 L13 23Z" fill="#5fb8ff"></path><path d="M7 3 H19 L22 8 H4Z" fill="#9ad3ff"></path></svg>
-<input type="text" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="\u0410\u0434\u0440\u0435\u0441 TON-\u043A\u043E\u0448\u0435\u043B\u044C\u043A\u0430" placeholder="\u0410\u0434\u0440\u0435\u0441 \u043A\u043E\u0448\u0435\u043B\u044C\u043A\u0430 UQ\u2026" value="{{wdAddress}}" onInput="{{onWdAddress}}" style="flex-grow: 1; min-width: 0; height: 100%; border: 0; outline: none; background: transparent; font-family: ui-monospace, Menlo, monospace; font-size: 13px; color: #ffffff">
-</label>
-<div style="text-align: center; font-size: 11px; font-weight: 700; letter-spacing: 1.5px; color: #6c7282">\u041C\u0418\u041D. 1 TON \xB7 \u0417\u0410\u042F\u0412\u041A\u0423 \u041F\u0420\u041E\u0412\u0415\u0420\u0418\u0422 \u0410\u0414\u041C\u0418\u041D (\u0414\u041E 24 \u0427)</div>
-</sc-if>
-
-<sc-if value="{{wdIsNft}}" hint-placeholder-val="{{ false }}">
+<sc-if value="{{wdIsNft}}" hint-placeholder-val="{{ true }}">
 <div style="display: flex; justify-content: space-between; align-items: baseline">
 <span style="font-size: 15px; font-weight: 700">\u0412\u044B\u0431\u0435\u0440\u0438 NFT</span>
 <span style="font-size: 12px; color: #8a90a0">{{wdInfo}}</span>
@@ -384,7 +366,7 @@ class Component extends DCLogic {
     super(props);
     var list = [];
     for (var i = 0; i < 8; i++) list.push(pickDrop());
-    this.state = { drops: list, online: 934, dep: false, depTab: 'ton', depAmount: '', depCur: 0, depNet: 0, depCryptoAmount: '', depToast: 0, depMode: 'dep', wdSel: {}, toast: null, wdKind: 'ton', wdAmount: '', wdAddress: (function () { try { return (window.RK && window.RK.store.get('rk_wd_addr')) || ''; } catch (e) { return ''; } })() };
+    this.state = { drops: list, online: 934, dep: false, depTab: 'ton', depAmount: '', depCur: 0, depNet: 0, depCryptoAmount: '', depToast: 0, depMode: 'dep', wdSel: {}, toast: null, wdKind: 'nft', wdAmount: '', wdAddress: (function () { try { return (window.RK && window.RK.store.get('rk_wd_addr')) || ''; } catch (e) { return ''; } })() };
   }
   componentDidMount() {
     var self = this, net = window.RK && window.RK.net;
@@ -519,7 +501,7 @@ class Component extends DCLogic {
       modeDepSel: s.depMode === 'dep' ? 'true' : 'false', modeWdSel: s.depMode === 'wd' ? 'true' : 'false',
       modeDepBg: s.depMode === 'dep' ? '#ffc83d' : 'transparent', modeDepColor: s.depMode === 'dep' ? '#1a1300' : '#a3a8b5',
       modeWdBg: s.depMode === 'wd' ? '#ffc83d' : 'transparent', modeWdColor: s.depMode === 'wd' ? '#1a1300' : '#a3a8b5',
-      badgeText: s.depMode === 'wd' ? '\u0412\u044B\u0432\u043E\u0434 \u043F\u043E \u0437\u0430\u044F\u0432\u043A\u0435 \xB7 \u043F\u0440\u043E\u0432\u0435\u0440\u044F\u0435\u0442 \u0430\u0434\u043C\u0438\u043D\u0438\u0441\u0442\u0440\u0430\u0442\u043E\u0440' : testOn ? '\u0422\u0415\u0421\u0422 \xB7 \u0441\u0443\u043C\u043C\u0430 \u0441\u0440\u0430\u0437\u0443 \u0437\u0430\u0447\u0438\u0441\u043B\u044F\u0435\u0442\u0441\u044F \u043D\u0430 \u0431\u0430\u043B\u0430\u043D\u0441' : (liveTon ? '\u041E\u043F\u043B\u0430\u0442\u0430 \u0447\u0435\u0440\u0435\u0437 Tonkeeper \xB7 \u0437\u0430\u0447\u0438\u0441\u043B\u0435\u043D\u0438\u0435 \u0430\u0432\u0442\u043E\u043C\u0430\u0442\u0438\u0447\u0435\u0441\u043A\u0438' : liveCb ? '\u041E\u043F\u043B\u0430\u0442\u0430 \u0447\u0435\u0440\u0435\u0437 @CryptoBot \xB7 \u0437\u0430\u0447\u0438\u0441\u043B\u0435\u043D\u0438\u0435 \u0430\u0432\u0442\u043E\u043C\u0430\u0442\u0438\u0447\u0435\u0441\u043A\u0438' : '\u0414\u0415\u041C\u041E \xB7 ' + (s.depMode === 'wd' ? '\u0432\u044B\u0432\u043E\u0434' : '\u043F\u043E\u043F\u043E\u043B\u043D\u0435\u043D\u0438\u0435') + ' \u0441\u043A\u043E\u0440\u043E \u0431\u0443\u0434\u0435\u0442 \u0434\u043E\u0441\u0442\u0443\u043F\u043D\u043E'),
+      badgeText: s.depMode === 'wd' ? '\u0412\u044B\u0432\u043E\u0434 NFT \u043F\u043E \u0437\u0430\u044F\u0432\u043A\u0435 \xB7 \u043F\u0440\u043E\u0432\u0435\u0440\u044F\u0435\u0442 \u0430\u0434\u043C\u0438\u043D\u0438\u0441\u0442\u0440\u0430\u0442\u043E\u0440' : testOn ? '\u0422\u0415\u0421\u0422 \xB7 \u0441\u0443\u043C\u043C\u0430 \u0441\u0440\u0430\u0437\u0443 \u0437\u0430\u0447\u0438\u0441\u043B\u044F\u0435\u0442\u0441\u044F \u043D\u0430 \u0431\u0430\u043B\u0430\u043D\u0441' : (liveTon ? '\u041E\u043F\u043B\u0430\u0442\u0430 \u0447\u0435\u0440\u0435\u0437 Tonkeeper \xB7 \u0437\u0430\u0447\u0438\u0441\u043B\u0435\u043D\u0438\u0435 \u0430\u0432\u0442\u043E\u043C\u0430\u0442\u0438\u0447\u0435\u0441\u043A\u0438' : liveCb ? '\u041E\u043F\u043B\u0430\u0442\u0430 \u0447\u0435\u0440\u0435\u0437 @CryptoBot \xB7 \u0437\u0430\u0447\u0438\u0441\u043B\u0435\u043D\u0438\u0435 \u0430\u0432\u0442\u043E\u043C\u0430\u0442\u0438\u0447\u0435\u0441\u043A\u0438' : '\u0414\u0415\u041C\u041E \xB7 ' + (s.depMode === 'wd' ? '\u0432\u044B\u0432\u043E\u0434' : '\u043F\u043E\u043F\u043E\u043B\u043D\u0435\u043D\u0438\u0435') + ' \u0441\u043A\u043E\u0440\u043E \u0431\u0443\u0434\u0435\u0442 \u0434\u043E\u0441\u0442\u0443\u043F\u043D\u043E'),
       badgeColor: s.depMode === 'wd' || testOn || liveTon || liveCb ? '#2bd46b' : '#ffc83d', badgeBg: s.depMode === 'wd' || testOn || liveTon || liveCb ? 'rgba(43,212,107,0.12)' : 'rgba(255,200,61,0.12)', badgeBorder: s.depMode === 'wd' || testOn || liveTon || liveCb ? 'rgba(43,212,107,0.4)' : 'rgba(255,200,61,0.35)',
       depComment: depInfo ? depInfo.comment : '', hasDepComment: !!depInfo,
       waiting: !!s.waitingDeposit && s.depTab === 'ton',
