@@ -313,19 +313,22 @@ class Component extends DCLogic {
   }
   componentWillUnmount() { clearTimeout(this.tt); }
   selected() { var s = this.state; return s.items.filter(function (it) { return s.sel.indexOf(it.uid) !== -1; }); }
+  // Продажа — через сервер: он проверяет, что подарки твои, и зачисляет их цену
   sell() {
-    var s = this.state, picked = this.selected(), sum = 0;
-    picked.forEach(function (it) { sum += priceOf(it); });
-    sum = Math.round(sum * 100) / 100;
-    var R = rk(), items;
-    if (R) { R.inventory.remove(s.sel); items = R.inventory.list(); }
-    else items = s.items.filter(function (it) { return s.sel.indexOf(it.uid) === -1; });
-    var self = this;
-    this.setState({ items: items, sel: [], confirm: false, balance: Math.round((s.balance + sum) * 100) / 100, toast: 'Продано ' + giftsWord(picked.length) + ' за ' + fmt(sum) });
-    clearTimeout(this.tt); this.tt = setTimeout(function () { self.setState({ toast: null }); }, 2600);
+    var s = this.state, picked = this.selected(), self = this;
+    if (!picked.length || this.selling) return;
+    this.selling = true;
+    window.RK.net.req('inv.sell', { uids: picked.map(function (it) { return it.uid; }) }).then(function (r) {
+      self.selling = false;
+      var msg = r.ok ? 'Продано ' + giftsWord(r.data.count) + ' за ' + fmt(r.data.sum) : r.err;
+      self.setState({ sel: [], confirm: false, toast: msg });
+      clearTimeout(self.tt); self.tt = setTimeout(function () { self.setState({ toast: null }); }, 2600);
+    });
   }
   renderVals() {
     var self = this, s = this.state;
+    s.items = loadItems(); // инвентарь присылает сервер
+    s.sel = s.sel.filter(function (u) { return s.items.some(function (it) { return it.uid === u; }); });
     var list = s.items.filter(function (it) { return CAT[it.key]; }).slice();
     if (s.sort === 'price') list.sort(function (a, b) { return priceOf(b) - priceOf(a); });
     else list.sort(function (a, b) { return (b.at || 0) - (a.at || 0); });
@@ -359,7 +362,7 @@ class Component extends DCLogic {
       hasSelection: s.sel.length > 0 && !s.confirm,
       selCount: s.sel.length, selTotal: fmt(selTotal),
       askSell: function () { self.setState({ confirm: true }); },
-      withdraw: function () { self.setState({ toast: 'Вывод подарков в Telegram появится вместе с сервером' }); clearTimeout(self.tt); self.tt = setTimeout(function () { self.setState({ toast: null }); }, 2600); },
+      withdraw: function () { self.setState({ toast: 'Вывод NFT: главный экран → «+» → «Вывести NFT»' }); clearTimeout(self.tt); self.tt = setTimeout(function () { self.setState({ toast: null }); }, 2800); },
       showConfirm: s.confirm,
       confirmText: 'Ты продаёшь ' + giftsWord(picked.length) + '.',
       confirmItems: picked.slice(0, 6).map(function (it) { return { img: CAT[it.key].img, name: CAT[it.key].name }; }),

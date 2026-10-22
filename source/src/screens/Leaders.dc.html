@@ -82,89 +82,58 @@ a{color:#ffc83d}a:hover{color:#ffe08a}
 </div>
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":1200}}'>
-var NAMES = ['dimon_ton', 'Артём', 'kirill_x', 'nastya.gifts', 'pepe_hunter', 'Руслан', 'max_crash', 'lera_lucky', 'tonfather', 'Влад', 'sanya777', 'egor_nft', 'Катя', 'denchik_k', 'gift_trader', 'Тимур', 'ilya.eth', 'alina_moon', 'Серёга', 'nik_upgrade',
-  'mr_mines', 'Даша', 'arsen_kz', 'zhenya_pvp', 'olegtrade', 'Миша', 'vika_star', 'roma_btc', 'Алексей', 'stas_d', 'yana_k', 'bogdan_ua', 'Игорь', 'snoop_fan', 'pasha_rich', 'Ксюша', 'artur_99', 'lil_raccoon', 'Никита', 'sergo_gold',
-  'krist1na', 'Антон', 'vitya_x2', 'kamila', 'Дима К.', 'gleb_tg', 'marina_vip', 'Женя', 'rostik', 'ton_baron'];
+// Настоящий рейтинг: сервер считает сумму ставок (оборот) каждого игрока
 var COLORS = ['#13a58a', '#c41a78', '#2a6fe0', '#d9730a', '#7c3fe0', '#c92a2d', '#078a8a', '#9a7a00', '#3a8a2a', '#b0368f', '#5a6fd6', '#d1495b'];
 var TABS = [{ id: 'day', label: 'День' }, { id: 'week', label: 'Неделя' }, { id: 'all', label: 'Всё время' }];
-var PRIZES = { day: 'Топ-3 дня: 10 · 5 · 2 TON', week: 'Топ-3 недели: 50 · 25 · 10 TON', all: 'Легенды RACKOON за всё время' };
-var GAMES = ['Crash', 'Кейсы', 'PvP', 'Апгрейд', 'Мины'];
-var LAUNCH = Date.UTC(2026, 8, 20); // от этой даты считается «всё время»
-function mskNow() { return Date.now() + 3 * 3600 * 1000; }
-function dayKey(t) { return new Date(t).toISOString().slice(0, 10); }
-function seeded(str) { var h = 2166136261; for (var i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); } h ^= h >>> 13; h = Math.imul(h, 0x5bd1e995); h ^= h >>> 15; return (h >>> 0) / 4294967296; }
+var HINTS = { day: 'Рейтинг по сумме ставок за сегодня', week: 'Рейтинг по сумме ставок за 7 дней', all: 'Лучшие игроки RACKOON за всё время' };
 function fmt(x) { return x >= 10000 ? (x / 1000).toFixed(1) + 'K' : x >= 1000 ? (Math.round(x / 10) / 100).toFixed(2) + 'K' : (Math.round(x * 100) / 100).toFixed(2); }
-function R() { return typeof window !== 'undefined' && window.RK ? window.RK : null; }
-// «Характер» игрока: у каждого своя активность — киты, середняки и редкие гости
-var PROFILE = NAMES.map(function (n, i) {
-  var u = seeded('whale:' + n);
-  return { name: n, color: COLORS[i % COLORS.length], scale: 6 + Math.pow(u, 3) * 200, active: 0.35 + seeded('act:' + n) * 0.6, game: GAMES[Math.floor(seeded('g:' + n) * GAMES.length)] };
-});
-// Оборот игрока за один день (полный)
-function dayVolume(pf, key) {
-  if (seeded('on:' + key + pf.name) > pf.active) return 0;
-  var r = seeded('v:' + key + pf.name);
-  return pf.scale * (0.1 + Math.pow(r, 2.2) * 4.5);
-}
-// Сегодня оборот растёт в течение дня — таблица живая
-function todayShare(pf, t) {
-  var frac = ((t % 86400000) / 86400000);
-  var shift = seeded('t:' + dayKey(t) + pf.name) * 0.5;
-  return Math.max(0, Math.min(1, (frac - shift * 0.4) / (1 - shift * 0.4)));
-}
-function volumeFor(pf, tab, t) {
-  var today = dayKey(t), sum = dayVolume(pf, today) * todayShare(pf, t);
-  var days = tab.id === 'day' ? 0 : tab.id === 'week' ? 6 : Math.max(0, Math.floor((t - LAUNCH) / 86400000));
-  for (var d = 1; d <= days; d++) sum += dayVolume(pf, dayKey(t - d * 86400000));
-  return Math.round(sum * 100) / 100;
-}
-function myValue(tab) {
-  var r = R(); if (!r || !r.stats) return 0;
-  if (tab.id === 'day') return r.stats.day().wagered || 0;
-  if (tab.id === 'week') return r.stats.range(7).wagered || 0;
-  return r.stats.total().wagered || 0;
-}
-// Таблица по обороту (сумме ставок). Соперники в демо — сгенерированные, но правдоподобные игроки.
-function board(tab, t) {
-  var list = PROFILE.map(function (pf) { return { name: pf.name, value: volumeFor(pf, tab, t), me: false, color: pf.color, game: pf.game }; })
-    .filter(function (x) { return x.value >= 0.5; });
-  var r = R(), meName = (r && r.user && (r.user.username || r.user.first_name)) || 'Ты';
-  list.push({ name: meName, value: Math.round(myValue(tab) * 100) / 100, me: true, color: '#ffc83d', game: '' });
-  return list.sort(function (a, b) { return b.value - a.value; });
-}
+function colorOf(name) { var h = 0; for (var i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) | 0; return COLORS[Math.abs(h) % COLORS.length]; }
+var EMPTY_P = { name: '—', value: 0, me: false, color: '#2a2e3a' };
 
 class Component extends DCLogic {
-  constructor(props) { super(props); this.state = { tab: 'day', now: mskNow() }; }
-  componentDidMount() { var self = this; this.iv = setInterval(function () { self.setState({ now: mskNow() }); }, 4000); }
-  componentWillUnmount() { clearInterval(this.iv); }
+  constructor(props) { super(props); this.state = { tab: 'day', data: {}, loading: true }; }
+  load(tab) {
+    var self = this, t = tab || this.state.tab;
+    window.RK.net.req('leaders', { tab: t }).then(function (r) { if (r.ok) { var d = Object.assign({}, self.state.data); d[t] = r.data; self.setState({ data: d, loading: false }); } });
+  }
+  componentDidMount() {
+    var self = this; this.load();
+    this.offSt = window.RK.net.on('status', function (n) { if (n.connected) self.load(); });
+    this.iv = setInterval(function () { self.load(); }, 15000);
+  }
+  componentWillUnmount() { clearInterval(this.iv); if (this.offSt) this.offSt(); }
   renderVals() {
     var self = this, s = this.state;
     var tab = TABS.filter(function (t) { return t.id === s.tab; })[0];
-    var list = board(tab, s.now);
-    var meIdx = 0; list.forEach(function (x, i) { if (x.me) meIdx = i; });
-    var me = list[meIdx];
+    var d = s.data[s.tab] || { top: [], me: { place: 0, value: 0 }, total: 0 };
+    var myName = (window.RK && window.RK.user && (window.RK.user.username || window.RK.user.first_name)) || 'Ты';
+    var list = d.top.map(function (p) { return { name: p.name, value: p.value, me: p.me, color: p.me ? '#ffc83d' : colorOf(p.name) }; });
+    var meIdx = list.findIndex(function (x) { return x.me; });
+    var me = meIdx >= 0 ? list[meIdx] : { name: myName, value: d.me.value || 0, me: true };
+    if (meIdx < 0) meIdx = d.me.place > 0 ? d.me.place - 1 : list.length;
     var top = list.slice(0, 3);
+    while (top.length < 3) top.push(EMPTY_P);
     var order = [top[1], top[0], top[2]];
     var meta = [{ place: 2, h: 70, size: 64, ring: '#c9d1e0', base: '#c9d1e0' }, { place: 1, h: 96, size: 82, ring: '#ffc83d', base: '#ffc83d' }, { place: 3, h: 54, size: 60, ring: '#d98a4a', base: '#d98a4a' }];
-    var ahead = meIdx > 0 ? list[meIdx - 1] : null;
+    var ahead = meIdx > 0 && list[meIdx - 1] ? list[meIdx - 1] : null;
     return {
       meAvatar: (window.RK && window.RK.user && window.RK.user.photo_url) || '/_blob/661884b648dd965ea69af44ea8c7ee95',
-      tabs: TABS.map(function (t) { var sel = t.id === s.tab; return { label: t.label, sel: sel ? 'true' : 'false', bg: sel ? '#ffc83d' : 'transparent', color: sel ? '#1a1300' : '#a3a8b5', pick: function () { self.setState({ tab: t.id }); } }; }),
-      prizeTitle: tab.id === 'all' ? 'Зал славы' : 'Призы лидерам',
-      prizeText: PRIZES[tab.id],
+      tabs: TABS.map(function (t) { var sel = t.id === s.tab; return { label: t.label, sel: sel ? 'true' : 'false', bg: sel ? '#ffc83d' : 'transparent', color: sel ? '#1a1300' : '#a3a8b5', pick: function () { self.setState({ tab: t.id }); self.load(t.id); } }; }),
+      prizeTitle: tab.id === 'all' ? 'Зал славы' : 'Рейтинг',
+      prizeText: HINTS[tab.id],
       metricLabel: 'Оборот, TON',
       podium: order.map(function (p, i) {
         var m = meta[i];
         return { name: p.name, value: fmt(p.value) + ' TON', initial: p.name.charAt(0).toUpperCase(), avBg: p.color, isMe: p.me, notMe: !p.me, place: m.place, h: m.h, size: m.size, fs: Math.round(m.size * 0.4), ring: m.ring, base: m.base };
       }),
-      playersLine: '● ' + list.length + ' игроков в рейтинге',
+      playersLine: '● ' + (d.total || 0) + ' игроков в рейтинге',
       rows: list.slice(3, 50).map(function (p, i) {
-        return { place: i + 4, name: p.name, game: p.game || 'ты', value: fmt(p.value), initial: p.name.charAt(0).toUpperCase(), avBg: p.color, isMe: p.me, notMe: !p.me, border: p.me ? '#ffc83d' : '#222838' };
+        return { place: i + 4, name: p.name, game: p.me ? 'ты' : '', value: fmt(p.value), initial: p.name.charAt(0).toUpperCase(), avBg: p.color, isMe: p.me, notMe: !p.me, border: p.me ? '#ffc83d' : '#222838' };
       }),
-      mePlace: meIdx + 1,
-      meName: me.name === 'Ты' ? 'Ты' : me.name + ' (ты)',
+      mePlace: d.me.place > 0 ? d.me.place : '—',
+      meName: me.name + ' (ты)',
       meValue: fmt(me.value),
-      meHint: ahead ? 'До ' + (meIdx) + ' места: ' + fmt(ahead.value - me.value + 0.01) + ' TON' : 'Ты на первом месте!'
+      meHint: !(me.value > 0) ? 'Сделай ставку в любой игре, чтобы попасть в рейтинг' : (ahead ? 'До ' + (meIdx) + ' места: ' + fmt(ahead.value - me.value + 0.01) + ' TON' : 'Ты на первом месте!')
     };
   }
 }

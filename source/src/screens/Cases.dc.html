@@ -378,65 +378,22 @@ function chgText(c) { var v = chg(c); return (v >= 0 ? '▲ ' : '▼ ') + Math.a
 function chgColor(c) { return chg(c) >= 0 ? '#2bd46b' : '#ff5d73'; }
 function supplyText(c) { if (c.star) return c.stars + ' ⭐ · обычный подарок'; return c.supply ? c.supply.toLocaleString('ru-RU') + ' шт.' : 'новая коллекция'; }
 
-var RTP = 0.90;
-var FREE_COOLDOWN = 24 * 3600 * 1000;
+// Кейсы, составы и шансы — общий файл src/cases.js (такой же у сервера: он и крутит кейсы)
+var CM = window.RK.cases;
+var FREE_COOLDOWN = CM.FREE_COOLDOWN;
 var CASE_TABS = [
   { id: 'cheap', label: 'Дешёвые', hint: 'От 0.5 TON · мишки, сердечки, торты, кольца и NFT' },
   { id: 'mid', label: 'Средние', hint: 'Только NFT-подарки' },
   { id: 'exp', label: 'Дорогие', hint: 'Редкие и дорогие NFT' },
   { id: 'free', label: 'Бесплатные', hint: 'Раз в сутки · TON на баланс' }
 ];
-// cat: cheap — дешёвые (обычные подарки за ⭐ + немного NFT), mid — средние (только NFT), exp — дорогие, free — бесплатный.
-var CASES = [
-  { id: 's05', cat: 'cheap', art: 'assets/case-s05.jpg', ratio: '1 / 1', name: 'Мелочь', price: 0.5, color: '#ff7ab8', dark: '#c4447f', bg: '#2e1022', glow: 'rgba(255,122,184,0.9)', edge: '#5a1c3e', opened: 0, isNew: true,
-    pool: ['Heart', 'Teddy Bear', 'Rose', 'Gift Box', 'Cake', 'Bouquet', 'Ring', 'Lol Pop'] },
-  { id: 's1', cat: 'cheap', art: 'assets/case-s1.jpg', ratio: '1 / 1', name: 'Плюшевый', price: 1, color: '#c98a5a', dark: '#94582e', bg: '#2a1a10', glow: 'rgba(201,138,90,0.9)', edge: '#4f3220', opened: 0, isNew: true,
-    pool: ['Teddy Bear', 'Heart', 'Rose', 'Cake', 'Ring', 'Trophy', 'Lol Pop', 'Chill Flame', 'Ice Cream', 'B-Day Candle'] },
-  { id: 's2', cat: 'cheap', art: 'assets/case-s2.jpg', ratio: '1 / 1', name: 'Сладкий', price: 2, color: '#ff9f43', dark: '#c46a12', bg: '#2e1d0c', glow: 'rgba(255,159,67,0.9)', edge: '#5a3714', opened: 0, isNew: true,
-    pool: ['Cake', 'Bouquet', 'Ring', 'Trophy', 'Diamond', 'Lol Pop', 'Instant Ramen', 'Candy Cane', 'Homemade Cake', 'Snow Globe', 'Desk Calendar', 'Jester Hat'] },
-  { id: 's35', cat: 'cheap', art: 'assets/case-s35.jpg', ratio: '1 / 1', name: 'Колечко', price: 3.5, color: '#7fd6ff', dark: '#3f9ccc', bg: '#0e2230', glow: 'rgba(127,214,255,0.9)', edge: '#1d4560', opened: 0, isNew: true,
-    pool: ['Ring', 'Lol Pop', 'Candy Cane', 'Hypno Lollipop', 'B-Day Candle', 'Homemade Cake', 'Snow Globe', 'Spy Agaric', 'Light Sword', 'Jelly Bunny', 'Bunny Muffin', 'Berry Box', 'Top Hat'] },
-  { id: 'c1', cat: 'mid', art: '/_blob/fcf5bf14ee8b1ae499c387610e4d1977', name: 'Карманник', price: 5, color: '#2bbf5a', dark: '#1a8a3e', bg: '#10291a', glow: 'rgba(43,191,90,0.9)', edge: '#1f4a2c', opened: 2591 },
-  { id: 'c2', cat: 'mid', art: '/_blob/06ce572b9077b276c1d8a7b06b5e8713', name: 'Конфетный', price: 10, color: '#f2c218', dark: '#b88f00', bg: '#2a240c', glow: 'rgba(242,194,24,0.9)', edge: '#4a4010', opened: 1036, isNew: true },
-  { id: 'c3', cat: 'mid', art: '/_blob/9e1537bfc41c71475ce556a1aaf4884f', name: 'Пиратский', price: 15, color: '#2f86ff', dark: '#1a5ccc', bg: '#0f1d33', glow: 'rgba(47,134,255,0.9)', edge: '#1c3560', opened: 1554 },
-  { id: 'c4', cat: 'mid', art: '/_blob/c0847d0dc5fbcb1a68d80763032f0675', name: 'Налётчик', price: 25, color: '#ff4d4d', dark: '#c02a2a', bg: '#2e1212', glow: 'rgba(255,77,77,0.9)', edge: '#5a2020', opened: 2591, isNew: true },
-  { id: 'c5', cat: 'exp', art: '/_blob/db1a02051117bc41aa898a143cdc3d48', name: 'Медвежатник', price: 50, color: '#ff8a1f', dark: '#c45f00', bg: '#2e1c0c', glow: 'rgba(255,138,31,0.9)', edge: '#5a3612', opened: 5181 },
-  { id: 'c6', cat: 'exp', art: '/_blob/72f77fc4af6bf75c8e7d10aa33580007', name: 'Ночной рейд', price: 100, color: '#9b5cff', dark: '#6a32d0', bg: '#1d1233', glow: 'rgba(155,92,255,0.9)', edge: '#3a2460', opened: 311 },
-  { id: 'c7', cat: 'exp', art: '/_blob/b289144243be3c7e4e7176e3a0070caa', name: 'Сейф', price: 250, color: '#14c8c8', dark: '#0a8c8c', bg: '#0c2a2a', glow: 'rgba(20,200,200,0.9)', edge: '#164a4a', opened: 518 },
-  { id: 'c8', cat: 'exp', art: '/_blob/313d5daa64736bbfb70ecfcd97ed3141', name: 'Крёстный енот', price: 500, color: '#ffc83d', dark: '#c79400', bg: '#2e250c', glow: 'rgba(255,200,61,0.95)', edge: '#5a4a14', opened: 10362 },
-  // Единственный бесплатный кейс: раз в сутки, внутри TON на баланс
-  { id: 'free', cat: 'free', name: 'Ежедневный', price: 0, free: true, color: '#5fd4ff', dark: '#2fa0d0', bg: '#0c2430', glow: 'rgba(95,212,255,0.9)', edge: '#18465a', opened: 8812,
-    pool: ['TON_0.1', 'TON_1'], probs: [0.99, 0.01] }
-];
+var BUILT = CM.build();
+var CASES = CM.CASES.map(function (c0) { var b = BUILT[c0.id]; return Object.assign({}, c0, { pool: b.pool, probs: b.probs, top: b.top }); });
 // Призы-TON (зачисляются сразу на баланс, в инвентарь не попадают)
 var TON_IMG = 'assets/ton.svg';
 CAT['TON_0.1'] = { name: '0.1 TON', supply: 0, base: 0.1, price: 0.1, prev: 0.1, img: TON_IMG, color: '#5fd4ff', ton: true };
 CAT['TON_1'] = { name: '1 TON', supply: 0, base: 1, price: 1, prev: 1, img: TON_IMG, color: '#ffc83d', ton: true };
-// Состав кейса: 12 NFT от ~¼ до ~40 цен кейса. У бесплатного состав задан вручную (TON).
-function buildPool(P) {
-  var cand = CAT_LIST.filter(function (c) { return c.price >= 0.25 * P && c.price <= 40 * P; });
-  var n = 12, out = [];
-  for (var i = 0; i < n && i < cand.length; i++) {
-    var idx = Math.round(i * (cand.length - 1) / Math.max(1, n - 1));
-    if (out.indexOf(cand[idx].name) === -1) out.push(cand[idx].name);
-  }
-  return out;
-}
-CASES.forEach(function (c) {
-  if (c.free) { /* pool и probs заданы в CASES */ }
-  else {
-    c.pool = (c.pool || buildPool(c.price)).filter(function (k) { return CAT[k]; });
-    var prices = c.pool.map(function (k) { return CAT[k].price; });
-    var target = c.price * RTP;
-    var ev = function (a) { var S = 0, E = 0; prices.forEach(function (p) { var w = Math.pow(p, -a); S += w; E += w * p; }); return E / S; };
-    var lo = -5, hi = 12;
-    for (var i = 0; i < 80; i++) { var mid = (lo + hi) / 2; if (ev(mid) > target) lo = mid; else hi = mid; }
-    var a = (lo + hi) / 2, Ssum = 0;
-    var w = prices.map(function (p) { var x = Math.pow(p, -a); Ssum += x; return x; });
-    c.probs = w.map(function (x) { return x / Ssum; });
-  }
-  c.top = c.pool.reduce(function (best, k) { return !best || CAT[k].price > CAT[best].price ? k : best; }, null);
-});
+CASES.forEach(function (c) { c.pool = c.pool.filter(function (k) { return CAT[k]; }); });
 
 var TILE = 92, GAP = 6, STEP = TILE + GAP, N = 44, WIN_IDX = 38, CENTER = 179;
 function caseById(id) { return CASES.filter(function (c) { return c.id === id; })[0]; }
@@ -444,35 +401,25 @@ function fmt(p) { return (Math.round(p * 100) / 100) + ' TON'; }
 function roll(c) { var r = Math.random(), acc = 0; for (var i = 0; i < c.pool.length; i++) { acc += c.probs[i]; if (r < acc) return c.pool[i]; } return c.pool[c.pool.length - 1]; }
 function previewStrip(c) { var s = []; for (var i = 0; i < N; i++) s.push(c.free ? roll(c) : c.pool[i % c.pool.length]); return s; }
 function fmtChance(p) { var v = p * 100; return v >= 10 ? v.toFixed(1) + '%' : (v >= 1 ? v.toFixed(2) + '%' : v.toFixed(3) + '%'); }
-function rkStore() { return typeof window !== 'undefined' && window.RK && window.RK.store ? window.RK.store : null; }
-function getFreeAt() { var S = rkStore(); if (S) return parseInt(S.get('rk_free_at') || '0', 10) || 0; try { return parseInt(localStorage.getItem('rk_free_at') || '0', 10) || 0; } catch (e) { return 0; } }
-function setFreeAt(t) { var S = rkStore(); if (S) { S.set('rk_free_at', String(t)); return; } try { localStorage.setItem('rk_free_at', String(t)); } catch (e) {} }
+function NET() { return window.RK && window.RK.net; }
+function freeAt() { return (window.RK && window.RK.acct && window.RK.acct.freeAt) || 0; }
 function hms(ms) { var s = Math.ceil(ms / 1000), h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), x = s % 60; return h + ':' + ('0' + m).slice(-2) + ':' + ('0' + x).slice(-2); }
-function randomDrop() { var i = Math.floor(Math.pow(Math.random(), 2.2) * CAT_LIST.length); return CAT_LIST[i]; }
+// LIVE-лента: настоящие выпадения игроков (сервер присылает их всем)
+function liveFeed() { var n = NET(); return ((n && n.feed) || []).filter(function (f) { return f.key && CAT[f.key]; }).slice(0, 7).map(function (f) { return f.key; }); }
 
 class Component extends DCLogic {
   constructor(props) {
     super(props);
-    var drops = []; for (var i = 0; i < 7; i++) drops.push(randomDrop().name);
     this.state = {
-      caseId: null, tab: 'cheap', balance: 500, fast: false, spinning: false,
-      strip: [], offset: 0, anim: false, won: null, overlay: false, loot: [], nextId: 1,
-      freeAt: getFreeAt(), now: Date.now(), drops: drops
+      caseId: null, tab: 'cheap', balance: 0, fast: false, spinning: false,
+      strip: [], offset: 0, anim: false, won: null, overlay: false, now: Date.now(), shownBal: null
     };
   }
   componentDidMount() {
     var self = this;
-    this.iv = setInterval(function () {
-      var s = self.state, upd = { now: Date.now() };
-      if (Math.random() < 0.35) upd.drops = [randomDrop().name].concat(s.drops).slice(0, 7);
-      self.setState(upd);
-    }, 1500);
+    this.iv = setInterval(function () { self.setState({ now: Date.now() }); }, 1000);
   }
-  componentWillUnmount() {
-    clearTimeout(this.t1); clearTimeout(this.t2); clearInterval(this.iv);
-    // Ушёл с экрана во время прокрутки — TON всё равно зачисляем
-    if (this.pendingTon) { var W = window.RK && window.RK.wallet; if (W) W.set(Math.round((W.get() + this.pendingTon) * 100) / 100); this.pendingTon = 0; }
-  }
+  componentWillUnmount() { clearTimeout(this.t1); clearTimeout(this.t2); clearInterval(this.iv); }
 
   openCase(id) {
     var c = caseById(id);
@@ -480,28 +427,30 @@ class Component extends DCLogic {
     this.setState({ caseId: id, strip: previewStrip(c), offset: 2 * STEP + TILE / 2 - CENTER, anim: false, overlay: false });
     if (typeof window !== 'undefined' && window.scrollTo) window.scrollTo(0, 0);
   }
-  freeLeft() { return Math.max(0, this.state.freeAt + FREE_COOLDOWN - this.state.now); }
+  freeLeft() { return Math.max(0, freeAt() + FREE_COOLDOWN - this.state.now); }
 
+  // Кейс крутит сервер: он списывает цену, разыгрывает приз и кладёт его в инвентарь.
+  // Игра только показывает анимацию, которая останавливается на выигрыше.
   open() {
-    var s = this.state, c = caseById(s.caseId);
+    var s = this.state, c = caseById(s.caseId), self = this, net = NET();
     if (!c || s.spinning) return;
     if (c.free) { if (this.freeLeft() > 0) return; }
     else if (s.balance < c.price) return;
-    var won = roll(c), strip = [];
-    this.pendingTon = CAT[won].ton ? CAT[won].price : 0;
-    for (var i = 0; i < N; i++) strip.push(i === WIN_IDX ? won : roll(c));
-    var finalOffset = WIN_IDX * STEP + TILE / 2 - CENTER + (Math.random() - 0.5) * (TILE - 20);
-    var dur = s.fast ? 1100 : 4800, self = this;
-    var upd = { spinning: true, strip: strip, offset: 2 * STEP + TILE / 2 - CENTER, anim: false, overlay: false, won: null };
-    if (c.free) { var t = Date.now(); setFreeAt(t); upd.freeAt = t; } else upd.balance = Math.round((s.balance - c.price) * 100) / 100;
-    this.setState(upd);
-    this.t1 = setTimeout(function () {
-      self.setState({ offset: finalOffset, anim: true });
-      self.t2 = setTimeout(function () { try { if (window.RK && window.RK.track) window.RK.track({ game: 'cases', bet: c.free ? 0 : c.price, win: CAT[won].price, round: true }); } catch (e) {} var fin = { spinning: false, won: { key: won, caseId: c.id }, overlay: true, drops: [won].concat(self.state.drops).slice(0, 7) };
-        // TON сразу на баланс
-        if (self.pendingTon) { fin.balance = Math.round((self.state.balance + self.pendingTon) * 100) / 100; self.pendingTon = 0; }
-        self.setState(fin); }, dur + 120);
-    }, 40);
+    this.setState({ spinning: true, overlay: false, won: null, shownBal: Math.round((s.balance - (c.free ? 0 : c.price)) * 100) / 100 });
+    net.req('case.open', { id: c.id }).then(function (r) {
+      if (!r.ok) { self.setState({ spinning: false, shownBal: null }); if (window.RK.toast) window.RK.toast(r.err, false); return; }
+      var won = r.data.won, strip = [];
+      for (var i = 0; i < N; i++) strip.push(i === WIN_IDX ? won : roll(c));
+      var finalOffset = WIN_IDX * STEP + TILE / 2 - CENTER + (Math.random() - 0.5) * (TILE - 20);
+      var dur = self.state.fast ? 1100 : 4800;
+      self.setState({ strip: strip, offset: 2 * STEP + TILE / 2 - CENTER, anim: false });
+      self.t1 = setTimeout(function () {
+        self.setState({ offset: finalOffset, anim: true });
+        self.t2 = setTimeout(function () {
+          self.setState({ spinning: false, shownBal: null, won: { key: won, caseId: c.id, item: r.data.item }, overlay: true });
+        }, dur + 120);
+      }, 40);
+    });
   }
 
   renderVals() {
@@ -510,19 +459,19 @@ class Component extends DCLogic {
     var dur = s.fast ? 1.1 : 4.8;
     var freeLeft = this.freeLeft();
     var canOpen = c && !s.spinning && (c.free ? freeLeft === 0 : s.balance >= c.price);
-    var lootTotal = 0; s.loot.forEach(function (l) { lootTotal += CAT[l.key].price; });
+    var invNow = window.RK.inventory.list().filter(function (it) { return CAT[it.key]; });
     var won = s.won ? CAT[s.won.key] : null;
     var wonCase = s.won ? caseById(s.won.caseId) : null;
     var mult = won && wonCase && wonCase.price ? won.price / wonCase.price : 0;
     var list = CASES.filter(function (x) { return x.cat === s.tab; });
 
     return {
-      balanceText: fmt(s.balance),
+      balanceText: fmt(s.spinning && s.shownBal != null ? s.shownBal : s.balance),
       toggleFast: function () { if (!self.state.spinning) self.setState({ fast: !self.state.fast }); },
       fastPressed: s.fast ? 'true' : 'false', fastBorder: s.fast ? '#ffc83d' : '#1a1d27', fastColor: s.fast ? '#ffc83d' : '#a3a8b5',
       inGrid: !c, inDetail: !!c,
       toGrid: function () { if (!self.state.spinning) self.setState({ caseId: null, overlay: false }); },
-      liveDrops: s.drops.map(function (k) { var it = CAT[k]; return { name: it.name, img: it.img, color: it.color }; }),
+      liveDrops: liveFeed().map(function (k) { var it = CAT[k]; return { name: it.name, img: it.img, color: it.color }; }),
       tabs: CASE_TABS.map(function (t) { var sel = s.tab === t.id; return { label: t.label, sel: sel ? 'true' : 'false', color: sel ? '#ffffff' : '#6c7282', line: sel ? '#ffc83d' : 'transparent', pick: function () { self.setState({ tab: t.id }); } }; }),
       tabHint: (CASE_TABS.filter(function (t) { return t.id === s.tab; })[0] || {}).hint || '',
       grid: list.map(function (x) {
@@ -548,10 +497,8 @@ class Component extends DCLogic {
       btnShadow: canOpen ? '0 6px 24px rgba(255,200,61,0.35)' : 'none',
       btnText: !c ? '' : (s.spinning ? 'ОТКРЫВАЕМ...' : (c.free ? (freeLeft > 0 ? 'ЧЕРЕЗ ' + hms(freeLeft) : 'ОТКРЫТЬ БЕСПЛАТНО') : (s.balance >= c.price ? 'ОТКРЫТЬ · ' + fmt(c.price) : 'НЕ ХВАТАЕТ TON'))),
       contents: c ? c.pool.map(function (k, i) { var it = CAT[k]; return { name: it.name, img: it.img, priceText: fmt(it.price), color: it.color, chanceText: fmtChance(c.probs[i]) }; }).reverse() : [],
-      loot: s.loot.slice(0, 3).map(function (l) { var it = CAT[l.key]; return { name: it.name, img: it.img, priceText: fmt(it.price) }; }),
-      invInfo: (function () { var R = typeof window !== 'undefined' && window.RK && window.RK.inventory; var n = R ? R.list().length : s.loot.length; return n ? n + ' шт. · продать или вывести' : 'Забирай дропы, они попадут сюда'; })(),
-      hasLoot: s.loot.length > 0, noLoot: s.loot.length === 0, lootTotal: fmt(lootTotal),
-      sellAll: function () { var st = self.state, sum = 0; st.loot.forEach(function (l) { sum += CAT[l.key].price; }); self.setState({ loot: [], balance: Math.round((st.balance + sum) * 100) / 100 }); },
+      loot: invNow.slice(0, 3).map(function (l) { var it = CAT[l.key]; return { name: it.name, img: it.img, priceText: fmt(it.price) }; }),
+      invInfo: invNow.length ? invNow.length + ' шт. · продать или вывести' : 'Забирай дропы, они попадут сюда',
       showOverlay: s.overlay && !!won,
       resHead: wonCase ? 'Из кейса «' + wonCase.name + '» выпало' : '',
       resName: won ? won.name : '', resImg: won ? won.img : GIFT_IMG, resPrice: won ? fmt(won.price) : '',
@@ -562,8 +509,13 @@ class Component extends DCLogic {
       resMultColor: mult >= 1 || (wonCase && wonCase.free) ? '#2bd46b' : '#ff5d73',
       resIsTon: !!(won && won.ton), resIsGift: !(won && won.ton),
       creditWon: function () { self.setState({ overlay: false, won: null }); },
-      sellWon: function () { var st = self.state; if (!st.won) return; self.setState({ balance: Math.round((st.balance + CAT[st.won.key].price) * 100) / 100, overlay: false, won: null }); },
-      keepWon: function () { var st = self.state; if (!st.won) return; if (CAT[st.won.key].ton) { self.setState({ overlay: false, won: null }); return; } if (typeof window !== 'undefined' && window.RK && window.RK.inventory) window.RK.inventory.add(st.won.key); self.setState({ loot: [{ id: st.nextId, key: st.won.key }].concat(st.loot), nextId: st.nextId + 1, overlay: false, won: null }); }
+      // продать выигранный подарок — через сервер
+      sellWon: function () {
+        var st = self.state; if (!st.won || !st.won.item) return;
+        var uid = st.won.item.uid; self.setState({ overlay: false, won: null });
+        NET().req('inv.sell', { uids: [uid] }).then(function (r) { if (r.ok) window.RK.toast('Продано за ' + fmt(r.data.sum), true); else window.RK.toast(r.err, false); });
+      },
+      keepWon: function () { self.setState({ overlay: false, won: null }); } // подарок уже лежит в инвентаре
     };
   }
 }

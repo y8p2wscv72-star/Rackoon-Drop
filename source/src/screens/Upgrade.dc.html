@@ -381,6 +381,10 @@ class Component extends DCLogic {
 
   stake() {
     var s = this.state;
+    if (!s.spinning) { // инвентарь присылает сервер; во время прокрутки показываем ставку как была
+      s.inv = loadInv();
+      s.own = s.own.filter(function (u) { return s.inv.some(function (it) { return it.uid === u; }); });
+    }
     var picked = s.inv.filter(function (u) { return s.own.indexOf(u.uid) !== -1; });
     if (!picked.length) return null;
     var total = 0, top = null;
@@ -389,36 +393,30 @@ class Component extends DCLogic {
     return { price: Math.round(total * 100) / 100, name: name, color: top.color, img: top.img, count: picked.length };
   }
 
+  // Апгрейд крутит сервер: он забирает ставку, считает шанс и разыгрывает результат.
+  // Игра крутит колесо так, чтобы стрелка остановилась там, где выпало на сервере.
   spin() {
-    var s = this.state;
+    var s = this.state, self = this;
     var st0 = this.stake();
     var tgt = s.target ? CAT[s.target] : null;
     if (!st0 || !tgt || s.spinning || tgt.price <= st0.price) return;
-    var chance = chanceOf(st0.price, tgt.price);
-    var start = s.side === 'left' ? 1 - chance : 0;
-    var r = Math.random();
-    var win = r >= start && r < start + chance;
-    var base = s.angle - (s.angle % 360) + 360 * (s.fast ? 3 : 6);
-    var dur = s.fast ? 900 : 3600;
-    var self = this;
-    this.setState({ angle: base + r * 360, spinning: true, result: null, overlay: false, lastChance: chance, lastSide: s.side });
-    this.timer = setTimeout(function () {
+    this.setState({ spinning: true, result: null, overlay: false });
+    window.RK.net.req('upg.spin', { uids: s.own.slice(), target: s.target, side: s.side }).then(function (res) {
+      if (!res.ok) { self.setState({ spinning: false }); if (window.RK.toast) window.RK.toast(res.err, false); return; }
+      var d = res.data, win = d.win, chance = d.chance;
       var st = self.state;
-      var inv = st.inv.filter(function (u) { return st.own.indexOf(u.uid) === -1; });
-      var nextId = st.nextId;
-      var R = rkInv();
-      try { if (window.RK && window.RK.track) window.RK.track({ game: 'upgrade', bet: st0.price, win: win ? tgt.price : 0, round: true }); } catch (e) {}
-      if (R) { R.remove(st.own); if (win) R.add(st.target); inv = loadInv(); }
-      else if (win) { inv = [{ uid: 'i' + nextId, key: st.target }].concat(inv); nextId += 1; }
-      var mult = 'x' + (tgt.price / st0.price).toFixed(2);
-      var history = [{ mult: mult, win: win }].concat(st.history).slice(0, 10);
-      if (window.RK && window.RK.store) window.RK.store.setJSON('rk_upg_hist', history);
-      self.setState({
-        inv: inv, nextId: nextId, own: [], target: null, spinning: false,
-        result: win ? 'win' : 'lose', overlay: true, history: history,
-        res: { win: win, tgtName: tgt.name, tgtPrice: tgt.price, tgtImg: tgt.img, stakeName: st0.name, stakePrice: st0.price, stakeImg: st0.img, mult: mult }
-      });
-    }, dur + 150);
+      var base = st.angle - (st.angle % 360) + 360 * (st.fast ? 3 : 6);
+      var dur = st.fast ? 900 : 3600;
+      self.setState({ angle: base + d.r * 360, lastChance: chance, lastSide: st.side });
+      self.timer = setTimeout(function () {
+        var mult = 'x' + (d.tPrice / d.stake).toFixed(2);
+        self.setState({
+          own: [], target: null, spinning: false,
+          result: win ? 'win' : 'lose', overlay: true, history: d.history || self.state.history,
+          res: { win: win, tgtName: tgt.name, tgtPrice: tgt.price, tgtImg: tgt.img, stakeName: st0.name, stakePrice: st0.price, stakeImg: st0.img, mult: mult }
+        });
+      }, dur + 150);
+    });
   }
 
   pickMult(m) {

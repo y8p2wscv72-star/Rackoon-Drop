@@ -16,15 +16,15 @@ import TasksSrc from './screens/Tasks.dc.html';
 import LeadersSrc from './screens/Leaders.dc.html';
 import AdminSrc from './screens/Admin.dc.html';
 import GIFTCAT from './gifts.js';
+import CASESMOD from './cases.js';
 
 // ---------- Telegram ----------
 const tg = window.Telegram && window.Telegram.WebApp;
-const START_BALANCE = 0; // новые игроки начинают с нуля
 
 // ---------- Сохранение: на устройстве + в облаке Telegram (CloudStorage) ----------
 // Облако Telegram привязано к аккаунту игрока и боту: данные не пропадут,
 // даже если Telegram почистит кэш или игрок зайдёт с другого телефона.
-const SYNC_KEYS = ['rk_balance', 'rk_inv', 'rk_free_at', 'rk_pvp_hist', 'rk_crash_hist', 'rk_upg_hist', 'rk_stats', 'rk_tasks', 'rk_pvp_pending', 'rk_reset', 'rk_credits_done', 'rk_withdrawals'];
+const SYNC_KEYS = ['rk_guest', 'rk_wd_addr'];
 const CHUNK = 3900;
 const cloud = (() => {
   try { return tg && tg.CloudStorage && (!tg.isVersionAtLeast || tg.isVersionAtLeast('6.9')) ? tg.CloudStorage : null; } catch (e) { return null; }
@@ -75,74 +75,48 @@ function loadFromCloud() {
   });
 }
 
+// ---------- Баланс и инвентарь: их хранит и считает СЕРВЕР ----------
+// Игра держит у себя только копию для показа. Изменить её на телефоне бесполезно:
+// любая ставка, выигрыш или продажа проходят через сервер, а он присылает правильные значения.
+const acct = { bal: 0, inv: [], freeAt: 0, loaded: false };
 const wallet = {
-  get() {
-    const v = parseFloat(store.get('rk_balance')); return isNaN(v) ? START_BALANCE : v;
-  },
-  set(v) {
-    store.set('rk_balance', String(Math.round(v * 100) / 100));
-    // сообщаем серверу текущий баланс (не чаще раза в 2 секунды) — его видит админ
-    clearTimeout(this._rt);
-    this._rt = setTimeout(() => { try { if (window.RK && window.RK.net) window.RK.net.send({ t: 'bal', v: wallet.get() }); } catch (e) {} }, 2000);
-  }
+  get() { return acct.bal; },
+  set() { /* баланс меняет только сервер */ }
 };
-// Общий инвентарь подарков (демо: хранится на устройстве игрока)
-const STARTER_GIFTS = ['B-Day Candle', 'Lol Pop', 'Desk Calendar', 'Homemade Cake', 'Homemade Cake', 'Jingle Bells', 'Hypno Lollipop', 'Snow Globe', 'Berry Box'];
 const inventory = {
-  _load() { const v = store.getJSON('rk_inv', null); return Array.isArray(v) ? v : null; },
-  _save(a) { store.setJSON('rk_inv', a); this._mem = a; },
-  list() {
-    let a = this._load() || this._mem;
-    if (!a) { const t = Date.now(); a = STARTER_GIFTS.map((k, i) => ({ uid: 's' + i + '_' + t, key: k, at: t - (i + 1) * 3600000 })); this._save(a); }
-    return a.slice();
-  },
-  add(key) { const a = this.list(); const it = { uid: 'g' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), key, at: Date.now() }; a.unshift(it); this._save(a); return it; },
-  remove(uids) { const set = new Set([].concat(uids)); this._save(this.list().filter((x) => !set.has(x.uid))); },
-  reset() { store.remove('rk_inv'); this._mem = null; return this.list(); }
+  list() { return acct.inv.slice(); },
+  add() {}, remove() {}, reset() { return acct.inv.slice(); }
 };
-// Статистика игрока: для заданий и таблицы лидеров
-const mskDay = (t) => new Date((t || Date.now()) + 3 * 3600 * 1000).toISOString().slice(0, 10);
-const EMPTY_DAY = () => ({ cases: 0, crash: 0, pvp: 0, upgrade: 0, mines: 0, wagered: 0, won: 0 });
-const stats = {
-  _get() { const v = store.getJSON('rk_stats', null); return v && v.days ? v : { total: EMPTY_DAY(), days: {} }; },
-  day() { return Object.assign(EMPTY_DAY(), this._get().days[mskDay()] || {}); },
-  range(n) {
-    const v = this._get(), out = EMPTY_DAY();
-    for (let i = 0; i < n; i++) { const d = v.days[mskDay(Date.now() - i * 86400000)]; if (d) Object.keys(out).forEach((k) => { out[k] += d[k] || 0; }); }
-    return out;
-  },
-  total() { return Object.assign(EMPTY_DAY(), this._get().total); }
-};
-function track(o) {
-  const v = stats._get(), key = mskDay();
-  const d = Object.assign(EMPTY_DAY(), v.days[key] || {});
-  const t = Object.assign(EMPTY_DAY(), v.total || {});
-  [d, t].forEach((x) => {
-    if (o.round && o.game in x) x[o.game] += 1;
-    x.wagered = Math.round((x.wagered + (o.bet || 0)) * 100) / 100;
-    x.won = Math.round((x.won + (o.win || 0)) * 100) / 100;
-  });
-  v.days[key] = d; v.total = t;
-  Object.keys(v.days).sort().slice(0, -8).forEach((k) => { delete v.days[k]; });
-  store.setJSON('rk_stats', v);
+const stats = { day: () => ({}), range: () => ({}), total: () => ({}) }; // статистика — на сервере
+function track() {}
+// ---------- Уведомление поверх любого экрана ----------
+let toastEl = null, toastT = null;
+function showToast(text, ok) {
+  if (!toastEl) {
+    toastEl = document.createElement('div');
+    toastEl.setAttribute('role', 'status');
+    toastEl.style.cssText = 'position:fixed;left:50%;top:20px;transform:translateX(-50%);z-index:90;max-width:340px;box-sizing:border-box;padding:12px 16px;border-radius:16px;background:#1f2330;color:#fff;font:500 14px Rubik,system-ui,sans-serif;box-shadow:0 10px 30px rgba(0,0,0,.5);transition:opacity .25s;pointer-events:none';
+    document.body.appendChild(toastEl);
+  }
+  toastEl.textContent = text;
+  toastEl.style.border = '1px solid ' + (ok === false ? '#ff5d73' : ok ? '#2bd46b' : '#ffc83d');
+  toastEl.style.opacity = '1';
+  clearTimeout(toastT); toastT = setTimeout(() => { toastEl.style.opacity = '0'; }, 2800);
 }
-// ---------- Сеть: общий сервер для «Ракеты» и PvP (реальные игроки) ----------
+// ---------- Сеть: сервер игры ----------
 // Адрес сервера: window.RK_SERVER (задаётся в index.html), иначе тот же сайт.
-let currentScreen = null; // открытый экран — чтобы выигрыш сразу попал в его баланс
-function addBalance(amount) {
+let currentScreen = null; // открытый экран — чтобы новый баланс сразу попал в него
+function applyAcct(a) {
+  acct.bal = Math.round((a.bal || 0) * 100) / 100; acct.inv = Array.isArray(a.inv) ? a.inv : []; if (a.freeAt != null) acct.freeAt = a.freeAt; acct.loaded = true;
   const lg = currentScreen && currentScreen.logic;
-  if (lg && lg.state && 'balance' in lg.state) lg.setState({ balance: Math.round((lg.state.balance + amount) * 100) / 100 });
-  else { wallet.set(wallet.get() + amount); if (currentScreen) currentScreen.forceUpdate(); }
+  if (lg && lg.state && 'balance' in lg.state) lg.state.balance = acct.bal;
+  if (currentScreen) currentScreen.forceUpdate();
 }
-function setBalance(v) {
-  const lg = currentScreen && currentScreen.logic;
-  if (lg && lg.state && 'balance' in lg.state) lg.setState({ balance: v });
-  else { wallet.set(v); if (currentScreen) currentScreen.forceUpdate(); }
-}
+function addBalance() {} // совместимость: баланс меняет только сервер
 const net = (() => {
-  const handlers = {}; const rooms = new Set();
-  let ws = null, retry = 0, pingIv = null;
-  const api = { connected: false, me: null, online: 0, offset: 0 };
+  const handlers = {}; const rooms = new Set(); const pending = {};
+  let ws = null, retry = 0, pingIv = null, ridN = 0;
+  const api = { connected: false, me: null, online: 0, offset: 0, feed: [], wd: [] };
   function emit(t, m) { (handlers[t] || []).slice().forEach((fn) => { try { fn(m); } catch (e) { console.error(e); } }); }
   function url() {
     let base = (window.RK_SERVER || '').trim();
@@ -155,66 +129,15 @@ const net = (() => {
     return id;
   }
   function raw(m) { if (ws && ws.readyState === 1) { ws.send(JSON.stringify(m)); return true; } return false; }
-  // Зачисления с сервера (выигрыш в PvP, кэшаут в ракете) — один раз, с подтверждением
-  function onCredit(m) {
-    const done = store.getJSON('rk_credits_done', []);
-    m.dup = done.indexOf(m.id) !== -1; // уже зачисляли (повторная доставка) — не начисляем и не показываем
-    if (!m.dup) {
-      if (m.game === 'refund') {
-        // возврат по отклонённой заявке на вывод
-        if (m.gift) { const gi = giftInfo(m.gift); if (gi) inventory.add(gi.name); }
-        if (m.amount) addBalance(m.amount); else if (currentScreen) currentScreen.forceUpdate();
-      } else if (m.game === 'deposit') {
-        addBalance(m.amount); // настоящее пополнение TON, найденное сервером в блокчейне
-      } else if (m.game === 'admin') {
-        // начисление/списание от админа; списание не уводит баланс в минус
-        const lg = currentScreen && currentScreen.logic;
-        const cur = lg && lg.state && 'balance' in lg.state ? lg.state.balance : wallet.get();
-        addBalance(Math.max(m.amount, -cur));
-      } else {
-        let giftVal = 0;
-        if (m.gift) { const gi = giftInfo(m.gift); if (gi) { inventory.add(gi.name); giftVal = gi.price; } } // выигранный подарок — в инвентарь
-        if (m.amount) addBalance(m.amount);
-        else if (currentScreen) currentScreen.forceUpdate();
-        track({ game: m.game, win: Math.round((m.amount + giftVal) * 100) / 100 });
-      }
-      store.setJSON('rk_credits_done', [m.id].concat(done).slice(0, 100));
-    }
-    raw({ t: 'ack', id: m.id });
-  }
-  // ---- Заявки на вывод: храним у игрока, чтобы не потерялись, если сервер перезапустится ----
-  const WDK = 'rk_withdrawals';
-  const wdLoad = () => { const v = store.getJSON(WDK, []); return Array.isArray(v) ? v : []; };
-  const wdSave = (a) => store.setJSON(WDK, a.slice(0, 30));
-  function wdRefund(w) {
-    const back = w.kind === 'ton' ? w.amount : (w.fee || 0);
-    if (back) addBalance(back);
-    (w.gifts || []).forEach((g) => { const gi = giftInfo(g); if (gi) inventory.add(gi.name); });
-  }
-  function wdMsg(m) {
-    let list = wdLoad();
-    if (m.t === 'wd.ok' || m.t === 'wd.update') {
-      list = list.map((w) => (w.id === m.w.id ? Object.assign({}, w, { status: m.w.status, synced: true, note: m.w.note || '' }) : w));
-      if (!list.some((w) => w.id === m.w.id)) list.unshift(Object.assign({ synced: true }, m.w));
-    } else if (m.t === 'wd.err' && m.id) {
-      const w = list.find((x) => x.id === m.id && !x.synced);
-      if (w) { wdRefund(w); list = list.filter((x) => x !== w); } // сервер не принял — возвращаем
-    } else if (m.t === 'wd.list') {
-      const srv = {}; (m.items || []).forEach((w) => { srv[w.id] = w; });
-      list = list.map((w) => (srv[w.id] ? Object.assign({}, w, { status: srv[w.id].status, synced: true, note: srv[w.id].note || '' }) : w));
-      (m.items || []).forEach((w) => { if (!list.some((x) => x.id === w.id)) list.push(Object.assign({ synced: true }, w)); });
-      // сервер «забыл» заявку (передеплой) — отправляем снова
-      list.filter((w) => w.status === 'pending' && !srv[w.id]).forEach((w) => raw({ t: 'wd.create', id: w.id, kind: w.kind, amount: w.amount, address: w.address, gifts: w.gifts, at: w.at }));
-      list.sort((a, b) => b.at - a.at);
-    }
-    wdSave(list);
-  }
-  api.withdrawals = () => wdLoad();
-  api.withdraw = (w) => {
-    const rec = Object.assign({}, w, { status: 'pending', synced: false });
-    wdSave([rec].concat(wdLoad()));
-    raw({ t: 'wd.create', id: w.id, kind: w.kind, amount: w.amount, address: w.address, gifts: w.gifts, at: w.at });
-  };
+  // Запрос к серверу с ответом: net.req('case.open', { id }) → Promise({ ok, data, err })
+  api.req = (op, args) => new Promise((resolve) => {
+    const rid = 'q' + (++ridN);
+    if (!raw({ t: 'req', rid, op, args: args || {} })) return resolve({ ok: false, err: 'Нет связи с сервером' });
+    const timer = setTimeout(() => { delete pending[rid]; resolve({ ok: false, err: 'Сервер не ответил, попробуй ещё раз' }); }, 15000);
+    pending[rid] = (m) => { clearTimeout(timer); resolve(m); };
+  });
+  api.withdrawals = () => api.wd.slice();
+  api.withdraw = (w) => raw({ t: 'wd.create', id: w.id, kind: w.kind, amount: w.amount, address: w.address, items: w.items });
   function connect() {
     try { ws = new WebSocket(url()); } catch (e) { return later(); }
     ws.onopen = () => {
@@ -228,20 +151,30 @@ const net = (() => {
     ws.onmessage = (ev) => {
       let m; try { m = JSON.parse(ev.data); } catch (e) { return; }
       if (m.t === 'pong') { const now = Date.now(); api.offset = m.now - (m.c + now) / 2; return; }
+      if (m.t === 'res') { const f = pending[m.rid]; if (f) { delete pending[m.rid]; f(m); } return; }
       if (m.t === 'welcome') {
-        // Сброс балансов: сервер сообщает метку, игра обнуляет баланс один раз на каждую новую метку
-        if (m.balanceReset && store.get('rk_reset') !== m.balanceReset) { setBalance(0); store.set('rk_reset', m.balanceReset); }
-        api.me = m.me; api.online = m.online; api.deposit = m.deposit || null; api.cryptobot = m.cryptobot || null; api.connected = true; emit('status', api);
-        raw({ t: 'bal', v: wallet.get() });
-        if (m.me && String(m.me.uid).indexOf('tg') === 0) raw({ t: 'wd.list' });
+        api.me = m.me; api.online = m.online; api.deposit = m.deposit || null; api.cryptobot = m.cryptobot || null; api.gifts = m.gifts || null; api.connected = true;
+        api.feed = m.feed || [];
+        if (m.acct) applyAcct(m.acct);
+        if (m.me && m.me.tg) raw({ t: 'wd.list' });
+        emit('status', api);
       }
+      if (m.t === 'acct') { applyAcct(m); }
       if (m.t === 'online') { api.online = m.n; }
-      if (m.t === 'credit') onCredit(m);
-      if (m.t === 'wd.ok' || m.t === 'wd.err' || m.t === 'wd.list' || m.t === 'wd.update') wdMsg(m);
+      if (m.t === 'feed') { api.feed = [m.item].concat(api.feed).slice(0, 20); }
+      if (m.t === 'notify') showToast(m.text, true);
+      if (m.t === 'wd.list') api.wd = m.items || [];
+      if (m.t === 'wd.ok' || m.t === 'wd.update') { api.wd = [m.w].concat(api.wd.filter((w) => w.id !== m.w.id)).sort((x, y) => y.at - x.at); }
+      if (m.t === 'wd.err') showToast(m.msg, false);
       if (m.t === 'auth.expired') api.expired = true;
       emit(m.t, m);
     };
-    ws.onclose = () => { const was = api.connected; api.connected = false; clearInterval(pingIv); if (was) emit('status', api); if (!api.expired) later(); };
+    ws.onclose = () => {
+      const was = api.connected; api.connected = false; clearInterval(pingIv);
+      Object.keys(pending).forEach((rid) => { pending[rid]({ ok: false, err: 'Связь с сервером прервалась' }); delete pending[rid]; });
+      if (was) emit('status', api);
+      if (!api.expired) later();
+    };
     ws.onerror = () => {};
   }
   function later() { retry = Math.min(retry + 1, 6); setTimeout(connect, 500 * retry); }
@@ -251,7 +184,7 @@ const net = (() => {
   api.unsub = (r) => { rooms.delete(r); raw({ t: 'unsub', room: r }); };
   api.now = () => Date.now() + api.offset; // время сервера
   api.isMe = (uid) => !!(api.me && api.me.uid === uid);
-  api.start = connect; // подключаемся после загрузки сохранений из облака
+  api.start = connect;
   return api;
 })();
 
@@ -272,7 +205,7 @@ function giftInfo(name) {
 // Лестница подарков: самый дорогой на сумму / следующий дороже
 function giftBestFor(v) { const b = GIFTCAT.bestFor(v); return b ? giftInfo(b.name) : null; }
 function giftNextAbove(p) { const b = GIFTCAT.nextAbove(p); return b ? giftInfo(b.name) : null; }
-window.RK = { wallet, inventory, store, stats, track, net, addBalance, gift: giftInfo, giftBestFor, giftNextAbove, starGifts, botName: 'RackoonDropBot', user: (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) || null };
+window.RK = { wallet, inventory, store, stats, track, net, addBalance, acct, toast: showToast, cases: CASESMOD, gift: giftInfo, giftBestFor, giftNextAbove, starGifts, botName: 'RackoonDropBot', user: (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) || null };
 
 if (tg) {
   tg.ready();
@@ -368,7 +301,6 @@ class DCLogic {
   setState(partial, cb) {
     if (typeof partial === 'function') partial = partial(this.state, this.props);
     Object.assign(this.state, partial);
-    if (partial && 'balance' in partial) wallet.set(partial.balance);
     if (this._host) this._host.forceUpdate(cb);
     else if (cb) cb();
   }

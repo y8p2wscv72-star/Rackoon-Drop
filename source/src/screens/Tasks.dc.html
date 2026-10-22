@@ -112,7 +112,7 @@ var DAILY = [
   { id: 'wager20', title: 'Поставь в сумме 20 TON', key: 'wagered', goal: 20, reward: 1, href: 'Crash.dc.html', icon: '/_blob/a8d1e2a1f1626c9b8edd4755d9c32150', iconBg: '#1d1233' }
 ];
 var REFS = [
-  { title: 'Пригласи друга', reward: '0.1 TON' },
+  { title: 'Друг пришёл и сыграл на 1 TON', reward: '0.1 TON' },
   { title: 'Друг сыграл на 10 TON', reward: '1 TON' },
   { title: 'Друг сыграл на 100 TON', reward: '5 TON' }
 ];
@@ -120,28 +120,29 @@ function R() { return typeof window !== 'undefined' && window.RK ? window.RK : n
 function today() { var d = new Date(Date.now() + 3 * 3600 * 1000); return d.toISOString().slice(0, 10); }
 function fmt(x) { return (Math.round(x * 100) / 100).toFixed(2) + ' TON'; }
 function hm(ms) { var m = Math.ceil(ms / 60000), h = Math.floor(m / 60); return h + ' ч ' + (m % 60) + ' мин'; }
-function loadClaims() {
-  var r = R(), v = r && r.store ? r.store.getJSON('rk_tasks', null) : null;
-  if (!v || v.date !== today()) v = { date: today(), claimed: [] };
-  return v;
-}
-function dayStats() { var r = R(); return r && r.stats ? r.stats.day() : { cases: 0, crash: 0, pvp: 0, upgrade: 0, mines: 0, wagered: 0, won: 0 }; }
+// Прогресс заданий, полученные награды и рефералы хранит сервер
+var EMPTY = { cases: 0, crash: 0, pvp: 0, upgrade: 0, mines: 0, wagered: 0, won: 0 };
 
 class Component extends DCLogic {
   constructor(props) {
     super(props);
-    this.state = { balance: 50, claims: loadClaims(), toast: null, now: Date.now() };
+    this.state = { balance: 0, srv: null, toast: null, now: Date.now() };
   }
-  componentDidMount() { var self = this; this.iv = setInterval(function () { self.setState({ now: Date.now(), claims: loadClaims() }); }, 30000); }
-  componentWillUnmount() { clearInterval(this.iv); clearTimeout(this.tt); }
+  load() { var self = this; R().net.req('tasks.state').then(function (r) { if (r.ok) self.setState({ srv: r.data }); }); }
+  componentDidMount() {
+    var self = this; this.load();
+    this.offSt = R().net.on('status', function (n) { if (n.connected) self.load(); });
+    this.iv = setInterval(function () { self.setState({ now: Date.now() }); self.load(); }, 30000);
+  }
+  componentWillUnmount() { clearInterval(this.iv); clearTimeout(this.tt); if (this.offSt) this.offSt(); }
   toast(t) { var self = this; this.setState({ toast: t }); clearTimeout(this.tt); this.tt = setTimeout(function () { self.setState({ toast: null }); }, 2600); }
   claim(id, amount, label) {
-    var c = loadClaims();
-    if (c.claimed.indexOf(id) !== -1) return;
-    c.claimed.push(id);
-    var r = R(); if (r && r.store) r.store.setJSON('rk_tasks', c);
-    this.setState({ claims: c, balance: Math.round((this.state.balance + amount) * 100) / 100 });
-    this.toast('+' + fmt(amount) + ' · ' + label);
+    var self = this;
+    R().net.req('task.claim', { id: id }).then(function (r) {
+      if (!r.ok) { self.toast(r.err); return; }
+      self.toast('+' + fmt(r.data.reward) + ' · ' + label);
+      self.load();
+    });
   }
   refLink() {
     var r = R(), uid = r && r.user && r.user.id ? r.user.id : 'guest';
@@ -149,8 +150,10 @@ class Component extends DCLogic {
     return 'https://t.me/' + bot + '?start=ref_' + uid;
   }
   renderVals() {
-    var self = this, s = this.state, st = dayStats();
-    var gotBonus = s.claims.claimed.indexOf('bonus') !== -1;
+    var self = this, s = this.state, st = (s.srv && s.srv.day) || EMPTY;
+    var claimedList = (s.srv && s.srv.claimed) || [];
+    var ref = (s.srv && s.srv.ref) || { friends: 0, earned: 0, steps: [] };
+    var gotBonus = claimedList.indexOf('bonus') !== -1;
     var midnight = new Date(today() + 'T00:00:00+03:00').getTime() + 86400000;
     var link = this.refLink();
     return {
@@ -165,7 +168,7 @@ class Component extends DCLogic {
       resetIn: hm(Math.max(0, midnight - s.now)),
       daily: DAILY.map(function (t) {
         var have = Math.min(t.goal, Math.round((st[t.key] || 0) * 100) / 100);
-        var claimed = s.claims.claimed.indexOf(t.id) !== -1, complete = have >= t.goal;
+        var claimed = claimedList.indexOf(t.id) !== -1, complete = have >= t.goal;
         return {
           title: t.title, reward: fmt(t.reward), icon: t.icon, iconBg: t.iconBg, href: t.href,
           pct: Math.round(have / t.goal * 100), barColor: complete ? '#2bd46b' : '#ffc83d',
@@ -175,7 +178,7 @@ class Component extends DCLogic {
           claim: function () { self.claim(t.id, t.reward, t.title.toLowerCase()); }
         };
       }),
-      refs: REFS.map(function (r) { return { title: r.title, reward: r.reward, count: '0 из ∞' }; }),
+      refs: REFS.map(function (r, i) { var st2 = ref.steps[i]; return { title: r.title, reward: r.reward, count: (st2 ? st2.count : 0) + ' друзей' }; }),
       refLink: link,
       invite: function () {
         var url = 'https://t.me/share/url?url=' + encodeURIComponent(link) + '&text=' + encodeURIComponent('Залетай в RACKOON: кейсы, краш и PvP на NFT-подарки 🦝');

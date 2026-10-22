@@ -299,10 +299,7 @@ class Component extends DCLogic {
         self.setState({ sending: false, err: '' });
       }));
       this.offs.push(net.on('pvp.err', function (m) {
-        var s = self.state, upd = { sending: false, err: m.msg || 'Ошибка' };
-        if (m.gift) { var I = INV(); if (I && G(m.gift)) I.add(G(m.gift).name); upd.invTick = s.invTick + 1; } // подарок вернулся в инвентарь
-        else if (m.ton) upd.balance = r2(s.balance + Number(m.ton));
-        self.setState(upd);
+        self.setState({ sending: false, err: m.msg || 'Ошибка' }); // сервер ничего не списал
       }));
       this.offs.push(net.on('pvp.react', function (m) { self.floater(m.i); }));
       this.offs.push(net.on('status', function () { self.setState({ conn: net.connected }); }));
@@ -372,23 +369,23 @@ class Component extends DCLogic {
     this.setState(upd);
   }
 
-  join(ton, gift) {
+  join(ton, itemUid) {
     var s = this.state, net = NET();
     if (!net || !net.connected || (s.phase !== 'wait' && s.phase !== 'count') || s.sending) return false;
-    net.send({ t: 'pvp.join', ton: ton, gift: gift });
+    net.send({ t: 'pvp.join', ton: ton, item: itemUid }); // сервер сам спишет ставку / заберёт подарок
     return true;
   }
   mainAction() {
     var s = this.state;
     if (s.mode === 'ton') {
       if (s.bet > s.balance || !(s.bet >= 0.1)) return;
-      if (this.join(s.bet, null)) this.setState({ balance: r2(s.balance - s.bet), sending: true });
+      if (this.join(s.bet, null)) this.setState({ sending: true });
     } else {
       if (!s.pickGift) return;
       // pickGift = uid предмета из инвентаря: списываем и ставим
       var I = INV(), item = I ? I.list().filter(function (it) { return it.uid === s.pickGift; })[0] : null;
       if (!item || !G(item.key)) { this.setState({ pickGift: null, err: 'Этого подарка больше нет в инвентаре' }); return; }
-      if (this.join(0, item.key)) { I.remove(item.uid); this.setState({ pickGift: null, sending: true, invTick: s.invTick + 1 }); }
+      if (this.join(0, item.uid)) this.setState({ pickGift: null, sending: true });
     }
   }
   floater(i) {
