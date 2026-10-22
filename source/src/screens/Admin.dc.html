@@ -89,7 +89,26 @@ body{margin:0;background:#0d0f14}
 </div>
 </sc-for>
 </div>
-<div style="font-size: 11px; color: #6c7282; text-align: center; line-height: 1.5">Если игрок не в сети, сумма зачислится при его следующем входе в игру.<br>Списание не уводит баланс ниже нуля.</div>
+<div style="display: flex; justify-content: space-between; align-items: baseline; margin-top: 6px">
+<span style="font-size: 17px; font-weight: 700">Пополнения TON</span>
+<button type="button" onClick="{{refresh}}" style="height: 32px; border-radius: 10px; border: 1px solid #262b3a; background: #1b1e27; color: #a3a8b5; font-family: Rubik, system-ui, sans-serif; font-size: 12px; font-weight: 700; padding: 0 10px; cursor: pointer">Обновить</button>
+</div>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<sc-if value="{{noDeps}}" hint-placeholder-val="{{ false }}">
+<div style="border-radius: 14px; border: 1px dashed #2c3244; padding: 16px; text-align: center; font-size: 13px; color: #8a90a0">Переводов пока не было</div>
+</sc-if>
+<sc-for list="{{deps}}" as="dp" hint-placeholder-count="2">
+<div style="display: flex; flex-direction: column; gap: 4px; background: #151821; border: 1px solid {{dp.border}}; border-radius: 14px; padding: 10px 12px">
+<div style="display: flex; align-items: center; gap: 10px">
+<span style="flex-grow: 1; min-width: 0; font-size: 14px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{dp.who}}</span>
+<span style="font-size: 11px; color: #8a90a0">{{dp.time}}</span>
+<span style="font-size: 14px; font-weight: 900; color: #ffc83d">+{{dp.ton}} TON</span>
+</div>
+<span style="font-size: 11px; color: {{dp.statusColor}}">{{dp.status}}</span>
+</div>
+</sc-for>
+</div>
+<div style="font-size: 11px; color: #6c7282; text-align: center; line-height: 1.5">Перевод без комментария rk:… не зачисляется сам — выдай баланс вручную выше.<br>Если игрок не в сети, сумма зачислится при его следующем входе в игру.<br>Списание не уводит баланс ниже нуля.</div>
 </sc-if>
 
 </div>
@@ -131,7 +150,7 @@ class Component extends DCLogic {
         self.rt = setTimeout(function () { var n = NET(); if (n && n.connected) n.send({ t: 'admin.find', username: m.user.username }); }, 3000);
       }));
       this.offs.push(net.on('admin.err', function (m) { self.setState({ busy: false, msg: { ok: false, text: m.msg } }); }));
-      this.offs.push(net.on('admin.log', function (m) { self.setState({ log: m.log }); }));
+      this.offs.push(net.on('admin.log', function (m) { self.setState({ log: m.log, deps: m.deposits || [] }); }));
       this.offs.push(net.on('status', function () { self.forceUpdate(); if (net.connected) net.send({ t: 'admin.log' }); }));
       if (net.connected) net.send({ t: 'admin.log' });
     }
@@ -182,6 +201,13 @@ class Component extends DCLogic {
       hasMsg: !!s.msg, msg: s.msg ? s.msg.text : '',
       msgBg: s.msg && s.msg.ok ? 'rgba(43,212,107,0.12)' : 'rgba(255,93,115,0.12)', msgBorder: s.msg && s.msg.ok ? 'rgba(43,212,107,0.45)' : 'rgba(255,93,115,0.45)',
       log: (s.log || []).map(function (l) { return { to: l.to, time: hm(l.at), amount: (l.amount > 0 ? '+' : '') + l.amount + ' TON', color: l.amount > 0 ? '#2bd46b' : '#ff5d73' }; }),
+      refresh: function () { var n = NET(); if (n && n.connected) n.send({ t: 'admin.log' }); },
+      deps: (s.deps || []).map(function (d) {
+        var u = d.username ? '@' + d.username : (d.uid && d.uid.indexOf('tg') === 0 ? 'id ' + d.uid.slice(2) : (d.comment ? '«' + d.comment + '»' : 'без комментария'));
+        var ok = d.status === 'зачислено';
+        return { who: u, time: hm(d.at), ton: d.ton, status: d.status, statusColor: ok ? '#2bd46b' : '#ff8a5c', border: ok ? '#222838' : 'rgba(255,138,92,0.45)' };
+      }),
+      noDeps: !(s.deps && s.deps.length),
       noLog: !(s.log && s.log.length), logCount: s.log && s.log.length ? s.log.length + ' шт.' : ''
     };
   }

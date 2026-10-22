@@ -23,7 +23,7 @@ const START_BALANCE = 0; // новые игроки начинают с нуля
 // ---------- Сохранение: на устройстве + в облаке Telegram (CloudStorage) ----------
 // Облако Telegram привязано к аккаунту игрока и боту: данные не пропадут,
 // даже если Telegram почистит кэш или игрок зайдёт с другого телефона.
-const SYNC_KEYS = ['rk_balance', 'rk_inv', 'rk_free_at', 'rk_pvp_hist', 'rk_crash_hist', 'rk_upg_hist', 'rk_stats', 'rk_tasks', 'rk_pvp_pending', 'rk_reset'];
+const SYNC_KEYS = ['rk_balance', 'rk_inv', 'rk_free_at', 'rk_pvp_hist', 'rk_crash_hist', 'rk_upg_hist', 'rk_stats', 'rk_tasks', 'rk_pvp_pending', 'rk_reset', 'rk_credits_done'];
 const CHUNK = 3900;
 const cloud = (() => {
   try { return tg && tg.CloudStorage && (!tg.isVersionAtLeast || tg.isVersionAtLeast('6.9')) ? tg.CloudStorage : null; } catch (e) { return null; }
@@ -157,8 +157,11 @@ const net = (() => {
   // Зачисления с сервера (выигрыш в PvP, кэшаут в ракете) — один раз, с подтверждением
   function onCredit(m) {
     const done = store.getJSON('rk_credits_done', []);
-    if (done.indexOf(m.id) === -1) {
-      if (m.game === 'admin') {
+    m.dup = done.indexOf(m.id) !== -1; // уже зачисляли (повторная доставка) — не начисляем и не показываем
+    if (!m.dup) {
+      if (m.game === 'deposit') {
+        addBalance(m.amount); // настоящее пополнение TON, найденное сервером в блокчейне
+      } else if (m.game === 'admin') {
         // начисление/списание от админа; списание не уводит баланс в минус
         const lg = currentScreen && currentScreen.logic;
         const cur = lg && lg.state && 'balance' in lg.state ? lg.state.balance : wallet.get();
@@ -187,7 +190,7 @@ const net = (() => {
       if (m.t === 'welcome') {
         // Сброс балансов: сервер сообщает метку, игра обнуляет баланс один раз на каждую новую метку
         if (m.balanceReset && store.get('rk_reset') !== m.balanceReset) { setBalance(0); store.set('rk_reset', m.balanceReset); }
-        api.me = m.me; api.online = m.online; api.connected = true; emit('status', api);
+        api.me = m.me; api.online = m.online; api.deposit = m.deposit || null; api.connected = true; emit('status', api);
         raw({ t: 'bal', v: wallet.get() });
       }
       if (m.t === 'online') { api.online = m.n; }
