@@ -358,10 +358,16 @@ class Component extends DCLogic {
   }
   componentDidMount() {
     var self = this, net = window.RK && window.RK.net;
+    // открыть пополнение/вывод по просьбе другого экрана («Пополнить», «Вывести»)
+    this.onOpenDep = function () { var md = window.__rkOpenDep; if (!md) return; window.__rkOpenDep = null; self.setState({ dep: true, depMode: md === 'wd' ? 'wd' : 'dep' }); };
+    window.addEventListener('rk:opendep', this.onOpenDep);
+    setTimeout(this.onOpenDep, 0);
     if (net) this.offCredit = net.on('credit', function (m) {
       if (m.game !== 'deposit' && m.game !== 'admin' && m.game !== 'refund') return;
       self.setState({ waitingDeposit: 0, cbWaiting: 0 });
-      self.showToast(m.amount > 0 ? { icon: '✅', text: (m.game === 'deposit' ? 'Пополнение: +' : 'Начислено: +') + m.amount + ' TON', ok: true } : { icon: '➖', text: 'Списано ' + m.amount + ' TON' });
+      if (m.amount > 0) self.showToast({ icon: '✅', text: (m.game === 'deposit' ? 'Пополнение: +' : 'Начислено: +') + m.amount + ' TON', ok: true });
+      else if (m.gift) self.showToast({ icon: '🎁', text: (m.game === 'deposit' ? 'Пополнение NFT: ' : 'Возвращено: ') + m.gift, ok: true });
+      else if (m.amount < 0) self.showToast({ icon: '➖', text: 'Списано ' + m.amount + ' TON' });
     });
     if (net) {
       this.offCb1 = net.on('cb.invoice', function (m) { self.setState({ cbCreating: false, cbWaiting: Date.now(), waitingDeposit: Date.now() }); openTgLink(m.url); self.showToast({ icon: '⏳', text: 'Счёт на ' + m.amount + ' ' + m.asset + ' открыт в CryptoBot. После оплаты баланс зачислится сам' }); });
@@ -375,7 +381,7 @@ class Component extends DCLogic {
       self.setState({ tick: (s.tick || 0) + 1 }); // лента и онлайн приходят с сервера
     }, 2200);
   }
-  componentWillUnmount() { clearInterval(this.iv); clearTimeout(this.tt); if (this.offCredit) this.offCredit(); if (this.offCb1) this.offCb1(); if (this.offCb2) this.offCb2(); document.removeEventListener('visibilitychange', this.onVis); }
+  componentWillUnmount() { clearInterval(this.iv); clearTimeout(this.tt); if (this.offCredit) this.offCredit(); if (this.offCb1) this.offCb1(); if (this.offCb2) this.offCb2(); document.removeEventListener('visibilitychange', this.onVis); window.removeEventListener('rk:opendep', this.onOpenDep); }
   showToast(t) {
     var self = this;
     clearTimeout(this.tt);
@@ -459,7 +465,7 @@ class Component extends DCLogic {
     var liveCb = s.depMode === 'dep' && s.depTab === 'crypto' && !!(window.RK && window.RK.net && window.RK.net.cryptobot);
     return {
       topUp: function () { self.setState({ dep: true }); },
-      isAdmin: !!(window.RK && window.RK.net && window.RK.net.me && window.RK.net.me.admin),
+      isAdmin: !!(window.RK && window.RK.net && window.RK.net.me && (window.RK.net.me.admin || window.RK.net.me.adminStale)),
       depOpen: s.dep, depClose: function () { self.setState({ dep: false, depToast: 0 }); },
       depTabs: DEP_TABS.map(function (t) {
         var sel = s.depTab === t.id;
