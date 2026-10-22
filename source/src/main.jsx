@@ -15,6 +15,7 @@ import InventorySrc from './screens/Inventory.dc.html';
 import TasksSrc from './screens/Tasks.dc.html';
 import LeadersSrc from './screens/Leaders.dc.html';
 import AdminSrc from './screens/Admin.dc.html';
+import GIFTCAT from './gifts.js';
 
 // ---------- Telegram ----------
 const tg = window.Telegram && window.Telegram.WebApp;
@@ -211,7 +212,15 @@ const net = (() => {
   return api;
 })();
 
-window.RK = { wallet, inventory, store, stats, track, net, botName: 'RackoonDropBot', user: (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) || null };
+// Подарок из общего каталога: название, сегодняшняя цена, картинка, цвет редкости (или null)
+function giftInfo(name) {
+  const n = GIFTCAT.canon(name);
+  if (!n) return null;
+  const price = GIFTCAT.priceOf(n);
+  const local = GIFTCAT.IMG[n] || GIFTCAT.GIFT_IMG;
+  return { name: n, price, color: GIFTCAT.rarityColor(price), img: window.rkThumb ? window.rkThumb(n, local) : fixAssets(local) };
+}
+window.RK = { wallet, inventory, store, stats, track, net, gift: giftInfo, botName: 'RackoonDropBot', user: (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) || null };
 
 if (tg) {
   tg.ready();

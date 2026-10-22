@@ -119,7 +119,7 @@ a{color:#ffc83d}a:hover{color:#ffe08a}
 </div>
 </sc-if>
 <sc-if value="{{isGiftMode}}" hint-placeholder-val="{{ false }}">
-<div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; padding-top: 12px; border-top: 1px solid #222838">
+<div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; padding-top: 12px; border-top: 1px solid #222838; max-height: 270px; overflow-y: auto; -webkit-overflow-scrolling: touch">
 <sc-for list="{{gifts}}" as="g" hint-placeholder-count="4">
 <button type="button" onClick="{{g.pick}}" aria-pressed="{{g.pressed}}" style="min-width: 0; background: #0b0d12; border: 2px solid {{g.border}}; border-radius: 12px; padding: 8px 4px; display: flex; flex-direction: column; align-items: center; gap: 2px; cursor: pointer; font-family: Rubik, system-ui, sans-serif; color: #ffffff">
 <img src="{{g.img}}" alt="" style="width: 40px; height: 40px">
@@ -129,7 +129,7 @@ a{color:#ffc83d}a:hover{color:#ffe08a}
 </sc-for>
 </div>
 <sc-if value="{{noGifts}}" hint-placeholder-val="{{ false }}">
-<div style="font-size: 13px; color: #8a90a0; text-align: center">Подарков в инвентаре нет</div>
+<div style="font-size: 13px; color: #8a90a0; text-align: center">Подарков в инвентаре нет — выбей их в кейсах</div>
 </sc-if>
 </sc-if>
 </div>
@@ -217,17 +217,10 @@ a{color:#ffc83d}a:hover{color:#ffe08a}
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":1250}}'>
 var FEE = 0.07, S = 358;
-var GIFTS = {
-  cake: { name: 'Homemade Cake', price: 5.04, img: '/_blob/6ef5ecbeb712d1b1d752a33d1e9c279d' },
-  globe: { name: 'Snow Globe', price: 5.92, img: '/_blob/6e3628fac94b5266f3b64cea9c5fe7ee' },
-  record: { name: 'Record Player', price: 11.9, img: '/_blob/8f4c023d08704d2319e54c9872a8c46d' },
-  rose: { name: 'Eternal Rose', price: 25.6, img: '/_blob/734e25b54462cda990767f69381d8355' },
-  bear: { name: 'Toy Bear', price: 35, img: '/_blob/c02bc9477e447f6f71962df1fc7a399a' },
-  lpotion: { name: 'Love Potion', price: 14.1, img: '/_blob/5bb7da32fc8a6f8dbe91cf7cedc20c65' },
-  bells: { name: 'Jingle Bells', price: 10, img: '/_blob/808ef5efdbeb6b276f70430b220f760b' },
-  signet: { name: 'Signet Ring', price: 32.1, img: '/_blob/4826a2db621709393534f8feae3d3f4a' }
-};
-if (window.rkThumb) Object.keys(GIFTS).forEach(function (k) { GIFTS[k].img = window.rkThumb(GIFTS[k].name, GIFTS[k].img); });
+// Подарки берутся из инвентаря игрока (window.RK.inventory), цены — из общего каталога (window.RK.gift)
+function G(name) { return (window.RK && window.RK.gift && window.RK.gift(name)) || null; }
+function INV() { return window.RK && window.RK.inventory; }
+function invList() { var I = INV(); return I ? I.list().filter(function (it) { return !!G(it.key); }) : []; }
 // Реакции: свои иконки (огонь, смех, злость, сердце, салют) — их видят все на арене
 var REACTIONS = [
   { label: 'Огонь', icon: '/_blob/34af5661e80ecf394b0a48aeeb28ab6c' },
@@ -241,9 +234,10 @@ function r2(x) { return Math.round(x * 100) / 100; }
 function rkTrack(o) { try { if (window.RK && window.RK.track) window.RK.track(o); } catch (e) {} }
 function NET() { return window.RK && window.RK.net; }
 function isMe(uid) { var n = NET(); return !!(n && n.isMe(uid)); }
-function giftPrice(k) { return GIFTS[k] ? GIFTS[k].price : 0; }
+function giftPrice(k) { var g = G(k); return g ? g.price : 0; }
 function fmt(x) { return (Math.floor(x * 100) / 100).toFixed(2) + ' TON'; }
-function stakeOf(p) { var s = p.ton; p.gifts.forEach(function (k) { s += giftPrice(k); }); return r2(s); }
+// ставка = TON + стоимость подарков (её считает сервер по каталогу на момент ставки)
+function stakeOf(p) { return r2(p.ton + (p.giftValue || 0)); }
 
 // Арена: участки нарезаются диагональными полосами от правого верхнего угла.
 // Самая маленькая ставка — треугольник в углу, самая большая — остальное поле.
@@ -261,7 +255,7 @@ function withHouse(players) {
   if (!players.length) return players;
   var pot = 0; players.forEach(function (p) { pot += stakeOf(p); });
   if (pot <= 0) return players;
-  return players.concat([{ id: 'house', name: 'RACKOON', house: true, me: false, ton: Math.round(pot * HOUSE / (1 - HOUSE) * 100) / 100, gifts: [], color: '#1d2230' }]);
+  return players.concat([{ id: 'house', name: 'RACKOON', house: true, me: false, giftValue: 0, ton: Math.round(pot * HOUSE / (1 - HOUSE) * 100) / 100, gifts: [], color: '#1d2230' }]);
 }
 // Порядок полос — как на сервере (по ставке, при равенстве — по id игрока)
 function bandsFor(players) {
@@ -279,7 +273,7 @@ function bandsFor(players) {
 }
 function timeOf(t) { var d = new Date(t + 3 * 3600 * 1000); var mo = ['янв.', 'февр.', 'мар.', 'апр.', 'мая', 'июн.', 'июл.', 'авг.', 'сент.', 'окт.', 'нояб.', 'дек.'][d.getUTCMonth()]; return d.getUTCDate() + ' ' + mo + ' ' + ('0' + d.getUTCHours()).slice(-2) + ':' + ('0' + d.getUTCMinutes()).slice(-2); }
 function playersOf(r) {
-  return (r ? r.players : []).map(function (p) { return { id: p.uid, name: p.name, photo: p.photo, me: isMe(p.uid), ton: p.ton, gifts: p.gifts, color: p.color }; });
+  return (r ? r.players : []).map(function (p) { return { id: p.uid, name: p.name, photo: p.photo, me: isMe(p.uid), ton: p.ton, gifts: p.gifts, giftValue: p.giftValue || 0, color: p.color }; });
 }
 
 // Раунды ведёт сервер: на арене только живые игроки
@@ -289,7 +283,7 @@ class Component extends DCLogic {
     this.state = {
       rs: null, phase: 'wait', now: Date.now(), conn: false, err: '', sending: false,
       players: [], spunN: null, doneN: null,
-      balance: 50, bet: 0.5, mode: 'ton', inv: ['cake', 'globe', 'record', 'rose'], pickGift: null,
+      balance: 50, bet: 0.5, mode: 'ton', invTick: 0, pickGift: null,
       ball: { x: S / 2, y: S / 2 }, ballDur: 0, frozen: null, cam: false,
       winner: null, showWinner: false, view: 'players', floaters: [], fid: 0
     };
@@ -300,13 +294,14 @@ class Component extends DCLogic {
     if (net) {
       this.offs.push(net.on('pvp', function (m) { self.onRound(m); }));
       this.offs.push(net.on('pvp.ok', function (m) {
-        rkTrack({ game: 'pvp', bet: r2((m.ton || 0) + giftPrice(m.gift)), round: self.betN !== m.n });
+        rkTrack({ game: 'pvp', bet: r2((m.ton || 0) + (m.giftPrice || giftPrice(m.gift))), round: self.betN !== m.n });
         self.betN = m.n;
         self.setState({ sending: false, err: '' });
       }));
       this.offs.push(net.on('pvp.err', function (m) {
         var s = self.state, upd = { sending: false, err: m.msg || 'Ошибка' };
-        if (m.gift) upd.inv = s.inv.concat([m.gift]); else if (m.ton) upd.balance = r2(s.balance + Number(m.ton));
+        if (m.gift) { var I = INV(); if (I && G(m.gift)) I.add(G(m.gift).name); upd.invTick = s.invTick + 1; } // подарок вернулся в инвентарь
+        else if (m.ton) upd.balance = r2(s.balance + Number(m.ton));
         self.setState(upd);
       }));
       this.offs.push(net.on('pvp.react', function (m) { self.floater(m.i); }));
@@ -390,8 +385,10 @@ class Component extends DCLogic {
       if (this.join(s.bet, null)) this.setState({ balance: r2(s.balance - s.bet), sending: true });
     } else {
       if (!s.pickGift) return;
-      var k = s.pickGift;
-      if (this.join(0, k)) { var inv = s.inv.slice(); inv.splice(inv.indexOf(k), 1); this.setState({ inv: inv, pickGift: null, sending: true }); }
+      // pickGift = uid предмета из инвентаря: списываем и ставим
+      var I = INV(), item = I ? I.list().filter(function (it) { return it.uid === s.pickGift; })[0] : null;
+      if (!item || !G(item.key)) { this.setState({ pickGift: null, err: 'Этого подарка больше нет в инвентаре' }); return; }
+      if (this.join(0, item.key)) { I.remove(item.uid); this.setState({ pickGift: null, sending: true, invTick: s.invTick + 1 }); }
     }
   }
   floater(i) {
@@ -404,6 +401,7 @@ class Component extends DCLogic {
 
   renderVals() {
     var self = this, s = this.state, r = s.rs, net = NET();
+    var inv = invList();
     var bands = s.frozen || bandsFor(withHouse(s.players));
     var total = 0; s.players.forEach(function (p) { total += stakeOf(p); });
     var totalAll = 0; bands.forEach(function (b) { totalAll += b.v; });
@@ -440,7 +438,7 @@ class Component extends DCLogic {
         name: p.me ? 'Ты' : p.name, initial: p.name.charAt(0).toUpperCase(), avBg: p.color, hasPhoto: !!ph, noPhoto: !ph, photo: ph,
         border: p.me ? '#ffc83d' : '#222838', chance: totalAll ? (st / totalAll * 100).toFixed(2) + '%' : '—', stakeText: st.toFixed(2),
         hasTon: p.ton > 0, tonText: p.ton.toFixed(2),
-        giftImgs: p.gifts.filter(function (k) { return GIFTS[k]; }).map(function (k) { return { img: GIFTS[k].img, name: GIFTS[k].name }; })
+        giftImgs: p.gifts.filter(function (k) { return G(k); }).map(function (k) { return { img: G(k).img, name: G(k).name }; })
       };
     });
 
@@ -492,13 +490,13 @@ class Component extends DCLogic {
       onBetKey: function (e) { if (e && e.key === 'Enter' && e.target && e.target.blur) e.target.blur(); },
       betMinus: function () { self.setState({ betStr: null, bet: r2(Math.max(0.1, self.state.bet - 0.1)) }); },
       betPlus: function () { self.setState({ betStr: null, bet: r2(Math.min(Math.max(0.1, self.state.balance), self.state.bet + 0.1)) }); },
-      gifts: s.inv.map(function (k) { var g = GIFTS[k]; var sel = s.pickGift === k; return { name: g.name, img: g.img, priceText: g.price + ' TON', pressed: sel ? 'true' : 'false', border: sel ? '#ffc83d' : '#222838', pick: function () { self.setState({ pickGift: sel ? null : k }); } }; }),
-      noGifts: s.inv.length === 0,
+      gifts: inv.map(function (it) { var g = G(it.key); var sel = s.pickGift === it.uid; return { name: g.name, img: g.img, priceText: g.price + ' TON', pressed: sel ? 'true' : 'false', border: sel ? '#ffc83d' : '#222838', pick: function () { self.setState({ pickGift: sel ? null : it.uid }); } }; }),
+      noGifts: inv.length === 0,
       toggleHistory: function () { self.setState({ view: self.state.view === 'history' ? 'players' : 'history' }); try { if (window.scrollTo) window.scrollTo(0, 0); } catch (e) {} },
       historyPressed: s.view === 'history' ? 'true' : 'false', historyBorder: s.view === 'history' ? '#ffc83d' : '#1a1d27',
       showPlayers: true, showHistory: s.view === 'history', historyCount: hist.length,
       gameId: r ? r.gameId : '—', players: players,
-      history: hist.map(function (h) { var mine = isMe(h.uid); return { id: h.id, name: mine ? 'Ты' : h.name, chance: h.chance, win: h.win, time: timeOf(h.time), avBg: h.av, initial: h.name.charAt(0).toUpperCase(), hasTon: h.ton > 0, tonText: h.ton.toFixed(2), giftImgs: (h.gifts || []).filter(function (k) { return GIFTS[k]; }).map(function (k) { return GIFTS[k].img; }) }; }),
+      history: hist.map(function (h) { var mine = isMe(h.uid); return { id: h.id, name: mine ? 'Ты' : h.name, chance: h.chance, win: h.win, time: timeOf(h.time), avBg: h.av, initial: h.name.charAt(0).toUpperCase(), hasTon: h.ton > 0, tonText: h.ton.toFixed(2), giftImgs: (h.gifts || []).filter(function (k) { return G(k); }).map(function (k) { return G(k).img; }) }; }),
       showWinner: s.showWinner && !!w,
       winGameId: w ? w.gameId : '', winHasPhoto: !!(w && w.photo && !w.house), winNoPhoto: !(w && w.photo && !w.house), winPhoto: w && w.photo ? w.photo : '',
       winInitial: w ? w.name.charAt(0).toUpperCase() : '', winAvBg: w ? w.color : '#222838', winName: w ? w.name : '',

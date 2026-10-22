@@ -186,11 +186,11 @@ a{color:#ffc83d}a:hover{color:#ffe08a}
 <span style="font-size: 14px; font-weight: 700">Поставь подарок</span>
 <button type="button" onClick="{{closeGift}}" style="height: 36px; border: 0; background: transparent; color: #a3a8b5; font-family: Rubik, system-ui, sans-serif; font-size: 13px; cursor: pointer">Отмена</button>
 </div>
-<div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px">
+<div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; max-height: 270px; overflow-y: auto; -webkit-overflow-scrolling: touch">
 <sc-for list="{{gifts}}" as="g" hint-placeholder-count="4">
-<button type="button" onClick="{{g.pick}}" style="background: #0b0d12; border: 1px solid #222838; border-radius: 12px; padding: 8px 4px; display: flex; flex-direction: column; align-items: center; gap: 2px; cursor: pointer; font-family: Rubik, system-ui, sans-serif; color: #ffffff">
+<button type="button" onClick="{{g.pick}}" style="min-width: 0; background: #0b0d12; border: 1px solid #222838; border-radius: 12px; padding: 8px 4px; display: flex; flex-direction: column; align-items: center; gap: 2px; cursor: pointer; font-family: Rubik, system-ui, sans-serif; color: #ffffff">
 <img src="{{g.img}}" alt="" style="width: 40px; height: 40px">
-<span style="font-size: 10px; font-weight: 500; white-space: nowrap">{{g.name}}</span>
+<span style="max-width: 100%; font-size: 10px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{g.name}}</span>
 <span style="font-size: 11px; font-weight: 700; color: #ffc83d">{{g.priceText}}</span>
 </button>
 </sc-for>
@@ -257,16 +257,10 @@ a{color:#ffc83d}a:hover{color:#ffe08a}
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":1300}}'>
 var GROWTH = 0.16;
-var GIFTS = {
-  cake: { name: 'Homemade Cake', price: 5.04, img: '/_blob/6ef5ecbeb712d1b1d752a33d1e9c279d' },
-  globe: { name: 'Snow Globe', price: 5.92, img: '/_blob/6e3628fac94b5266f3b64cea9c5fe7ee' },
-  record: { name: 'Record Player', price: 11.9, img: '/_blob/8f4c023d08704d2319e54c9872a8c46d' },
-  rose: { name: 'Eternal Rose', price: 25.6, img: '/_blob/734e25b54462cda990767f69381d8355' },
-  bear: { name: 'Toy Bear', price: 35, img: '/_blob/c02bc9477e447f6f71962df1fc7a399a' },
-  lpotion: { name: 'Love Potion', price: 14.1, img: '/_blob/5bb7da32fc8a6f8dbe91cf7cedc20c65' },
-  bells: { name: 'Jingle Bells', price: 10, img: '/_blob/808ef5efdbeb6b276f70430b220f760b' }
-};
-if (window.rkThumb) Object.keys(GIFTS).forEach(function (k) { GIFTS[k].img = window.rkThumb(GIFTS[k].name, GIFTS[k].img); });
+// Подарки берутся из инвентаря игрока (window.RK.inventory), цены — из общего каталога (window.RK.gift)
+function G(name) { return (window.RK && window.RK.gift && window.RK.gift(name)) || null; }
+function INV() { return window.RK && window.RK.inventory; }
+function invList() { var I = INV(); return I ? I.list().filter(function (it) { return !!G(it.key); }) : []; }
 var AV = ['#e5383b', '#2a7fff', '#2bd46b', '#9b5cff', '#ff8a5c', '#00a8a8', '#c77dff', '#e0a800'];
 
 function r2(x) { return Math.round(x * 100) / 100; }
@@ -329,7 +323,7 @@ class Component extends DCLogic {
     this.state = {
       rs: null, phase: 'wait', m: 1, now: Date.now(), conn: false, err: '',
       balance: 50, bet: 1, queued: null, giftPick: false, sending: false,
-      inv: ['cake', 'globe', 'record', 'rose']
+      invTick: 0
     };
     this.offs = [];
   }
@@ -341,7 +335,8 @@ class Component extends DCLogic {
       this.offs.push(net.on('crash.err', function (m) {
         // ставка не прошла — возвращаем деньги / подарок
         var s = self.state, upd = { sending: false, err: m.msg || 'Ошибка' };
-        if (m.gift) upd.inv = s.inv.concat([m.gift]); else if (m.amount) upd.balance = r2(s.balance + Number(m.amount));
+        if (m.gift) { var I = INV(); if (I && G(m.gift)) I.add(G(m.gift).name); upd.invTick = s.invTick + 1; } // подарок вернулся в инвентарь
+        else if (m.amount) upd.balance = r2(s.balance + Number(m.amount));
         self.setState(upd);
       }));
       this.offs.push(net.on('status', function () { self.setState({ conn: net.connected }); }));
@@ -384,9 +379,12 @@ class Component extends DCLogic {
     var s = this.state, net = NET();
     if (!net || !net.connected) return;
     if (gift) {
-      var inv = s.inv.slice(), i = inv.indexOf(gift); if (i === -1) return; inv.splice(i, 1);
-      this.setState({ inv: inv, sending: true, giftPick: false });
-      net.send({ t: 'crash.bet', gift: gift });
+      // gift = uid предмета из инвентаря: списываем его и ставим
+      var I = INV(), item = I ? I.list().filter(function (it) { return it.uid === gift; })[0] : null;
+      if (!item || !G(item.key)) { this.setState({ giftPick: false, err: 'Этого подарка больше нет в инвентаре' }); return; }
+      I.remove(item.uid);
+      this.setState({ sending: true, giftPick: false, invTick: s.invTick + 1 });
+      net.send({ t: 'crash.bet', gift: item.key });
     } else {
       if (!(amount >= 0.1) || amount > s.balance) return;
       this.setState({ balance: r2(s.balance - amount), sending: true });
@@ -403,10 +401,10 @@ class Component extends DCLogic {
       this.setState({ queued: s.queued ? null : { amount: s.bet, gift: null } });
     }
   }
-  placeGift(k) {
+  placeGift(uid, name) {
     var s = this.state;
-    if (s.phase === 'wait' && !this.myBet() && !s.sending) this.sendBet(0, k);
-    else this.setState({ giftPick: false, queued: { gift: k } });
+    if (s.phase === 'wait' && !this.myBet() && !s.sending) this.sendBet(0, uid);
+    else this.setState({ giftPick: false, queued: { gift: uid, name: name } }); // спишется в начале следующего раунда
   }
   cashout() {
     var s = this.state, me = this.myBet(), net = NET();
@@ -417,6 +415,7 @@ class Component extends DCLogic {
 
   renderVals() {
     var self = this, s = this.state, r = s.rs, net = NET();
+    var inv = invList();
     var remain = r && s.phase === 'wait' ? Math.max(0, (r.waitEnd - s.now) / 1000) : 0;
     var waitSec = r ? r.waitMs / 1000 : 5;
     var timerColor = remain > 3 ? '#2bd46b' : (remain > 1.5 ? '#ffc83d' : '#ff5d73');
@@ -448,7 +447,7 @@ class Component extends DCLogic {
         multColor: cashed ? '#2bd46b' : (lost ? '#ff5d73' : '#8a90a0'),
         payText: cashed ? '+' + fmt(b.pay) : (lost ? '0.00' : fmt(b.amount)),
         payColor: cashed ? '#2bd46b' : (lost ? '#ff5d73' : '#ffffff'),
-        hasGift: !!b.gift, giftImg: b.gift && GIFTS[b.gift] ? GIFTS[b.gift].img : '', giftName: b.gift && GIFTS[b.gift] ? GIFTS[b.gift].name : ''
+        hasGift: !!(b.gift && G(b.gift)), giftImg: b.gift && G(b.gift) ? G(b.gift).img : '', giftName: b.gift && G(b.gift) ? G(b.gift).name : ''
       };
     });
     var total = 0; bets.forEach(function (b) { total += b.amount; });
@@ -504,14 +503,14 @@ class Component extends DCLogic {
       tonBtnBg: canBetNow || (s.conn && s.phase !== 'wait') ? '#ffc83d' : '#1d2230',
       tonBtnColor: canBetNow || (s.conn && s.phase !== 'wait') ? '#1a1300' : '#6c7282',
       tonBtnText: !s.conn ? 'Нет связи' : (s.phase === 'wait' ? (me ? 'Ставка принята' : (s.sending ? 'Отправляем...' : 'Ставка TON')) : (s.queued ? 'Отменить' : 'На след. раунд')),
-      giftBtnColor: s.inv.length ? '#ffffff' : '#5a6070',
-      openGift: function () { if (self.state.inv.length) self.setState({ giftPick: !self.state.giftPick }); },
+      giftBtnColor: inv.length ? '#ffffff' : '#5a6070',
+      openGift: function () { if (invList().length) self.setState({ giftPick: !self.state.giftPick }); else self.setState({ err: 'В инвентаре нет подарков — выбей их в кейсах' }); },
       closeGift: function () { self.setState({ giftPick: false }); },
       placeTon: function () { self.placeTon(); },
       showGiftPick: s.giftPick && !showCashout,
-      gifts: s.inv.map(function (k) { var g = GIFTS[k]; return { name: g.name, img: g.img, priceText: g.price + ' TON', pick: function () { self.placeGift(k); } }; }),
+      gifts: inv.map(function (it) { var g = G(it.key); return { name: g.name, img: g.img, priceText: g.price + ' TON', pick: function () { self.placeGift(it.uid, g.name); } }; }),
       hasQueued: !!s.queued,
-      queuedText: s.queued ? (s.queued.gift ? GIFTS[s.queued.gift].name : fmt(s.queued.amount) + ' TON') : '',
+      queuedText: s.queued ? (s.queued.gift ? s.queued.name : fmt(s.queued.amount) + ' TON') : '',
       hasErr: !!s.err, errText: s.err,
       players: players,
       noPlayers: players.length === 0,
