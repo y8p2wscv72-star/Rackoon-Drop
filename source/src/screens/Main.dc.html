@@ -170,12 +170,11 @@ a{color:#ffc83d}a:hover{color:#ffe08a}
 </button>
 </div>
 <div style="display: flex; flex-direction: column; gap: 6px">
-<span style="font-size: 11px; font-weight: 700; letter-spacing: 2px; color: #6c7282">СЕТЬ</span>
-<button type="button" onClick="{{depNextNet}}" style="height: 60px; border-radius: 16px; border: 1px solid #262b3a; background: #0d0f14; color: #ffffff; cursor: pointer; display: flex; align-items: center; gap: 10px; padding: 0 12px; font-family: Rubik, system-ui, sans-serif; text-align: left">
-<span style="width: 32px; height: 32px; border-radius: 10px; background: {{netColor}}; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 900; flex-shrink: 0">{{netShort}}</span>
-<span style="display: flex; flex-direction: column; gap: 1px; flex-grow: 1; min-width: 0"><span style="font-size: 15px; font-weight: 900; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{netName}}</span><span style="font-size: 11px; color: #8a90a0">{{netStd}}</span></span>
-<svg width="12" height="8" viewBox="0 0 12 8" aria-hidden="true"><path d="M1 1 L6 6 L11 1" fill="none" stroke="#8a90a0" stroke-width="2" stroke-linecap="round"></path></svg>
-</button>
+<span style="font-size: 11px; font-weight: 700; letter-spacing: 2px; color: #6c7282">ОПЛАТА</span>
+<div style="height: 60px; box-sizing: border-box; border-radius: 16px; border: 1px solid #262b3a; background: #0d0f14; display: flex; align-items: center; gap: 10px; padding: 0 12px">
+<span style="width: 32px; height: 32px; border-radius: 10px; background: #1a8cff; display: flex; align-items: center; justify-content: center; flex-shrink: 0"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 4 L3 11 L9 13 L11 19 L14 15 L19 19Z" fill="#ffffff"></path></svg></span>
+<span style="display: flex; flex-direction: column; gap: 1px; min-width: 0"><span style="font-size: 15px; font-weight: 900">CryptoBot</span><span style="font-size: 11px; color: #8a90a0">в Telegram</span></span>
+</div>
 </div>
 </div>
 <label style="height: 72px; border-radius: 20px; background: #0d0f14; border: 1px solid #262b3a; display: flex; align-items: center; gap: 12px; padding: 0 18px; cursor: text">
@@ -183,7 +182,10 @@ a{color:#ffc83d}a:hover{color:#ffe08a}
 <input type="text" inputmode="decimal" enterkeyhint="done" autocomplete="off" aria-label="Сумма" placeholder="5" value="{{depCryptoAmount}}" onInput="{{depOnCryptoAmount}}" style="flex-grow: 1; min-width: 0; height: 100%; border: 0; outline: none; background: transparent; font-family: Rubik, system-ui, sans-serif; font-size: 30px; font-weight: 900; color: #ffffff">
 <span style="font-size: 14px; font-weight: 700; color: #8a90a0; background: #1f2330; border-radius: 10px; padding: 6px 10px">{{curCode}}</span>
 </label>
-<div style="text-align: center; font-size: 11px; font-weight: 700; letter-spacing: 2px; color: #6c7282">ЛИМИТ: 5 – 1500 TON В ЭКВИВАЛЕНТЕ</div>
+<div style="text-align: center; font-size: 11px; font-weight: 700; letter-spacing: 1.5px; color: #6c7282">ЗАЧИСЛИМ В TON ПО КУРСУ НА МОМЕНТ ОПЛАТЫ</div>
+<sc-if value="{{cbWaiting}}" hint-placeholder-val="{{ false }}">
+<div role="status" style="display: flex; align-items: center; gap: 8px; justify-content: center; font-size: 13px; color: #2bd46b"><span style="width: 8px; height: 8px; border-radius: 50%; background: #2bd46b; animation: rkBlink 1.2s infinite"></span>Ждём оплату в CryptoBot…</div>
+</sc-if>
 </sc-if>
 
 <sc-if value="{{depIsGift}}" hint-placeholder-val="{{ false }}">
@@ -280,12 +282,23 @@ function pickDrop() {
   return DROPS[0];
 }
 // Окно депозита (демо: только внешний вид, деньги не принимаются)
+// Валюты для оплаты через @CryptoBot (сеть выбирать не нужно — её выбирает CryptoBot)
 var CURS = [
-  { code: 'USDT', name: 'Tether', sym: '₮', color: '#26a17b', nets: [{ name: 'TRON', std: 'TRC20', short: 'TRX', color: '#e5383b' }, { name: 'TON', std: 'Jetton', short: 'TON', color: '#2a7fff' }, { name: 'BNB Chain', std: 'BEP20', short: 'BSC', color: '#e0a800' }] },
-  { code: 'TON', name: 'Toncoin', sym: '◆', color: '#2a7fff', nets: [{ name: 'TON', std: 'Native', short: 'TON', color: '#2a7fff' }] },
-  { code: 'BTC', name: 'Bitcoin', sym: '₿', color: '#f7931a', nets: [{ name: 'Bitcoin', std: 'BTC', short: 'BTC', color: '#f7931a' }] },
-  { code: 'ETH', name: 'Ethereum', sym: 'Ξ', color: '#6f7cf0', nets: [{ name: 'Ethereum', std: 'ERC20', short: 'ETH', color: '#6f7cf0' }, { name: 'Arbitrum', std: 'L2', short: 'ARB', color: '#2d74da' }] }
+  { code: 'USDT', name: 'Tether', sym: '₮', color: '#26a17b' },
+  { code: 'TON', name: 'Toncoin', sym: '◆', color: '#2a7fff' },
+  { code: 'BTC', name: 'Bitcoin', sym: '₿', color: '#f7931a' },
+  { code: 'ETH', name: 'Ethereum', sym: 'Ξ', color: '#6f7cf0' },
+  { code: 'USDC', name: 'USD Coin', sym: '$', color: '#2775ca' },
+  { code: 'TRX', name: 'TRON', sym: 'T', color: '#e5383b' },
+  { code: 'LTC', name: 'Litecoin', sym: 'Ł', color: '#345d9d' },
+  { code: 'BNB', name: 'BNB', sym: 'B', color: '#d9a400' }
 ];
+function openTgLink(url) {
+  var tg = window.Telegram && window.Telegram.WebApp;
+  try { if (tg && tg.openTelegramLink && /^https:\/\/t\.me\//.test(url)) { tg.openTelegramLink(url); return; } } catch (e) {}
+  try { if (tg && tg.openLink) { tg.openLink(url); return; } } catch (e) {}
+  window.open(url, '_blank');
+}
 // ТЕСТОВЫЙ РЕЖИМ (сумма сразу на баланс без оплаты) — выключен: теперь настоящая оплата через Tonkeeper.
 var TEST_TOPUP = false;
 // Пополнение TON: открываем Tonkeeper с адресом, суммой и комментарием игрока.
@@ -317,9 +330,13 @@ class Component extends DCLogic {
     var self = this, net = window.RK && window.RK.net;
     if (net) this.offCredit = net.on('credit', function (m) {
       if (m.dup || (m.game !== 'deposit' && m.game !== 'admin')) return;
-      self.setState({ waitingDeposit: 0 });
+      self.setState({ waitingDeposit: 0, cbWaiting: 0 });
       self.showToast(m.amount > 0 ? { icon: '✅', text: (m.game === 'deposit' ? 'Пополнение: +' : 'Начислено: +') + m.amount + ' TON', ok: true } : { icon: '➖', text: 'Списано ' + m.amount + ' TON' });
     });
+    if (net) {
+      this.offCb1 = net.on('cb.invoice', function (m) { self.setState({ cbCreating: false, cbWaiting: Date.now(), waitingDeposit: Date.now() }); openTgLink(m.url); self.showToast({ icon: '⏳', text: 'Счёт на ' + m.amount + ' ' + m.asset + ' открыт в CryptoBot. После оплаты баланс зачислится сам' }); });
+      this.offCb2 = net.on('cb.err', function (m) { self.setState({ cbCreating: false }); self.showToast({ icon: '⚠️', text: m.msg }); });
+    }
     // вернулся из кошелька — просим сервер проверить переводы пораньше
     this.onVis = function () { var n = window.RK && window.RK.net; if (!document.hidden && self.state.waitingDeposit && n) n.send({ t: 'deposit.check' }); };
     document.addEventListener('visibilitychange', this.onVis);
@@ -328,7 +345,7 @@ class Component extends DCLogic {
       self.setState({ drops: [pickDrop()].concat(s.drops).slice(0, 8), online: Math.max(800, s.online + Math.round((Math.random() - 0.5) * 8)) });
     }, 2200);
   }
-  componentWillUnmount() { clearInterval(this.iv); clearTimeout(this.tt); if (this.offCredit) this.offCredit(); document.removeEventListener('visibilitychange', this.onVis); }
+  componentWillUnmount() { clearInterval(this.iv); clearTimeout(this.tt); if (this.offCredit) this.offCredit(); if (this.offCb1) this.offCb1(); if (this.offCb2) this.offCb2(); document.removeEventListener('visibilitychange', this.onVis); }
   showToast(t) {
     var self = this;
     clearTimeout(this.tt);
@@ -364,17 +381,28 @@ class Component extends DCLogic {
       this.showToast({ icon: '⏳', text: 'Ждём перевод. Баланс зачислится сам примерно через минуту после оплаты' });
       return;
     }
+    if (s.depTab === 'crypto') {
+      var n2 = window.RK && window.RK.net, a2 = parseFloat(s.depCryptoAmount);
+      if (!(a2 > 0)) { this.showToast({ icon: '⚠️', text: 'Введи сумму' }); return; }
+      if (!n2 || !n2.connected) { this.showToast({ icon: '⚠️', text: 'Нет связи с сервером, попробуй ещё раз' }); return; }
+      if (!n2.cryptobot) { this.showToast({ icon: '🚧', text: 'Пополнение через CryptoBot скоро будет доступно' }); return; }
+      if (this.state.cbCreating) return;
+      this.setState({ cbCreating: true });
+      n2.send({ t: 'cb.create', asset: CURS[s.depCur].code, amount: a2 });
+      return;
+    }
     this.showToast({ icon: '🚧', text: 'Это демо-версия: пополнение скоро будет доступно' });
   }
   renderVals() {
     var self = this, s = this.state;
-    var cur = CURS[s.depCur], net = cur.nets[s.depNet] || cur.nets[0];
+    var cur = CURS[s.depCur] || CURS[0];
     var inv = s.dep && window.RK && window.RK.inventory ? window.RK.inventory.list() : [];
     var wdCount = 0; inv.forEach(function (it) { if (s.wdSel[it.uid]) wdCount++; });
     var tgUser = window.RK && window.RK.user;
     var testOn = TEST_TOPUP && s.depMode === 'dep' && s.depTab === 'ton';
     var depInfo = window.RK && window.RK.net && window.RK.net.deposit;
     var liveTon = !TEST_TOPUP && s.depMode === 'dep' && s.depTab === 'ton';
+    var liveCb = s.depMode === 'dep' && s.depTab === 'crypto' && !!(window.RK && window.RK.net && window.RK.net.cryptobot);
     return {
       topUp: function () { self.setState({ dep: true }); },
       isAdmin: !!(window.RK && window.RK.net && window.RK.net.me && window.RK.net.me.admin),
@@ -389,9 +417,7 @@ class Component extends DCLogic {
       depAmount: s.depAmount, depOnAmount: function (e) { self.setState({ depAmount: cleanNum(e && e.target && e.target.value) }); },
       depChips: [1, 5, 10, 50].map(function (v) { return { label: v + ' TON', pick: function () { self.setState({ depAmount: String(v) }); } }; }),
       curCode: cur.code, curName: cur.name, curSym: cur.sym, curColor: cur.color,
-      netName: net.name, netStd: net.std, netShort: net.short, netColor: net.color,
       depNextCur: function () { self.setState({ depCur: (self.state.depCur + 1) % CURS.length, depNet: 0 }); },
-      depNextNet: function () { self.setState({ depNet: (self.state.depNet + 1) % cur.nets.length }); },
       depCryptoAmount: s.depCryptoAmount, depOnCryptoAmount: function (e) { self.setState({ depCryptoAmount: cleanNum(e && e.target && e.target.value) }); },
       depGiftImgs: DROPS.slice(0, 4).map(function (d) { return { img: d.img, color: colorOf(d.price) }; }),
       depGiftSteps: [
@@ -405,10 +431,11 @@ class Component extends DCLogic {
       modeDepSel: s.depMode === 'dep' ? 'true' : 'false', modeWdSel: s.depMode === 'wd' ? 'true' : 'false',
       modeDepBg: s.depMode === 'dep' ? '#ffc83d' : 'transparent', modeDepColor: s.depMode === 'dep' ? '#1a1300' : '#a3a8b5',
       modeWdBg: s.depMode === 'wd' ? '#ffc83d' : 'transparent', modeWdColor: s.depMode === 'wd' ? '#1a1300' : '#a3a8b5',
-      badgeText: testOn ? 'ТЕСТ · сумма сразу зачисляется на баланс' : (liveTon ? 'Оплата через Tonkeeper · зачисление автоматически' : 'ДЕМО · ' + (s.depMode === 'wd' ? 'вывод' : 'пополнение') + ' скоро будет доступно'),
-      badgeColor: testOn || liveTon ? '#2bd46b' : '#ffc83d', badgeBg: testOn || liveTon ? 'rgba(43,212,107,0.12)' : 'rgba(255,200,61,0.12)', badgeBorder: testOn || liveTon ? 'rgba(43,212,107,0.4)' : 'rgba(255,200,61,0.35)',
+      badgeText: testOn ? 'ТЕСТ · сумма сразу зачисляется на баланс' : (liveTon ? 'Оплата через Tonkeeper · зачисление автоматически' : liveCb ? 'Оплата через @CryptoBot · зачисление автоматически' : 'ДЕМО · ' + (s.depMode === 'wd' ? 'вывод' : 'пополнение') + ' скоро будет доступно'),
+      badgeColor: testOn || liveTon || liveCb ? '#2bd46b' : '#ffc83d', badgeBg: testOn || liveTon || liveCb ? 'rgba(43,212,107,0.12)' : 'rgba(255,200,61,0.12)', badgeBorder: testOn || liveTon || liveCb ? 'rgba(43,212,107,0.4)' : 'rgba(255,200,61,0.35)',
       depComment: depInfo ? depInfo.comment : '', hasDepComment: !!depInfo,
       waiting: !!s.waitingDeposit && s.depTab === 'ton',
+      cbWaiting: !!s.cbWaiting && s.depTab === 'crypto',
       wdItems: inv.map(function (it) {
         var sel = !!s.wdSel[it.uid];
         return { name: it.key, img: window.rkThumb ? window.rkThumb(it.key, NFT_FALLBACK) : NFT_FALLBACK, sel: sel, pressed: sel ? 'true' : 'false',
