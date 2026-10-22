@@ -163,10 +163,10 @@ a{color:#ffc83d}a:hover{color:#ffe08a}
 <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px">
 <div style="display: flex; flex-direction: column; gap: 6px">
 <span style="font-size: 11px; font-weight: 700; letter-spacing: 2px; color: #6c7282">ВАЛЮТА</span>
-<button type="button" onClick="{{depNextCur}}" style="height: 60px; border-radius: 16px; border: 1px solid #262b3a; background: #0d0f14; color: #ffffff; cursor: pointer; display: flex; align-items: center; gap: 10px; padding: 0 12px; font-family: Rubik, system-ui, sans-serif; text-align: left">
+<button type="button" onClick="{{curToggle}}" aria-expanded="{{curOpenAttr}}" aria-label="Выбрать валюту" style="height: 60px; border-radius: 16px; border: 1px solid {{curBtnBorder}}; background: #0d0f14; color: #ffffff; cursor: pointer; display: flex; align-items: center; gap: 10px; padding: 0 12px; font-family: Rubik, system-ui, sans-serif; text-align: left">
 <span style="width: 32px; height: 32px; border-radius: 50%; background: {{curColor}}; color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 900; flex-shrink: 0">{{curSym}}</span>
 <span style="display: flex; flex-direction: column; gap: 1px; flex-grow: 1; min-width: 0"><span style="font-size: 15px; font-weight: 900">{{curCode}}</span><span style="font-size: 11px; color: #8a90a0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{curName}}</span></span>
-<svg width="12" height="8" viewBox="0 0 12 8" aria-hidden="true"><path d="M1 1 L6 6 L11 1" fill="none" stroke="#8a90a0" stroke-width="2" stroke-linecap="round"></path></svg>
+<svg width="12" height="8" viewBox="0 0 12 8" aria-hidden="true" style="transform: rotate({{curArrow}}deg); transition: transform 0.2s"><path d="M1 1 L6 6 L11 1" fill="none" stroke="#8a90a0" stroke-width="2" stroke-linecap="round"></path></svg>
 </button>
 </div>
 <div style="display: flex; flex-direction: column; gap: 6px">
@@ -177,6 +177,16 @@ a{color:#ffc83d}a:hover{color:#ffe08a}
 </div>
 </div>
 </div>
+<sc-if value="{{curOpen}}" hint-placeholder-val="{{ false }}">
+<div role="listbox" aria-label="Валюта" style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; background: #0d0f14; border: 1px solid #ffc83d; border-radius: 18px; padding: 8px; animation: rkFadeIn 0.15s ease-out">
+<sc-for list="{{curList}}" as="cl" hint-placeholder-count="8">
+<button type="button" role="option" aria-selected="{{cl.sel}}" onClick="{{cl.pick}}" style="height: 52px; border-radius: 12px; border: 1px solid {{cl.border}}; background: {{cl.bg}}; color: #ffffff; cursor: pointer; display: flex; align-items: center; gap: 10px; padding: 0 10px; font-family: Rubik, system-ui, sans-serif; text-align: left">
+<span style="width: 30px; height: 30px; border-radius: 50%; background: {{cl.color}}; color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 900; flex-shrink: 0">{{cl.sym}}</span>
+<span style="display: flex; flex-direction: column; gap: 1px; min-width: 0"><span style="font-size: 14px; font-weight: 900">{{cl.code}}</span><span style="font-size: 11px; color: #8a90a0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{cl.name}}</span></span>
+</button>
+</sc-for>
+</div>
+</sc-if>
 <label style="height: 72px; border-radius: 20px; background: #0d0f14; border: 1px solid #262b3a; display: flex; align-items: center; gap: 12px; padding: 0 18px; cursor: text">
 <span style="width: 34px; height: 34px; border-radius: 50%; background: {{curColor}}; color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 17px; font-weight: 900; flex-shrink: 0">{{curSym}}</span>
 <input type="text" inputmode="decimal" enterkeyhint="done" autocomplete="off" aria-label="Сумма" placeholder="5" value="{{depCryptoAmount}}" onInput="{{depOnCryptoAmount}}" style="flex-grow: 1; min-width: 0; height: 100%; border: 0; outline: none; background: transparent; font-family: Rubik, system-ui, sans-serif; font-size: 30px; font-weight: 900; color: #ffffff">
@@ -417,7 +427,13 @@ class Component extends DCLogic {
       depAmount: s.depAmount, depOnAmount: function (e) { self.setState({ depAmount: cleanNum(e && e.target && e.target.value) }); },
       depChips: [1, 5, 10, 50].map(function (v) { return { label: v + ' TON', pick: function () { self.setState({ depAmount: String(v) }); } }; }),
       curCode: cur.code, curName: cur.name, curSym: cur.sym, curColor: cur.color,
-      depNextCur: function () { self.setState({ depCur: (self.state.depCur + 1) % CURS.length, depNet: 0 }); },
+      curToggle: function () { self.setState({ curOpen: !self.state.curOpen }); },
+      curOpen: !!s.curOpen, curOpenAttr: s.curOpen ? 'true' : 'false', curArrow: s.curOpen ? 180 : 0, curBtnBorder: s.curOpen ? '#ffc83d' : '#262b3a',
+      curList: CURS.map(function (c, i) {
+        var sel = i === s.depCur;
+        return { code: c.code, name: c.name, sym: c.sym, color: c.color, sel: sel ? 'true' : 'false', border: sel ? '#ffc83d' : '#262b3a', bg: sel ? '#2a2410' : '#151821',
+          pick: function () { self.setState({ depCur: i, curOpen: false }); } };
+      }),
       depCryptoAmount: s.depCryptoAmount, depOnCryptoAmount: function (e) { self.setState({ depCryptoAmount: cleanNum(e && e.target && e.target.value) }); },
       depGiftImgs: DROPS.slice(0, 4).map(function (d) { return { img: d.img, color: colorOf(d.price) }; }),
       depGiftSteps: [
