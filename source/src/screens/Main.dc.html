@@ -151,6 +151,12 @@ a{color:#ffc83d}a:hover{color:#ffe08a}
 </sc-for>
 </div>
 <div style="text-align: center; font-size: 11px; font-weight: 700; letter-spacing: 2px; color: #6c7282">МИН. СУММА: 0.1 TON</div>
+<sc-if value="{{hasDepComment}}" hint-placeholder-val="{{ false }}">
+<div style="border-radius: 14px; background: #0d0f14; border: 1px solid #262b3a; padding: 10px 12px; font-size: 12px; line-height: 1.45; color: #a3a8b5">Откроется Tonkeeper с суммой и комментарием <span style="color: #ffc83d; font-weight: 700">{{depComment}}</span>. Не удаляй комментарий — по нему мы найдём твой перевод.</div>
+</sc-if>
+<sc-if value="{{waiting}}" hint-placeholder-val="{{ false }}">
+<div role="status" style="display: flex; align-items: center; gap: 8px; justify-content: center; font-size: 13px; color: #2bd46b"><span style="width: 8px; height: 8px; border-radius: 50%; background: #2bd46b; animation: rkBlink 1.2s infinite"></span>Ждём перевод из кошелька…</div>
+</sc-if>
 </sc-if>
 
 <sc-if value="{{depIsCrypto}}" hint-placeholder-val="{{ false }}">
@@ -230,13 +236,14 @@ a{color:#ffc83d}a:hover{color:#ffe08a}
 <button type="button" onClick="{{depSubmit}}" disabled="{{depBtnDisabled}}" style="height: 56px; border-radius: 18px; border: 0; background: {{depBtnBg}}; color: #1a1300; font-family: Rubik, system-ui, sans-serif; font-size: 17px; font-weight: 900; cursor: pointer; box-shadow: 0 6px 22px rgba(255,200,61,0.3)">{{depBtnText}}</button>
 </div>
 </div>
+
+</div>
+</sc-if>
 <sc-if value="{{depToast}}" hint-placeholder-val="{{ false }}">
 <div style="position: fixed; left: 0; right: 0; top: 24px; z-index: 70; display: flex; justify-content: center; pointer-events: none">
 <div role="status" style="width: 320px; box-sizing: border-box; background: #1f2330; border: 1px solid {{toastBorder}}; border-radius: 16px; padding: 12px 14px; display: flex; align-items: center; gap: 10px; font-family: Rubik, system-ui, sans-serif; font-size: 13px; font-weight: 500; color: #ffffff; box-shadow: 0 10px 30px rgba(0,0,0,0.5); animation: rkToast 2.6s ease-out forwards">
 <span style="font-size: 18px">{{toastIcon}}</span><span>{{toastText}}</span>
 </div>
-</div>
-</sc-if>
 </div>
 </sc-if>
 
@@ -279,9 +286,19 @@ var CURS = [
   { code: 'BTC', name: 'Bitcoin', sym: '₿', color: '#f7931a', nets: [{ name: 'Bitcoin', std: 'BTC', short: 'BTC', color: '#f7931a' }] },
   { code: 'ETH', name: 'Ethereum', sym: 'Ξ', color: '#6f7cf0', nets: [{ name: 'Ethereum', std: 'ERC20', short: 'ETH', color: '#6f7cf0' }, { name: 'Arbitrum', std: 'L2', short: 'ARB', color: '#2d74da' }] }
 ];
-// ТЕСТОВЫЙ РЕЖИМ: сумма с вкладки TON сразу зачисляется на баланс (для проверки бота).
-// Когда подключишь настоящие платежи — поставь false.
-var TEST_TOPUP = true;
+// ТЕСТОВЫЙ РЕЖИМ (сумма сразу на баланс без оплаты) — выключен: теперь настоящая оплата через Tonkeeper.
+var TEST_TOPUP = false;
+// Пополнение TON: открываем Tonkeeper с адресом, суммой и комментарием игрока.
+// Сервер находит перевод в блокчейне по комментарию и сам зачисляет баланс.
+function tonkeeperUrl(wallet, ton, comment) {
+  var nano = Math.round(ton * 1e9);
+  return 'https://app.tonkeeper.com/transfer/' + wallet + '?amount=' + nano + '&text=' + encodeURIComponent(comment);
+}
+function openLink(url) {
+  var tg = window.Telegram && window.Telegram.WebApp;
+  try { if (tg && tg.openLink) { tg.openLink(url); return; } } catch (e) {}
+  window.open(url, '_blank');
+}
 var NFT_FALLBACK = '/_blob/a64ccb23ba5a5ab0f1f789ab412cf3af';
 var DEP_TABS = [{ id: 'ton', label: 'TON' }, { id: 'crypto', label: 'Crypto' }, { id: 'gift', label: 'Подарки' }];
 function cleanNum(v) {
@@ -297,13 +314,21 @@ class Component extends DCLogic {
     this.state = { drops: list, online: 934, dep: false, depTab: 'ton', depAmount: '', depCur: 0, depNet: 0, depCryptoAmount: '', depToast: 0, depMode: 'dep', wdSel: {}, toast: null };
   }
   componentDidMount() {
-    var self = this;
+    var self = this, net = window.RK && window.RK.net;
+    if (net) this.offCredit = net.on('credit', function (m) {
+      if (m.dup || (m.game !== 'deposit' && m.game !== 'admin')) return;
+      self.setState({ waitingDeposit: 0 });
+      self.showToast(m.amount > 0 ? { icon: '✅', text: (m.game === 'deposit' ? 'Пополнение: +' : 'Начислено: +') + m.amount + ' TON', ok: true } : { icon: '➖', text: 'Списано ' + m.amount + ' TON' });
+    });
+    // вернулся из кошелька — просим сервер проверить переводы пораньше
+    this.onVis = function () { var n = window.RK && window.RK.net; if (!document.hidden && self.state.waitingDeposit && n) n.send({ t: 'deposit.check' }); };
+    document.addEventListener('visibilitychange', this.onVis);
     this.iv = setInterval(function () {
       var s = self.state;
       self.setState({ drops: [pickDrop()].concat(s.drops).slice(0, 8), online: Math.max(800, s.online + Math.round((Math.random() - 0.5) * 8)) });
     }, 2200);
   }
-  componentWillUnmount() { clearInterval(this.iv); clearTimeout(this.tt); }
+  componentWillUnmount() { clearInterval(this.iv); clearTimeout(this.tt); if (this.offCredit) this.offCredit(); document.removeEventListener('visibilitychange', this.onVis); }
   showToast(t) {
     var self = this;
     clearTimeout(this.tt);
@@ -328,6 +353,17 @@ class Component extends DCLogic {
       this.showToast({ icon: '✅', text: 'Тест: зачислено ' + v + ' TON на баланс', ok: true });
       return;
     }
+    if (s.depTab === 'ton') {
+      var net = window.RK && window.RK.net, dep = net && net.deposit;
+      var amt = Math.round(parseFloat(s.depAmount) * 100) / 100;
+      if (!(amt >= 0.1)) { this.showToast({ icon: '⚠️', text: 'Минимальная сумма — 0.1 TON' }); return; }
+      if (!net || !net.connected) { this.showToast({ icon: '⚠️', text: 'Нет связи с сервером, попробуй ещё раз' }); return; }
+      if (!dep) { this.showToast({ icon: '⚠️', text: 'Пополнение доступно только при входе через Telegram' }); return; }
+      openLink(tonkeeperUrl(dep.wallet, amt, dep.comment));
+      this.setState({ waitingDeposit: Date.now() });
+      this.showToast({ icon: '⏳', text: 'Ждём перевод. Баланс зачислится сам примерно через минуту после оплаты' });
+      return;
+    }
     this.showToast({ icon: '🚧', text: 'Это демо-версия: пополнение скоро будет доступно' });
   }
   renderVals() {
@@ -337,6 +373,8 @@ class Component extends DCLogic {
     var wdCount = 0; inv.forEach(function (it) { if (s.wdSel[it.uid]) wdCount++; });
     var tgUser = window.RK && window.RK.user;
     var testOn = TEST_TOPUP && s.depMode === 'dep' && s.depTab === 'ton';
+    var depInfo = window.RK && window.RK.net && window.RK.net.deposit;
+    var liveTon = !TEST_TOPUP && s.depMode === 'dep' && s.depTab === 'ton';
     return {
       topUp: function () { self.setState({ dep: true }); },
       isAdmin: !!(window.RK && window.RK.net && window.RK.net.me && window.RK.net.me.admin),
@@ -367,8 +405,10 @@ class Component extends DCLogic {
       modeDepSel: s.depMode === 'dep' ? 'true' : 'false', modeWdSel: s.depMode === 'wd' ? 'true' : 'false',
       modeDepBg: s.depMode === 'dep' ? '#ffc83d' : 'transparent', modeDepColor: s.depMode === 'dep' ? '#1a1300' : '#a3a8b5',
       modeWdBg: s.depMode === 'wd' ? '#ffc83d' : 'transparent', modeWdColor: s.depMode === 'wd' ? '#1a1300' : '#a3a8b5',
-      badgeText: testOn ? 'ТЕСТ · сумма сразу зачисляется на баланс' : 'ДЕМО · ' + (s.depMode === 'wd' ? 'вывод' : 'пополнение') + ' скоро будет доступно',
-      badgeColor: testOn ? '#2bd46b' : '#ffc83d', badgeBg: testOn ? 'rgba(43,212,107,0.12)' : 'rgba(255,200,61,0.12)', badgeBorder: testOn ? 'rgba(43,212,107,0.4)' : 'rgba(255,200,61,0.35)',
+      badgeText: testOn ? 'ТЕСТ · сумма сразу зачисляется на баланс' : (liveTon ? 'Оплата через Tonkeeper · зачисление автоматически' : 'ДЕМО · ' + (s.depMode === 'wd' ? 'вывод' : 'пополнение') + ' скоро будет доступно'),
+      badgeColor: testOn || liveTon ? '#2bd46b' : '#ffc83d', badgeBg: testOn || liveTon ? 'rgba(43,212,107,0.12)' : 'rgba(255,200,61,0.12)', badgeBorder: testOn || liveTon ? 'rgba(43,212,107,0.4)' : 'rgba(255,200,61,0.35)',
+      depComment: depInfo ? depInfo.comment : '', hasDepComment: !!depInfo,
+      waiting: !!s.waitingDeposit && s.depTab === 'ton',
       wdItems: inv.map(function (it) {
         var sel = !!s.wdSel[it.uid];
         return { name: it.key, img: window.rkThumb ? window.rkThumb(it.key, NFT_FALLBACK) : NFT_FALLBACK, sel: sel, pressed: sel ? 'true' : 'false',
