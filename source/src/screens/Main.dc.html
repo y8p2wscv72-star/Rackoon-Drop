@@ -109,12 +109,17 @@ a{color:#ffc83d}a:hover{color:#ffe08a}
 <div role="dialog" aria-label="Депозит" style="width: 100%; max-width: 390px; margin: 0 auto; box-sizing: border-box; background: #151821; border-top: 1px solid #262b3a; border-radius: 28px 28px 0 0; padding: 18px 16px 26px; display: flex; flex-direction: column; gap: 14px; animation: rkSheetUp 0.32s cubic-bezier(0.2, 0.9, 0.3, 1); font-family: Rubik, system-ui, sans-serif; color: #ffffff">
 
 <div style="position: relative; display: flex; align-items: center; justify-content: center; height: 44px">
-<div style="font-size: 26px; font-weight: 900; font-style: italic; letter-spacing: 0.5px">ДЕПОЗИТ</div>
+<div style="font-size: 26px; font-weight: 900; font-style: italic; letter-spacing: 0.5px">{{depTitle}}</div>
 <button type="button" onClick="{{depClose}}" aria-label="Закрыть" style="position: absolute; right: 0; top: 0; width: 44px; height: 44px; border-radius: 14px; border: 0; background: #1f2330; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0">
 <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 3 L13 13 M13 3 L3 13" stroke="#ffffff" stroke-width="2.4" stroke-linecap="round"></path></svg>
 </button>
 </div>
-<div style="align-self: center; font-size: 11px; font-weight: 700; color: #ffc83d; background: rgba(255,200,61,0.12); border: 1px solid rgba(255,200,61,0.35); border-radius: 999px; padding: 5px 10px">ДЕМО · пополнение скоро будет доступно</div>
+<div role="tablist" aria-label="Пополнить или вывести" style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px; background: #0d0f14; border: 1px solid #262b3a; border-radius: 16px; padding: 4px">
+<button type="button" role="tab" aria-selected="{{modeDepSel}}" onClick="{{modeDep}}" style="height: 40px; border-radius: 12px; border: 0; background: {{modeDepBg}}; color: {{modeDepColor}}; font-family: Rubik, system-ui, sans-serif; font-size: 15px; font-weight: 900; cursor: pointer">Пополнить</button>
+<button type="button" role="tab" aria-selected="{{modeWdSel}}" onClick="{{modeWd}}" style="height: 40px; border-radius: 12px; border: 0; background: {{modeWdBg}}; color: {{modeWdColor}}; font-family: Rubik, system-ui, sans-serif; font-size: 15px; font-weight: 900; cursor: pointer">Вывести NFT</button>
+</div>
+<div style="align-self: center; font-size: 11px; font-weight: 700; color: {{badgeColor}}; background: {{badgeBg}}; border: 1px solid {{badgeBorder}}; border-radius: 999px; padding: 5px 10px">{{badgeText}}</div>
+<sc-if value="{{isDepMode}}" hint-placeholder-val="{{ true }}">
 
 <div role="tablist" style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px">
 <sc-for list="{{depTabs}}" as="dt" hint-placeholder-count="3">
@@ -185,16 +190,43 @@ a{color:#ffc83d}a:hover{color:#ffe08a}
 </div>
 <div style="text-align: center; font-size: 11px; font-weight: 700; letter-spacing: 2px; color: #6c7282">ПОДАРОК ЗАЧИСЛЯЕТСЯ ПО ФЛОР-ЦЕНЕ</div>
 </sc-if>
+</sc-if>
+
+<sc-if value="{{isWdMode}}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; justify-content: space-between; align-items: baseline">
+<span style="font-size: 15px; font-weight: 700">Выбери подарки</span>
+<span style="font-size: 12px; color: #8a90a0">{{wdInfo}}</span>
+</div>
+<sc-if value="{{wdHasItems}}" hint-placeholder-val="{{ true }}">
+<div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; max-height: 236px; overflow-y: auto; -webkit-overflow-scrolling: touch">
+<sc-for list="{{wdItems}}" as="wi" hint-placeholder-count="8">
+<button type="button" onClick="{{wi.toggle}}" aria-pressed="{{wi.pressed}}" aria-label="{{wi.name}}" style="position: relative; min-width: 0; height: 110px; border-radius: 14px; border: 2px solid {{wi.border}}; background: {{wi.bg}}; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 4px; font-family: Rubik, system-ui, sans-serif; color: #ffffff">
+<img src="{{wi.img}}" alt="" style="width: 48px; height: 48px">
+<span style="max-width: 100%; font-size: 10px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{wi.name}}</span>
+<sc-if value="{{wi.sel}}" hint-placeholder-val="{{ false }}"><span style="position: absolute; right: 5px; top: 5px; width: 20px; height: 20px; border-radius: 50%; background: #ffc83d; color: #1a1300; font-size: 12px; font-weight: 900; display: flex; align-items: center; justify-content: center">✓</span></sc-if>
+</button>
+</sc-for>
+</div>
+</sc-if>
+<sc-if value="{{wdEmpty}}" hint-placeholder-val="{{ false }}">
+<div style="border-radius: 18px; border: 1px dashed #2c3244; padding: 26px 12px; text-align: center; font-size: 13px; color: #8a90a0">В инвентаре пока нет подарков — выбей их в кейсах</div>
+</sc-if>
+<div style="display: flex; align-items: center; gap: 10px; border-radius: 16px; background: #0d0f14; border: 1px solid #262b3a; padding: 12px 14px">
+<svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 4 L3 11 L9 13 L11 19 L14 15 L19 19Z" fill="none" stroke="#5fb8ff" stroke-width="2" stroke-linejoin="round"></path></svg>
+<span style="display: flex; flex-direction: column; gap: 2px; min-width: 0"><span style="font-size: 12px; color: #8a90a0">Получатель</span><span style="font-size: 14px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{wdTo}}</span></span>
+</div>
+<div style="text-align: center; font-size: 11px; font-weight: 700; letter-spacing: 2px; color: #6c7282">КОМИССИЯ ЗА ВЫВОД 0.1 TON</div>
+</sc-if>
 
 <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px">
 <button type="button" onClick="{{depClose}}" style="height: 56px; border-radius: 18px; border: 0; background: #1f2330; color: #ffffff; font-family: Rubik, system-ui, sans-serif; font-size: 17px; font-weight: 700; cursor: pointer">Отмена</button>
-<button type="button" onClick="{{depSubmit}}" style="height: 56px; border-radius: 18px; border: 0; background: #ffc83d; color: #1a1300; font-family: Rubik, system-ui, sans-serif; font-size: 17px; font-weight: 900; cursor: pointer; box-shadow: 0 6px 22px rgba(255,200,61,0.3)">{{depBtnText}}</button>
+<button type="button" onClick="{{depSubmit}}" disabled="{{depBtnDisabled}}" style="height: 56px; border-radius: 18px; border: 0; background: {{depBtnBg}}; color: #1a1300; font-family: Rubik, system-ui, sans-serif; font-size: 17px; font-weight: 900; cursor: pointer; box-shadow: 0 6px 22px rgba(255,200,61,0.3)">{{depBtnText}}</button>
 </div>
 </div>
 <sc-if value="{{depToast}}" hint-placeholder-val="{{ false }}">
 <div style="position: fixed; left: 0; right: 0; top: 24px; z-index: 70; display: flex; justify-content: center; pointer-events: none">
-<div role="status" style="width: 320px; box-sizing: border-box; background: #1f2330; border: 1px solid #ffc83d; border-radius: 16px; padding: 12px 14px; display: flex; align-items: center; gap: 10px; font-family: Rubik, system-ui, sans-serif; font-size: 13px; font-weight: 500; color: #ffffff; box-shadow: 0 10px 30px rgba(0,0,0,0.5); animation: rkToast 2.6s ease-out forwards">
-<span style="font-size: 18px">🚧</span><span>Это демо-версия: пополнение скоро будет доступно</span>
+<div role="status" style="width: 320px; box-sizing: border-box; background: #1f2330; border: 1px solid {{toastBorder}}; border-radius: 16px; padding: 12px 14px; display: flex; align-items: center; gap: 10px; font-family: Rubik, system-ui, sans-serif; font-size: 13px; font-weight: 500; color: #ffffff; box-shadow: 0 10px 30px rgba(0,0,0,0.5); animation: rkToast 2.6s ease-out forwards">
+<span style="font-size: 18px">{{toastIcon}}</span><span>{{toastText}}</span>
 </div>
 </div>
 </sc-if>
@@ -240,6 +272,10 @@ var CURS = [
   { code: 'BTC', name: 'Bitcoin', sym: '₿', color: '#f7931a', nets: [{ name: 'Bitcoin', std: 'BTC', short: 'BTC', color: '#f7931a' }] },
   { code: 'ETH', name: 'Ethereum', sym: 'Ξ', color: '#6f7cf0', nets: [{ name: 'Ethereum', std: 'ERC20', short: 'ETH', color: '#6f7cf0' }, { name: 'Arbitrum', std: 'L2', short: 'ARB', color: '#2d74da' }] }
 ];
+// ТЕСТОВЫЙ РЕЖИМ: сумма с вкладки TON сразу зачисляется на баланс (для проверки бота).
+// Когда подключишь настоящие платежи — поставь false.
+var TEST_TOPUP = true;
+var NFT_FALLBACK = '/_blob/a64ccb23ba5a5ab0f1f789ab412cf3af';
 var DEP_TABS = [{ id: 'ton', label: 'TON' }, { id: 'crypto', label: 'Crypto' }, { id: 'gift', label: 'Подарки' }];
 function cleanNum(v) {
   v = String(v || '').replace(',', '.').replace(/[^0-9.]/g, '');
@@ -251,7 +287,7 @@ class Component extends DCLogic {
     super(props);
     var list = [];
     for (var i = 0; i < 8; i++) list.push(pickDrop());
-    this.state = { drops: list, online: 934, dep: false, depTab: 'ton', depAmount: '', depCur: 0, depNet: 0, depCryptoAmount: '', depToast: 0 };
+    this.state = { drops: list, online: 934, dep: false, depTab: 'ton', depAmount: '', depCur: 0, depNet: 0, depCryptoAmount: '', depToast: 0, depMode: 'dep', wdSel: {}, toast: null };
   }
   componentDidMount() {
     var self = this;
@@ -261,16 +297,39 @@ class Component extends DCLogic {
     }, 2200);
   }
   componentWillUnmount() { clearInterval(this.iv); clearTimeout(this.tt); }
-  depSubmit() {
+  showToast(t) {
     var self = this;
     clearTimeout(this.tt);
-    this.setState({ depToast: 0 }, function () { self.setState({ depToast: Date.now() }); });
-    try { var tg = window.Telegram && window.Telegram.WebApp; if (tg && tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('warning'); } catch (e) {}
+    this.setState({ depToast: 0 }, function () { self.setState({ depToast: Date.now(), toast: t }); });
+    try { var tg = window.Telegram && window.Telegram.WebApp; if (tg && tg.HapticFeedback) tg.HapticFeedback.notificationOccurred(t.ok ? 'success' : 'warning'); } catch (e) {}
     this.tt = setTimeout(function () { self.setState({ depToast: 0 }); }, 2600);
+  }
+  depSubmit() {
+    var s = this.state;
+    if (s.depMode === 'wd') {
+      var n = Object.keys(s.wdSel).length;
+      if (!n) return;
+      this.showToast({ icon: '🚧', text: 'Демо: вывод NFT скоро будет доступен (' + n + ' шт. выбрано)' });
+      return;
+    }
+    if (s.depTab === 'ton' && TEST_TOPUP) {
+      var v = Math.round(parseFloat(s.depAmount) * 100) / 100;
+      if (!(v >= 0.1)) { this.showToast({ icon: '⚠️', text: 'Минимальная сумма — 0.1 TON' }); return; }
+      if (v > 100000) v = 100000;
+      if (window.RK) window.RK.wallet.set(window.RK.wallet.get() + v);
+      this.setState({ depAmount: '' });
+      this.showToast({ icon: '✅', text: 'Тест: зачислено ' + v + ' TON на баланс', ok: true });
+      return;
+    }
+    this.showToast({ icon: '🚧', text: 'Это демо-версия: пополнение скоро будет доступно' });
   }
   renderVals() {
     var self = this, s = this.state;
     var cur = CURS[s.depCur], net = cur.nets[s.depNet] || cur.nets[0];
+    var inv = s.dep && window.RK && window.RK.inventory ? window.RK.inventory.list() : [];
+    var wdCount = 0; inv.forEach(function (it) { if (s.wdSel[it.uid]) wdCount++; });
+    var tgUser = window.RK && window.RK.user;
+    var testOn = TEST_TOPUP && s.depMode === 'dep' && s.depTab === 'ton';
     return {
       topUp: function () { self.setState({ dep: true }); },
       depOpen: s.dep, depClose: function () { self.setState({ dep: false, depToast: 0 }); },
@@ -294,7 +353,27 @@ class Component extends DCLogic {
         { n: 2, text: 'Отправь ему любой NFT-подарок' },
         { n: 3, text: 'Подарок появится в твоём инвентаре' }
       ],
-      depBtnText: s.depTab === 'gift' ? 'Открыть бота' : 'Пополнить',
+      depTitle: s.depMode === 'wd' ? 'ВЫВОД' : 'ДЕПОЗИТ',
+      isDepMode: s.depMode === 'dep', isWdMode: s.depMode === 'wd',
+      modeDep: function () { self.setState({ depMode: 'dep' }); }, modeWd: function () { self.setState({ depMode: 'wd' }); },
+      modeDepSel: s.depMode === 'dep' ? 'true' : 'false', modeWdSel: s.depMode === 'wd' ? 'true' : 'false',
+      modeDepBg: s.depMode === 'dep' ? '#ffc83d' : 'transparent', modeDepColor: s.depMode === 'dep' ? '#1a1300' : '#a3a8b5',
+      modeWdBg: s.depMode === 'wd' ? '#ffc83d' : 'transparent', modeWdColor: s.depMode === 'wd' ? '#1a1300' : '#a3a8b5',
+      badgeText: testOn ? 'ТЕСТ · сумма сразу зачисляется на баланс' : 'ДЕМО · ' + (s.depMode === 'wd' ? 'вывод' : 'пополнение') + ' скоро будет доступно',
+      badgeColor: testOn ? '#2bd46b' : '#ffc83d', badgeBg: testOn ? 'rgba(43,212,107,0.12)' : 'rgba(255,200,61,0.12)', badgeBorder: testOn ? 'rgba(43,212,107,0.4)' : 'rgba(255,200,61,0.35)',
+      wdItems: inv.map(function (it) {
+        var sel = !!s.wdSel[it.uid];
+        return { name: it.key, img: window.rkThumb ? window.rkThumb(it.key, NFT_FALLBACK) : NFT_FALLBACK, sel: sel, pressed: sel ? 'true' : 'false',
+          border: sel ? '#ffc83d' : '#262b3a', bg: sel ? '#2a2410' : '#0d0f14',
+          toggle: function () { var m = Object.assign({}, self.state.wdSel); if (m[it.uid]) delete m[it.uid]; else m[it.uid] = 1; self.setState({ wdSel: m }); } };
+      }),
+      wdHasItems: inv.length > 0, wdEmpty: inv.length === 0,
+      wdInfo: wdCount ? 'выбрано ' + wdCount + ' из ' + inv.length : inv.length + ' шт. в инвентаре',
+      wdTo: tgUser && tgUser.username ? '@' + tgUser.username : ((tgUser && tgUser.first_name) || 'твой Telegram-аккаунт'),
+      depBtnText: s.depMode === 'wd' ? (wdCount ? 'Вывести ' + wdCount + ' NFT' : 'Выбери NFT') : (s.depTab === 'gift' ? 'Открыть бота' : 'Пополнить'),
+      depBtnDisabled: s.depMode === 'wd' && !wdCount,
+      depBtnBg: s.depMode === 'wd' && !wdCount ? '#3a3420' : '#ffc83d',
+      toastIcon: s.toast ? s.toast.icon : '', toastText: s.toast ? s.toast.text : '', toastBorder: s.toast && s.toast.ok ? '#2bd46b' : '#ffc83d',
       depSubmit: function () { self.depSubmit(); },
       depToast: !!s.depToast,
       online: (window.RK && window.RK.net && window.RK.net.connected && window.RK.net.online) || this.state.online,
