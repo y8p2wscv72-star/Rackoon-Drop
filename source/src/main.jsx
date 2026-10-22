@@ -17,12 +17,12 @@ import LeadersSrc from './screens/Leaders.dc.html';
 
 // ---------- Telegram ----------
 const tg = window.Telegram && window.Telegram.WebApp;
-const START_BALANCE = 100;
+const START_BALANCE = 0; // новые игроки начинают с нуля
 
 // ---------- Сохранение: на устройстве + в облаке Telegram (CloudStorage) ----------
 // Облако Telegram привязано к аккаунту игрока и боту: данные не пропадут,
 // даже если Telegram почистит кэш или игрок зайдёт с другого телефона.
-const SYNC_KEYS = ['rk_balance', 'rk_inv', 'rk_free_at', 'rk_pvp_hist', 'rk_crash_hist', 'rk_upg_hist', 'rk_stats', 'rk_tasks', 'rk_pvp_pending'];
+const SYNC_KEYS = ['rk_balance', 'rk_inv', 'rk_free_at', 'rk_pvp_hist', 'rk_crash_hist', 'rk_upg_hist', 'rk_stats', 'rk_tasks', 'rk_pvp_pending', 'rk_reset'];
 const CHUNK = 3900;
 const cloud = (() => {
   try { return tg && tg.CloudStorage && (!tg.isVersionAtLeast || tg.isVersionAtLeast('6.9')) ? tg.CloudStorage : null; } catch (e) { return null; }
@@ -127,6 +127,11 @@ function addBalance(amount) {
   if (lg && lg.state && 'balance' in lg.state) lg.setState({ balance: Math.round((lg.state.balance + amount) * 100) / 100 });
   else { wallet.set(wallet.get() + amount); if (currentScreen) currentScreen.forceUpdate(); }
 }
+function setBalance(v) {
+  const lg = currentScreen && currentScreen.logic;
+  if (lg && lg.state && 'balance' in lg.state) lg.setState({ balance: v });
+  else { wallet.set(v); if (currentScreen) currentScreen.forceUpdate(); }
+}
 const net = (() => {
   const handlers = {}; const rooms = new Set();
   let ws = null, retry = 0, pingIv = null;
@@ -166,7 +171,11 @@ const net = (() => {
     ws.onmessage = (ev) => {
       let m; try { m = JSON.parse(ev.data); } catch (e) { return; }
       if (m.t === 'pong') { const now = Date.now(); api.offset = m.now - (m.c + now) / 2; return; }
-      if (m.t === 'welcome') { api.me = m.me; api.online = m.online; api.connected = true; emit('status', api); }
+      if (m.t === 'welcome') {
+        // Сброс балансов: сервер сообщает метку, игра обнуляет баланс один раз на каждую новую метку
+        if (m.balanceReset && store.get('rk_reset') !== m.balanceReset) { setBalance(0); store.set('rk_reset', m.balanceReset); }
+        api.me = m.me; api.online = m.online; api.connected = true; emit('status', api);
+      }
       if (m.t === 'online') { api.online = m.n; }
       if (m.t === 'credit') onCredit(m);
       emit(m.t, m);
