@@ -14,6 +14,7 @@ import PvpSrc from './screens/Pvp.dc.html';
 import InventorySrc from './screens/Inventory.dc.html';
 import TasksSrc from './screens/Tasks.dc.html';
 import LeadersSrc from './screens/Leaders.dc.html';
+import AdminSrc from './screens/Admin.dc.html';
 
 // ---------- Telegram ----------
 const tg = window.Telegram && window.Telegram.WebApp;
@@ -77,7 +78,12 @@ const wallet = {
   get() {
     const v = parseFloat(store.get('rk_balance')); return isNaN(v) ? START_BALANCE : v;
   },
-  set(v) { store.set('rk_balance', String(Math.round(v * 100) / 100)); }
+  set(v) {
+    store.set('rk_balance', String(Math.round(v * 100) / 100));
+    // сообщаем серверу текущий баланс (не чаще раза в 2 секунды) — его видит админ
+    clearTimeout(this._rt);
+    this._rt = setTimeout(() => { try { if (window.RK && window.RK.net) window.RK.net.send({ t: 'bal', v: wallet.get() }); } catch (e) {} }, 2000);
+  }
 };
 // Общий инвентарь подарков (демо: хранится на устройстве игрока)
 const STARTER_GIFTS = ['B-Day Candle', 'Lol Pop', 'Desk Calendar', 'Homemade Cake', 'Homemade Cake', 'Jingle Bells', 'Hypno Lollipop', 'Snow Globe', 'Berry Box'];
@@ -152,8 +158,15 @@ const net = (() => {
   function onCredit(m) {
     const done = store.getJSON('rk_credits_done', []);
     if (done.indexOf(m.id) === -1) {
-      addBalance(m.amount);
-      track({ game: m.game, win: m.amount });
+      if (m.game === 'admin') {
+        // начисление/списание от админа; списание не уводит баланс в минус
+        const lg = currentScreen && currentScreen.logic;
+        const cur = lg && lg.state && 'balance' in lg.state ? lg.state.balance : wallet.get();
+        addBalance(Math.max(m.amount, -cur));
+      } else {
+        addBalance(m.amount);
+        track({ game: m.game, win: m.amount });
+      }
       store.setJSON('rk_credits_done', [m.id].concat(done).slice(0, 100));
     }
     raw({ t: 'ack', id: m.id });
@@ -175,6 +188,7 @@ const net = (() => {
         // Сброс балансов: сервер сообщает метку, игра обнуляет баланс один раз на каждую новую метку
         if (m.balanceReset && store.get('rk_reset') !== m.balanceReset) { setBalance(0); store.set('rk_reset', m.balanceReset); }
         api.me = m.me; api.online = m.online; api.connected = true; emit('status', api);
+        raw({ t: 'bal', v: wallet.get() });
       }
       if (m.t === 'online') { api.online = m.n; }
       if (m.t === 'credit') onCredit(m);
@@ -410,7 +424,7 @@ class Screen extends React.Component {
 // ---------- Приложение ----------
 const SCREENS = {
   Main: parseScreen('Main', MainSrc), Crash: parseScreen('Crash', CrashSrc),
-  Upgrade: parseScreen('Upgrade', UpgradeSrc), Cases: parseScreen('Cases', CasesSrc), Mines: parseScreen('Mines', MinesSrc), Pvp: parseScreen('Pvp', PvpSrc), Inventory: parseScreen('Inventory', InventorySrc), Tasks: parseScreen('Tasks', TasksSrc), Leaders: parseScreen('Leaders', LeadersSrc)
+  Upgrade: parseScreen('Upgrade', UpgradeSrc), Cases: parseScreen('Cases', CasesSrc), Mines: parseScreen('Mines', MinesSrc), Pvp: parseScreen('Pvp', PvpSrc), Inventory: parseScreen('Inventory', InventorySrc), Tasks: parseScreen('Tasks', TasksSrc), Leaders: parseScreen('Leaders', LeadersSrc), Admin: parseScreen('Admin', AdminSrc)
 };
 const injected = new Set();
 Object.values(SCREENS).forEach((s) => s.head.forEach((h) => {

@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>RACKOON — Админка</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Rubik:ital,wght@0,500;0,700;0,900;1,900&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#0d0f14}
+@keyframes rkAdmPop{0%{transform:translateY(-6px);opacity:0}100%{transform:translateY(0);opacity:1}}
+</style>
+</helmet>
+<div style="width: 390px; min-height: 900px; box-sizing: border-box; padding: 20px 16px 32px; display: flex; flex-direction: column; gap: 14px; background: #0d0f14; font-family: Rubik, system-ui, sans-serif; color: #ffffff">
+
+<header style="display: flex; align-items: center; gap: 10px; height: 48px">
+<a href="Main.dc.html" aria-label="Назад в лобби" style="width: 44px; height: 44px; border-radius: 14px; background: #1a1d27; display: flex; align-items: center; justify-content: center; flex-shrink: 0">
+<svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><path d="M13 3 L6 10 L13 17" fill="none" stroke="#ffffff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+</a>
+<div style="font-size: 26px; font-weight: 900; font-style: italic; flex-grow: 1">АДМИНКА</div>
+<span style="font-size: 11px; font-weight: 700; padding: 5px 9px; border-radius: 999px; background: {{connBg}}; color: {{connColor}}">{{connText}}</span>
+</header>
+
+<sc-if value="{{noAccess}}" hint-placeholder-val="{{ false }}">
+<div style="background: #151821; border: 1px solid #3a1d26; border-radius: 18px; padding: 22px 16px; text-align: center; font-size: 14px; color: #ff8a9a">{{noAccessText}}</div>
+</sc-if>
+
+<sc-if value="{{hasAccess}}" hint-placeholder-val="{{ true }}">
+<div style="background: #151821; border: 1px solid #222838; border-radius: 20px; padding: 14px; display: flex; flex-direction: column; gap: 12px">
+<span style="font-size: 12px; font-weight: 700; letter-spacing: 2px; color: #6c7282">ИГРОК</span>
+<div style="display: grid; grid-template-columns: minmax(0, 1fr) 96px; gap: 8px">
+<label style="height: 52px; border-radius: 14px; background: #0d0f14; border: 1px solid #262b3a; display: flex; align-items: center; padding: 0 12px; gap: 4px; cursor: text">
+<span style="font-size: 18px; font-weight: 700; color: #6c7282">@</span>
+<input type="text" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="search" aria-label="Юзернейм игрока" placeholder="username" value="{{username}}" onInput="{{onUsername}}" onKeyDown="{{onUserKey}}" style="flex-grow: 1; min-width: 0; height: 100%; border: 0; outline: none; background: transparent; font-family: Rubik, system-ui, sans-serif; font-size: 17px; font-weight: 700; color: #ffffff">
+</label>
+<button type="button" onClick="{{find}}" style="height: 52px; border-radius: 14px; border: 0; background: #2a7fff; color: #ffffff; font-family: Rubik, system-ui, sans-serif; font-size: 15px; font-weight: 700; cursor: pointer">Найти</button>
+</div>
+
+<sc-if value="{{hasUser}}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; align-items: center; gap: 12px; background: #0d0f14; border: 1px solid #262b3a; border-radius: 16px; padding: 12px; animation: rkAdmPop 0.2s ease-out">
+<div style="width: 42px; height: 42px; border-radius: 12px; background: #2a2410; color: #ffc83d; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 900; flex-shrink: 0">{{uInitial}}</div>
+<div style="display: flex; flex-direction: column; gap: 2px; flex-grow: 1; min-width: 0">
+<span style="font-size: 15px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">@{{uUsername}}</span>
+<span style="font-size: 12px; color: {{uStatusColor}}">{{uStatus}}</span>
+</div>
+<div style="display: flex; flex-direction: column; align-items: flex-end; gap: 2px">
+<span style="font-size: 17px; font-weight: 900; color: #ffc83d">{{uBalance}}</span>
+<span style="font-size: 11px; color: #8a90a0">{{uPending}}</span>
+</div>
+</div>
+</sc-if>
+
+<span style="font-size: 12px; font-weight: 700; letter-spacing: 2px; color: #6c7282; margin-top: 4px">СУММА</span>
+<label style="height: 60px; border-radius: 14px; background: #0d0f14; border: 1px solid #262b3a; display: flex; align-items: center; padding: 0 14px; gap: 8px; cursor: text">
+<input type="text" inputmode="decimal" enterkeyhint="done" autocomplete="off" aria-label="Сумма в TON" placeholder="0" value="{{amount}}" onInput="{{onAmount}}" style="flex-grow: 1; min-width: 0; height: 100%; border: 0; outline: none; background: transparent; font-family: Rubik, system-ui, sans-serif; font-size: 26px; font-weight: 900; color: #ffffff">
+<span style="font-size: 14px; font-weight: 700; color: #8a90a0; background: #1f2330; border-radius: 10px; padding: 6px 10px">TON</span>
+</label>
+<div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px">
+<sc-for list="{{chips}}" as="ch" hint-placeholder-count="4">
+<button type="button" onClick="{{ch.pick}}" style="height: 38px; border-radius: 12px; border: 1px solid #262b3a; background: #1b1e27; color: #ffffff; font-family: Rubik, system-ui, sans-serif; font-size: 14px; font-weight: 700; cursor: pointer">{{ch.label}}</button>
+</sc-for>
+</div>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 2px">
+<button type="button" onClick="{{give}}" disabled="{{btnDisabled}}" style="height: 56px; border-radius: 16px; border: 0; background: {{giveBg}}; color: {{giveColor}}; font-family: Rubik, system-ui, sans-serif; font-size: 17px; font-weight: 900; cursor: pointer">+ Выдать</button>
+<button type="button" onClick="{{take}}" disabled="{{btnDisabled}}" style="height: 56px; border-radius: 16px; border: 0; background: {{takeBg}}; color: {{takeColor}}; font-family: Rubik, system-ui, sans-serif; font-size: 17px; font-weight: 900; cursor: pointer">− Отнять</button>
+</div>
+<sc-if value="{{hasMsg}}" hint-placeholder-val="{{ false }}">
+<div role="status" style="border-radius: 14px; padding: 12px; font-size: 13px; font-weight: 500; background: {{msgBg}}; border: 1px solid {{msgBorder}}; color: #ffffff; animation: rkAdmPop 0.2s ease-out">{{msg}}</div>
+</sc-if>
+</div>
+
+<div style="display: flex; justify-content: space-between; align-items: baseline; margin-top: 6px">
+<span style="font-size: 17px; font-weight: 700">Последние операции</span>
+<span style="font-size: 12px; color: #8a90a0">{{logCount}}</span>
+</div>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<sc-if value="{{noLog}}" hint-placeholder-val="{{ false }}">
+<div style="border-radius: 14px; border: 1px dashed #2c3244; padding: 16px; text-align: center; font-size: 13px; color: #8a90a0">Пока пусто</div>
+</sc-if>
+<sc-for list="{{log}}" as="lg" hint-placeholder-count="3">
+<div style="display: flex; align-items: center; gap: 10px; background: #151821; border: 1px solid #222838; border-radius: 14px; padding: 10px 12px">
+<span style="flex-grow: 1; min-width: 0; font-size: 14px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">@{{lg.to}}</span>
+<span style="font-size: 11px; color: #8a90a0">{{lg.time}}</span>
+<span style="font-size: 14px; font-weight: 900; color: {{lg.color}}">{{lg.amount}}</span>
+</div>
+</sc-for>
+</div>
+<div style="font-size: 11px; color: #6c7282; text-align: center; line-height: 1.5">Если игрок не в сети, сумма зачислится при его следующем входе в игру.<br>Списание не уводит баланс ниже нуля.</div>
+</sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":900}}'>
+function NET() { return window.RK && window.RK.net; }
+function cleanNum(v) {
+  v = String(v || '').replace(',', '.').replace(/[^0-9.]/g, '');
+  var parts = v.split('.'); if (parts.length > 2) v = parts[0] + '.' + parts.slice(1).join('');
+  return v.slice(0, 12);
+}
+function cleanUser(v) { return String(v || '').replace(/^@+/, '').replace(/[^A-Za-z0-9_]/g, '').slice(0, 32); }
+function ago(t) {
+  if (!t) return '';
+  var s = Math.max(0, Math.round((Date.now() - t) / 1000));
+  if (s < 60) return 'только что';
+  if (s < 3600) return Math.floor(s / 60) + ' мин назад';
+  if (s < 86400) return Math.floor(s / 3600) + ' ч назад';
+  return Math.floor(s / 86400) + ' дн назад';
+}
+function hm(t) { var d = new Date(t + 3 * 3600 * 1000); return ('0' + d.getUTCDate()).slice(-2) + '.' + ('0' + (d.getUTCMonth() + 1)).slice(-2) + ' ' + ('0' + d.getUTCHours()).slice(-2) + ':' + ('0' + d.getUTCMinutes()).slice(-2); }
+
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { username: '', amount: '', user: null, msg: null, log: [], busy: false, tick: 0 };
+    this.offs = [];
+  }
+  componentDidMount() {
+    var self = this, net = NET();
+    if (net) {
+      this.offs.push(net.on('admin.user', function (m) { self.setState({ user: m.user, busy: false, msg: null }); }));
+      this.offs.push(net.on('admin.done', function (m) {
+        var a = m.amount;
+        self.setState({ user: m.user, log: m.log, busy: false, amount: '',
+          msg: { ok: true, text: (a > 0 ? 'Выдано +' + a : 'Списано ' + a) + ' TON игроку @' + m.user.username + (m.user.online ? '' : ' (зачислится при входе)') } });
+        // через пару секунд обновляем карточку: игра игрока успеет зачислить и сообщить новый баланс
+        clearTimeout(self.rt);
+        self.rt = setTimeout(function () { var n = NET(); if (n && n.connected) n.send({ t: 'admin.find', username: m.user.username }); }, 3000);
+      }));
+      this.offs.push(net.on('admin.err', function (m) { self.setState({ busy: false, msg: { ok: false, text: m.msg } }); }));
+      this.offs.push(net.on('admin.log', function (m) { self.setState({ log: m.log }); }));
+      this.offs.push(net.on('status', function () { self.forceUpdate(); if (net.connected) net.send({ t: 'admin.log' }); }));
+      if (net.connected) net.send({ t: 'admin.log' });
+    }
+    this.iv = setInterval(function () { self.setState({ tick: self.state.tick + 1 }); }, 1000);
+  }
+  componentWillUnmount() { clearInterval(this.iv); clearTimeout(this.rt); this.offs.forEach(function (f) { f(); }); }
+  find() {
+    var net = NET(), u = this.state.username;
+    if (!u) return this.setState({ msg: { ok: false, text: 'Введи юзернейм игрока' } });
+    if (!net || !net.connected) return this.setState({ msg: { ok: false, text: 'Нет связи с сервером' } });
+    this.setState({ busy: true, msg: null });
+    net.send({ t: 'admin.find', username: u });
+  }
+  adjust(sign) {
+    var net = NET(), s = this.state, v = Math.round(parseFloat(s.amount) * 100) / 100;
+    if (!s.username) return this.setState({ msg: { ok: false, text: 'Введи юзернейм игрока' } });
+    if (!(v > 0)) return this.setState({ msg: { ok: false, text: 'Введи сумму больше нуля' } });
+    if (!net || !net.connected) return this.setState({ msg: { ok: false, text: 'Нет связи с сервером' } });
+    this.setState({ busy: true, msg: null });
+    net.send({ t: 'admin.adjust', username: s.username, amount: sign * v });
+  }
+  renderVals() {
+    var self = this, s = this.state, net = NET();
+    var conn = !!(net && net.connected), admin = !!(net && net.me && net.me.admin);
+    var u = s.user, ready = conn && admin && !s.busy;
+    return {
+      connText: conn ? 'online' : 'нет связи', connBg: conn ? 'rgba(43,212,107,0.14)' : 'rgba(255,93,115,0.14)', connColor: conn ? '#2bd46b' : '#ff5d73',
+      noAccess: !admin, hasAccess: admin,
+      noAccessText: conn ? 'Нет доступа. Админка доступна только администратору.' : 'Подключаемся к серверу...',
+      username: s.username,
+      onUsername: function (e) { self.setState({ username: cleanUser(e && e.target && e.target.value), user: null }); },
+      onUserKey: function (e) { if (e && e.key === 'Enter') { if (e.target && e.target.blur) e.target.blur(); self.find(); } },
+      find: function () { self.find(); },
+      hasUser: !!u,
+      uInitial: u ? (u.name || u.username || '?').charAt(0).toUpperCase() : '',
+      uUsername: u ? u.username : '',
+      uStatus: u ? (u.online ? '● в игре сейчас' : 'был(а) ' + ago(u.seen)) : '',
+      uStatusColor: u && u.online ? '#2bd46b' : '#8a90a0',
+      uBalance: u ? (u.balance == null ? '— TON' : u.balance.toFixed(2) + ' TON') : '',
+      uPending: u ? (u.pending ? 'ожидает: ' + (u.pending > 0 ? '+' : '') + u.pending + ' TON' : 'баланс игрока') : '',
+      amount: s.amount,
+      onAmount: function (e) { self.setState({ amount: cleanNum(e && e.target && e.target.value) }); },
+      chips: [1, 5, 10, 100].map(function (v) { return { label: v + ' TON', pick: function () { self.setState({ amount: String(v) }); } }; }),
+      give: function () { self.adjust(1); }, take: function () { self.adjust(-1); },
+      btnDisabled: !ready,
+      giveBg: ready ? '#2bd46b' : '#1d2a22', giveColor: ready ? '#06210f' : '#4f6b58',
+      takeBg: ready ? '#ff5d73' : '#2a1d22', takeColor: ready ? '#2a0610' : '#6b4f56',
+      hasMsg: !!s.msg, msg: s.msg ? s.msg.text : '',
+      msgBg: s.msg && s.msg.ok ? 'rgba(43,212,107,0.12)' : 'rgba(255,93,115,0.12)', msgBorder: s.msg && s.msg.ok ? 'rgba(43,212,107,0.45)' : 'rgba(255,93,115,0.45)',
+      log: (s.log || []).map(function (l) { return { to: l.to, time: hm(l.at), amount: (l.amount > 0 ? '+' : '') + l.amount + ' TON', color: l.amount > 0 ? '#2bd46b' : '#ff5d73' }; }),
+      noLog: !(s.log && s.log.length), logCount: s.log && s.log.length ? s.log.length + ' шт.' : ''
+    };
+  }
+}
+</script>
+</body>
+</html>
