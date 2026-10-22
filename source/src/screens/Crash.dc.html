@@ -20,7 +20,9 @@ a{color:#ffc83d}a:hover{color:#ffe08a}
 @keyframes rkRing{0%{transform:scale(.2);opacity:1}100%{transform:scale(2.2);opacity:0}}
 @keyframes rkRays{0%{transform:scale(.3) rotate(0deg);opacity:1}100%{transform:scale(1.5) rotate(25deg);opacity:0}}
 @keyframes rkBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
-@keyframes rkWarp{0%{transform:translateY(-260px)}100%{transform:translateY(520px)}}
+@keyframes rkWarp{0%{transform:translateY(-260px)}100%{transform:translateY(760px)}}
+@keyframes rkTrend{0%{transform:translate(90px,-90px) scale(.7);opacity:0}15%{opacity:1}80%{opacity:1}100%{transform:translate(-300px,300px) scale(1.05);opacity:0}}
+@keyframes rkFlick{0%,100%{transform:scale(1,1)}25%{transform:scale(.85,1.25)}50%{transform:scale(1.1,.9)}75%{transform:scale(.9,1.35)}}
 @keyframes rkShake{0%,100%{transform:translate(0,0)}25%{transform:translate(-1.5px,1px)}50%{transform:translate(1px,-1px)}75%{transform:translate(1.5px,1.5px)}}
 @keyframes rkS0{0%{transform:translate(0,0);opacity:1}100%{transform:translate(0px,-80px);opacity:0}}
 @keyframes rkS1{0%{transform:translate(0,0);opacity:1}100%{transform:translate(56px,-56px);opacity:0}}
@@ -47,8 +49,17 @@ a{color:#ffc83d}a:hover{color:#ffe08a}
 <div style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; background: radial-gradient(circle at 70% 30%, rgba(170,20,45,0.55), rgba(60,5,20,0.75)); opacity: {{tintOpacity}}; transition: opacity 0.35s"></div>
 
 <div aria-hidden="true" style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; overflow: hidden; opacity: {{speedOp}}; transition: opacity 0.6s">
+<div style="position: absolute; left: -121px; top: -100px; width: 600px; height: 600px; transform: rotate(45deg)">
 <sc-for list="{{warp}}" as="w" hint-placeholder-count="0">
 <span style="position: absolute; top: 0; left: {{w.x}}px; width: {{w.wd}}px; height: {{w.h}}px; border-radius: 2px; background: linear-gradient(to bottom, rgba(255,255,255,0), {{w.c}}); animation: rkWarp {{w.d}}ms linear infinite; animation-delay: -{{w.delay}}ms"></span>
+</sc-for>
+</div>
+</div>
+<div aria-hidden="true" style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; overflow: hidden; opacity: {{trendOp}}; transition: opacity 0.6s">
+<sc-for list="{{trend}}" as="tr" hint-placeholder-count="0">
+<div style="position: absolute; left: {{tr.x}}px; top: {{tr.y}}px; width: {{tr.s}}px; height: {{tr.s}}px; animation: rkTrend {{tr.d}}ms linear infinite; animation-delay: -{{tr.delay}}ms">
+<svg width="{{tr.s}}" height="{{tr.s}}" viewBox="0 0 40 40" style="display: block; filter: drop-shadow(0 0 6px {{tr.glow}})"><path d="{{tr.path}}" fill="none" stroke="{{tr.c}}" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"></path><path d="M25 5 L38 3 L36 16Z" fill="{{tr.c}}"></path></svg>
+</div>
 </sc-for>
 </div>
 <svg width="358" height="400" viewBox="0 0 358 400" aria-hidden="true" style="position: absolute; left: 0; top: 0; filter: drop-shadow(0 0 6px {{trailColor}})">
@@ -63,7 +74,32 @@ a{color:#ffc83d}a:hover{color:#ffe08a}
 </div>
 
 <sc-if value="{{showRocket}}" hint-placeholder-val="{{ false }}">
-<div style="position: absolute; width: 110px; height: 121px; {{rocketBox}}"><img src="/_blob/a8d1e2a1f1626c9b8edd4755d9c32150" alt="Енот на ракете" style="width: 110px; height: 121px; display: block; {{rocketAnim}}"></div>
+<div style="position: absolute; width: 130px; height: 130px; {{rocketBox}}"><div role="img" aria-label="Биткоин-ракета" style="width: 130px; height: 130px; {{rocketAnim}}">
+<svg width="130" height="130" viewBox="0 0 130 130" style="display: block; overflow: visible">
+<g transform="rotate(45 65 65)">
+<g style="transform-box: fill-box; transform-origin: 50% 0%; animation: rkFlick 0.16s linear infinite; filter: drop-shadow(0 0 8px rgba(80,255,110,0.9))">
+<path d="M54 100 C48 114 56 128 65 138 C74 128 82 114 76 100Z" fill="#3df05c" fill-opacity="0.9"></path>
+<path d="M59 100 C56 110 61 119 65 125 C69 119 74 110 71 100Z" fill="#d9ffb8"></path>
+</g>
+<path d="M47 70 C35 76 27 87 25 101 L47 92Z" fill="#f2a91c" stroke="#7a4a00" stroke-width="2.5" stroke-linejoin="round"></path>
+<path d="M83 70 C95 76 103 87 105 101 L83 92Z" fill="#d4870c" stroke="#7a4a00" stroke-width="2.5" stroke-linejoin="round"></path>
+<path d="M52 94 L78 94 L74 103 L56 103Z" fill="#a46600" stroke="#6b4100" stroke-width="2.5" stroke-linejoin="round"></path>
+<path d="M65 5 C88 22 92 62 84 95 L46 95 C38 62 42 22 65 5Z" fill="#f6c42e" stroke="#7a4a00" stroke-width="2.5" stroke-linejoin="round"></path>
+<path d="M65 5 C88 22 92 62 84 95 L71 95 C77 62 77 27 65 5Z" fill="#dc9d16"></path>
+<path d="M57 17 C48 33 46 57 49 84 L54 84 C52 59 54 35 62 15Z" fill="#fff1a6" fill-opacity="0.85"></path>
+<path d="M65 5 C71 9 77 16 80 24 C70 20 60 20 50 24 C53 16 59 9 65 5Z" fill="#fffbe8" stroke="#7a4a00" stroke-width="2" stroke-linejoin="round"></path>
+<path d="M47 31 Q65 37 83 31" fill="none" stroke="#a87000" stroke-width="3" stroke-linecap="round"></path>
+<path d="M45 84 Q65 90 85 84" fill="none" stroke="#a87000" stroke-width="3" stroke-linecap="round"></path>
+<path d="M53 39 Q65 42 77 39 M51 75 Q65 79 79 75" fill="none" stroke="#c98b00" stroke-width="1.5" stroke-linecap="round"></path>
+<circle cx="65" cy="57" r="15" fill="#ffd95a" stroke="#8f5c00" stroke-width="3"></circle>
+<circle cx="65" cy="57" r="10.5" fill="none" stroke="#c98b00" stroke-width="1.5"></circle>
+<g transform="rotate(-45 65 57)">
+<text x="65" y="64" text-anchor="middle" font-family="Rubik, system-ui, sans-serif" font-size="19" font-weight="900" fill="#7a4a00">B</text>
+<path d="M62.5 44.5 V48.5 M67.5 44.5 V48.5 M62.5 63.5 V67.5 M67.5 63.5 V67.5" stroke="#7a4a00" stroke-width="2.4" stroke-linecap="round"></path>
+</g>
+</g>
+</svg>
+</div></div>
 </sc-if>
 
 <sc-if value="{{isWait}}" hint-placeholder-val="{{ true }}">
@@ -223,7 +259,18 @@ function rocketPos(el, m) {
 var WARP = (function () {
   var out = [], cols = ['rgba(255,255,255,0.75)', 'rgba(120,170,255,0.7)', 'rgba(255,120,140,0.6)'];
   for (var i = 0; i < 26; i++) {
-    out.push({ x: Math.round(Math.random() * 356), wd: Math.random() < 0.3 ? 2 : 1, h: Math.round(80 + Math.random() * 180), c: cols[i % 3], d: Math.round(450 + Math.random() * 500), delay: Math.round(Math.random() * 900) });
+    out.push({ x: Math.round(Math.random() * 600), wd: Math.random() < 0.3 ? 2 : 1, h: Math.round(80 + Math.random() * 180), c: cols[i % 3], d: Math.round(450 + Math.random() * 500), delay: Math.round(Math.random() * 900) });
+  }
+  return out;
+})();
+// Стрелки «график вверх», пролетающие мимо ракеты
+var TREND = (function () {
+  var out = [], paths = ['M4 34 L14 22 L21 28 L34 8', 'M4 30 L15 20 L22 25 L35 8', 'M6 34 L34 8'];
+  for (var i = 0; i < 9; i++) {
+    var green = i % 3 !== 2;
+    out.push({ x: Math.round(60 + Math.random() * 300), y: Math.round(-30 + Math.random() * 260), s: Math.round(32 + Math.random() * 26),
+      c: green ? '#45e05a' : '#ffffff', glow: green ? 'rgba(69,224,90,0.8)' : 'rgba(255,255,255,0.6)',
+      path: paths[i % paths.length], d: Math.round(1300 + Math.random() * 900), delay: Math.round(Math.random() * 2000) });
   }
   return out;
 })();
@@ -335,6 +382,8 @@ class Component extends DCLogic {
     if (s.phase === 'fly') rp = rocketPos(flyEl, m);
     else if (s.phase === 'crash' && r) rp = rocketPos(flyMs(r.crashAt), r.crashAt);
     var rx = rp.x, ry = rp.y;
+    // на взлёте ракета «приближается» к камере
+    var rocketScale = s.phase === 'fly' ? 1 + 0.45 * (1 - Math.pow(1 - Math.min(1, flyEl / 2200), 3)) : 1;
 
     var top = Math.max(2, m * 1.3), scale = [];
     for (var i = 4; i >= 0; i--) scale.push({ label: (1 + (top - 1) * i / 4).toFixed(1) + 'x' });
@@ -369,7 +418,8 @@ class Component extends DCLogic {
       tintOpacity: s.phase === 'crash' ? '1' : '0',
       trailColor: s.phase === 'crash' ? '#ff3b55' : '#3d8bff',
       trailD: 'M 0 0',
-      warp: WARP,
+      warp: WARP, trend: TREND,
+      trendOp: s.phase === 'fly' ? Math.min(1, Math.max(0, (m - 1.02) / 0.15)).toFixed(2) : '0',
       speedOp: s.phase === 'fly' ? Math.min(1, Math.max(0, (m - 1.25) / 1.2)).toFixed(2) : '0',
       scale: scale,
       isWait: s.phase === 'wait', isFly: s.phase === 'fly', isCrash: s.phase === 'crash',
@@ -378,8 +428,8 @@ class Component extends DCLogic {
       multText: m.toFixed(2) + 'x',
       crashText: (r && r.crashAt ? r.crashAt : m).toFixed(2) + 'x',
       showRocket: s.phase !== 'crash',
-      rocketBox: 'left: ' + (rx - 55).toFixed(1) + 'px; top: ' + (ry - 60).toFixed(1) + 'px; transform: rotate(' + rp.rot.toFixed(1) + 'deg); transition: transform 0.25s linear; opacity: ' + (s.phase === 'wait' ? '0.85' : '1'),
-      rocketAnim: 'animation: ' + (s.phase === 'fly' && m > 1.6 ? 'rkShake 0.12s linear infinite' : 'rkBob 0.6s ease-in-out infinite') + '; filter: drop-shadow(0 0 16px rgba(255,160,40,0.55))',
+      rocketBox: 'left: ' + (rx - 65).toFixed(1) + 'px; top: ' + (ry - 65).toFixed(1) + 'px; transform: scale(' + rocketScale.toFixed(3) + '); opacity: ' + (s.phase === 'wait' ? '0.9' : '1'),
+      rocketAnim: 'animation: ' + (s.phase === 'fly' && m > 1.6 ? 'rkShake 0.12s linear infinite' : 'rkBob 0.6s ease-in-out infinite') + '; filter: drop-shadow(0 0 18px rgba(255,200,40,0.55))',
       boomPos: 'left: ' + rx.toFixed(1) + 'px; top: ' + ry.toFixed(1) + 'px',
       history: hist.map(function (h) {
         return { label: h.toFixed(2) + 'x', bg: h >= 10 ? 'rgba(255,200,61,0.18)' : (h >= 2 ? 'rgba(42,127,255,0.2)' : 'rgba(255,255,255,0.08)'), color: h >= 10 ? '#ffc83d' : (h >= 2 ? '#7fb2ff' : '#c9cdd6') };
