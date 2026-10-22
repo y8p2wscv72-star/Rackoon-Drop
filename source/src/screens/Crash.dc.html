@@ -72,7 +72,7 @@ a{color:#ffc83d}a:hover{color:#ffe08a}
 <div style="width: 170px; height: 8px; border-radius: 4px; background: rgba(255,255,255,0.12); overflow: hidden">
 <div style="height: 8px; border-radius: 4px; background: {{timerColor}}; width: {{timerPct}}%"></div>
 </div>
-<div style="font-size: 13px; font-weight: 700; letter-spacing: 4px; color: {{timerColor}}">ИГРА ЧЕРЕЗ</div>
+<div style="font-size: 13px; font-weight: 700; letter-spacing: 4px; color: {{timerColor}}">{{timerLabel}}</div>
 </div>
 </sc-if>
 
@@ -157,6 +157,9 @@ a{color:#ffc83d}a:hover{color:#ffe08a}
 </button>
 <button type="button" onClick="{{placeTon}}" disabled="{{betDisabled}}" style="height: 56px; border-radius: 16px; border: 0; background: {{tonBtnBg}}; color: {{tonBtnColor}}; font-family: Rubik, system-ui, sans-serif; font-size: 15px; font-weight: 900; cursor: pointer">{{tonBtnText}}</button>
 </div>
+<sc-if value="{{hasErr}}" hint-placeholder-val="{{ false }}">
+<div style="font-size: 12px; color: #ff5d73; text-align: center">{{errText}}</div>
+</sc-if>
 <sc-if value="{{hasQueued}}" hint-placeholder-val="{{ false }}">
 <div style="font-size: 12px; color: #ffc83d; text-align: center">Ставка {{queuedText}} сыграет в следующем раунде</div>
 </sc-if>
@@ -168,9 +171,12 @@ a{color:#ffc83d}a:hover{color:#ffe08a}
 <span style="font-size: 13px; font-weight: 500; color: #a3a8b5">{{playersInfo}}</span>
 </div>
 <div style="display: flex; flex-direction: column; gap: 8px">
+<sc-if value="{{noPlayers}}" hint-placeholder-val="{{ false }}">
+<div style="background: #151821; border: 1px dashed #2c3244; border-radius: 16px; padding: 18px 12px; text-align: center; font-size: 13px; color: #8a90a0">{{emptyText}}</div>
+</sc-if>
 <sc-for list="{{players}}" as="p" hint-placeholder-count="6">
 <div style="display: flex; align-items: center; gap: 10px; background: #151821; border: 1px solid {{p.border}}; border-radius: 16px; padding: 10px 12px">
-<div style="width: 38px; height: 38px; border-radius: 12px; background: {{p.avBg}}; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 900; flex-shrink: 0; overflow: hidden"><sc-if value="{{p.isMe}}" hint-placeholder-val="{{ false }}"><img src="{{meAvatar}}" referrerpolicy="no-referrer" alt="" style="width: 100%; height: 100%; object-fit: cover"></sc-if><sc-if value="{{p.notMe}}" hint-placeholder-val="{{ true }}">{{p.initial}}</sc-if></div>
+<div style="width: 38px; height: 38px; border-radius: 12px; background: {{p.avBg}}; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 900; flex-shrink: 0; overflow: hidden"><sc-if value="{{p.hasPhoto}}" hint-placeholder-val="{{ false }}"><img src="{{p.photo}}" data-av="1" referrerpolicy="no-referrer" alt="" style="width: 100%; height: 100%; object-fit: cover"></sc-if><sc-if value="{{p.noPhoto}}" hint-placeholder-val="{{ true }}">{{p.initial}}</sc-if></div>
 <div style="display: flex; flex-direction: column; gap: 2px; flex-grow: 1; min-width: 0">
 <span style="font-size: 14px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{p.name}}</span>
 <span style="font-size: 12px; font-weight: 500; color: #8a90a0">{{p.betText}} · <span style="color: {{p.multColor}}">{{p.multText}}</span></span>
@@ -189,7 +195,7 @@ a{color:#ffc83d}a:hover{color:#ffe08a}
 </div>
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":1300}}'>
-var RTP = 0.80, WAIT = 5000, AFTER = 3000, GROWTH = 0.16;
+var GROWTH = 0.16;
 var GIFTS = {
   cake: { name: 'Homemade Cake', price: 5.04, img: '/_blob/6ef5ecbeb712d1b1d752a33d1e9c279d' },
   globe: { name: 'Snow Globe', price: 5.92, img: '/_blob/6e3628fac94b5266f3b64cea9c5fe7ee' },
@@ -200,12 +206,12 @@ var GIFTS = {
   bells: { name: 'Jingle Bells', price: 10, img: '/_blob/808ef5efdbeb6b276f70430b220f760b' }
 };
 if (window.rkThumb) Object.keys(GIFTS).forEach(function (k) { GIFTS[k].img = window.rkThumb(GIFTS[k].name, GIFTS[k].img); });
-var BOT_GIFTS = ['cake', 'globe', 'record', 'rose', 'bear', 'lpotion', 'bells'];
-var NAMES = ['Bandit_77', 'TonWhale', 'Енотыч', 'lucky_ray', 'Gift Hunter', 'night_owl', 'Мурзик', 'Sasha_K', 'raccoon.eth', 'Vova', 'Polina', 'moonboy', 'Жора', 'kisa_mur'];
 var AV = ['#e5383b', '#2a7fff', '#2bd46b', '#9b5cff', '#ff8a5c', '#00a8a8', '#c77dff', '#e0a800'];
 
 function r2(x) { return Math.round(x * 100) / 100; }
 function rkTrack(o) { try { if (window.RK && window.RK.track) window.RK.track(o); } catch (e) {} }
+function NET() { return window.RK && window.RK.net; }
+function avColor(uid) { var h = 0; for (var i = 0; i < uid.length; i++) h = (h * 31 + uid.charCodeAt(i)) | 0; return AV[Math.abs(h) % AV.length]; }
 // Полёт ракеты: вылетает из левого нижнего угла по диагонали, выходит в центр
 // и разворачивается носом вверх; дальше — эффект скорости (полосы звёзд)
 function rocketPos(el, m) {
@@ -222,101 +228,84 @@ var WARP = (function () {
   return out;
 })();
 function fmt(x) { return (Math.floor(x * 100) / 100).toFixed(2); }
-// ---- Общее расписание раундов: ракета летает 24/7, даже когда тебя нет онлайн ----
-function srand(key) { var h = 2166136261; for (var i = 0; i < key.length; i++) { h ^= key.charCodeAt(i); h = Math.imul(h, 16777619); } h ^= h >>> 13; h = Math.imul(h, 0x5bd1e995); h ^= h >>> 15; return (h >>> 0) / 4294967296; }
-function crashPointFor(n) {
-  var u = Math.min(0.999999, srand('crash' + n));
-  var c = RTP / (1 - u);
-  return c < 1 ? 1 : Math.floor(c * 100) / 100;
-}
 function flyMs(c) { return Math.log(Math.max(1, c)) / GROWTH * 1000; }
-function roundLen(n) { return WAIT + flyMs(crashPointFor(n)) + AFTER; }
-// Раунды идут подряд с начала суток (UTC); считаем, какой сейчас и что было до него
-var SCHED = { day: -1, n: 0, start: 0, hist: [] };
-function schedAt(t) {
-  var day = Math.floor(t / 86400000);
-  if (SCHED.day !== day || t < SCHED.start) { SCHED = { day: day, n: day * 100000, start: day * 86400000, hist: [] }; }
-  while (SCHED.start + roundLen(SCHED.n) <= t) {
-    SCHED.hist.unshift(crashPointFor(SCHED.n)); if (SCHED.hist.length > 12) SCHED.hist.length = 12;
-    SCHED.start += roundLen(SCHED.n); SCHED.n += 1;
-  }
-  if (SCHED.hist.length < 12) {
-    var h = SCHED.hist.slice(), k = SCHED.n - SCHED.hist.length - 1;
-    while (h.length < 12) { h.push(crashPointFor(k)); k--; }
-    return { n: SCHED.n, start: SCHED.start, crashAt: crashPointFor(SCHED.n), hist: h };
-  }
-  return { n: SCHED.n, start: SCHED.start, crashAt: crashPointFor(SCHED.n), hist: SCHED.hist.slice() };
-}
-function makeBots(n) {
-  var cnt = 5 + Math.floor(srand('bc' + n) * 5), pool = NAMES.slice(), out = [];
-  for (var i = 0; i < cnt && pool.length; i++) {
-    var nm = pool.splice(Math.floor(srand('bn' + n + ':' + i) * pool.length), 1)[0];
-    var gift = srand('bg' + n + ':' + i) < 0.35 ? BOT_GIFTS[Math.floor(srand('bk' + n + ':' + i) * BOT_GIFTS.length)] : null;
-    var bet = gift ? GIFTS[gift].price : r2(0.1 + Math.pow(srand('bb' + n + ':' + i), 2) * 6);
-    out.push({ id: 'b' + i, name: nm, bet: bet, gift: gift, target: r2(1.05 + Math.pow(srand('bt' + n + ':' + i), 2) * 6), cashed: false, at: 0, av: AV[i % AV.length] });
-  }
-  return out;
-}
 
+// Раунды ведёт сервер: все игроки видят одну и ту же ракету и ставки друг друга
 class Component extends DCLogic {
   constructor(props) {
     super(props);
     this.state = {
-      phase: 'wait', t0: Date.now(), now: Date.now(), crashAt: 1, m: 1, roundN: null,
-      balance: 50, bet: 1, me: null, queued: null, giftPick: false,
-      inv: ['cake', 'globe', 'record', 'rose'],
-      bots: [],
-      history: schedAt(Date.now()).hist
+      rs: null, phase: 'wait', m: 1, now: Date.now(), conn: false, err: '',
+      balance: 50, bet: 1, queued: null, giftPick: false, sending: false,
+      inv: ['cake', 'globe', 'record', 'rose']
     };
+    this.offs = [];
   }
   componentDidMount() {
-    var self = this;
+    var self = this, net = NET();
+    if (net) {
+      this.offs.push(net.on('crash', function (m) { self.onRound(m); }));
+      this.offs.push(net.on('crash.ok', function (m) { rkTrack({ game: 'crash', bet: m.amount, round: true }); self.setState({ sending: false, err: '' }); }));
+      this.offs.push(net.on('crash.err', function (m) {
+        // ставка не прошла — возвращаем деньги / подарок
+        var s = self.state, upd = { sending: false, err: m.msg || 'Ошибка' };
+        if (m.gift) upd.inv = s.inv.concat([m.gift]); else if (m.amount) upd.balance = r2(s.balance + Number(m.amount));
+        self.setState(upd);
+      }));
+      this.offs.push(net.on('status', function () { self.setState({ conn: net.connected }); }));
+      net.sub('crash');
+      this.state.conn = net.connected;
+    }
     this.iv = setInterval(function () { self.tick(); }, 50);
   }
-  componentWillUnmount() { clearInterval(this.iv); }
+  componentWillUnmount() { clearInterval(this.iv); this.offs.forEach(function (f) { f(); }); var net = NET(); if (net) net.unsub('crash'); }
 
-  tick() {
-    var s = this.state, now = Date.now(), sc = schedAt(now), el = now - sc.start, fly = flyMs(sc.crashAt);
-    var upd = { now: now };
-    var newRound = sc.n !== s.roundN;
-    if (newRound) {
-      upd.roundN = sc.n; upd.crashAt = sc.crashAt; upd.bots = makeBots(sc.n); upd.boom = null; upd.history = sc.hist;
-      // ставка «на следующий раунд» входит в игру
-      var q = s.queued, bal = s.balance, me2 = null;
-      if (q && s.roundN !== null) {
-        if (q.gift) me2 = { amount: GIFTS[q.gift].price, gift: q.gift, cashed: false };
-        else if (q.amount <= bal) { bal = r2(bal - q.amount); me2 = { amount: q.amount, gift: null, cashed: false }; }
-        if (me2) rkTrack({ game: 'crash', bet: me2.amount, round: true });
-      }
-      upd.me = me2; upd.queued = null; upd.balance = bal;
-    }
-    var bots = newRound ? upd.bots : s.bots;
-    if (el < WAIT) {
-      upd.phase = 'wait'; upd.t0 = sc.start; upd.m = 1;
-    } else if (el < WAIT + fly) {
-      var m = Math.exp(GROWTH * (el - WAIT) / 1000);
-      upd.phase = 'fly'; upd.t0 = sc.start + WAIT; upd.m = m;
-      upd.bots = bots.map(function (b) { return !b.cashed && m >= b.target ? Object.assign({}, b, { cashed: true, at: b.target }) : b; });
-    } else {
-      upd.t0 = sc.start + WAIT + fly; upd.m = sc.crashAt;
-      if (s.phase !== 'crash' || newRound) {
-        var me = newRound ? upd.me : s.me;
-        if (me && !me.cashed) upd.me = Object.assign({}, me, { lost: true });
-        upd.boom = rocketPos(fly, sc.crashAt);
-        upd.history = [sc.crashAt].concat(sc.hist).slice(0, 12);
-        upd.bots = bots.map(function (b) { return !b.cashed && sc.crashAt >= b.target ? Object.assign({}, b, { cashed: true, at: b.target }) : b; });
-      }
-      upd.phase = 'crash';
+  onRound(r) {
+    var s = this.state, upd = { rs: r };
+    // новый раунд — ставка «на следующий раунд» уходит на сервер
+    if (r.phase === 'wait' && (!s.rs || s.rs.n !== r.n) && s.queued) {
+      var q = s.queued; upd.queued = null;
+      this.setState(upd);
+      this.sendBet(q.amount, q.gift);
+      return;
     }
     this.setState(upd);
   }
-
+  myBet() {
+    var r = this.state.rs, net = NET();
+    if (!r || !net) return null;
+    for (var i = 0; i < r.bets.length; i++) if (net.isMe(r.bets[i].uid)) return r.bets[i];
+    return null;
+  }
+  tick() {
+    var r = this.state.rs, net = NET(), now = net ? net.now() : Date.now();
+    var upd = { now: now, conn: !!(net && net.connected) };
+    if (r) {
+      upd.phase = r.phase;
+      if (r.phase === 'fly') upd.m = Math.exp(GROWTH * Math.max(0, now - r.flyStart) / 1000);
+      else if (r.phase === 'crash') upd.m = r.crashAt;
+      else upd.m = 1;
+    }
+    this.setState(upd);
+  }
+  sendBet(amount, gift) {
+    var s = this.state, net = NET();
+    if (!net || !net.connected) return;
+    if (gift) {
+      var inv = s.inv.slice(), i = inv.indexOf(gift); if (i === -1) return; inv.splice(i, 1);
+      this.setState({ inv: inv, sending: true, giftPick: false });
+      net.send({ t: 'crash.bet', gift: gift });
+    } else {
+      if (!(amount >= 0.1) || amount > s.balance) return;
+      this.setState({ balance: r2(s.balance - amount), sending: true });
+      net.send({ t: 'crash.bet', amount: amount });
+    }
+  }
   placeTon() {
     var s = this.state;
     if (s.phase === 'wait') {
-      if (s.me || s.bet > s.balance || !(s.bet >= 0.1)) return;
-      rkTrack({ game: 'crash', bet: s.bet, round: true });
-      this.setState({ balance: r2(s.balance - s.bet), me: { amount: s.bet, gift: null, cashed: false } });
+      if (this.myBet() || s.sending || s.bet > s.balance || !(s.bet >= 0.1)) return;
+      this.sendBet(s.bet, null);
     } else {
       if (!(s.bet >= 0.1)) return;
       this.setState({ queued: s.queued ? null : { amount: s.bet, gift: null } });
@@ -324,67 +313,58 @@ class Component extends DCLogic {
   }
   placeGift(k) {
     var s = this.state;
-    var inv = s.inv.slice(); var i = inv.indexOf(k);
-    if (i === -1) return;
-    inv.splice(i, 1);
-    if (s.phase === 'wait' && !s.me) { rkTrack({ game: 'crash', bet: GIFTS[k].price, round: true }); this.setState({ inv: inv, giftPick: false, me: { amount: GIFTS[k].price, gift: k, cashed: false } }); }
-    else this.setState({ inv: inv, giftPick: false, queued: { gift: k } });
+    if (s.phase === 'wait' && !this.myBet() && !s.sending) this.sendBet(0, k);
+    else this.setState({ giftPick: false, queued: { gift: k } });
   }
   cashout() {
-    var s = this.state;
-    if (s.phase !== 'fly' || !s.me || s.me.cashed) return;
-    var pay = Math.floor(s.me.amount * s.m * 100) / 100;
-    rkTrack({ game: 'crash', win: pay });
-    this.setState({ balance: r2(s.balance + pay), me: Object.assign({}, s.me, { cashed: true, at: Math.floor(s.m * 100) / 100, pay: pay }) });
+    var s = this.state, me = this.myBet(), net = NET();
+    if (s.phase !== 'fly' || !me || me.at || !net) return;
+    net.send({ t: 'crash.cashout' }); // выигрыш придёт с сервера и сам зачислится на баланс
   }
   setBet(v) { this.setState({ betStr: null, bet: r2(Math.max(0.1, Math.min(v, Math.max(0.1, this.state.balance)))) }); }
 
   renderVals() {
-    var self = this, s = this.state;
-    var el = s.now - s.t0;
-    var remain = Math.max(0, (WAIT - el) / 1000);
+    var self = this, s = this.state, r = s.rs, net = NET();
+    var remain = r && s.phase === 'wait' ? Math.max(0, (r.waitEnd - s.now) / 1000) : 0;
+    var waitSec = r ? r.waitMs / 1000 : 5;
     var timerColor = remain > 3 ? '#2bd46b' : (remain > 1.5 ? '#ffc83d' : '#ff5d73');
-    var timerText = (remain < 10 ? '0' : '') + remain.toFixed(2);
+    var timerText = r ? (remain < 10 ? '0' : '') + remain.toFixed(2) : '--';
     var m = s.phase === 'wait' ? 1 : s.m;
-    var rp = s.phase === 'fly' ? rocketPos(el, m) : (s.phase === 'crash' && s.boom ? s.boom : { x: 70, y: 300, rot: 0 });
+    var flyEl = r && s.phase === 'fly' ? s.now - r.flyStart : 0;
+    var rp = { x: 70, y: 300, rot: 0 };
+    if (s.phase === 'fly') rp = rocketPos(flyEl, m);
+    else if (s.phase === 'crash' && r) rp = rocketPos(flyMs(r.crashAt), r.crashAt);
     var rx = rp.x, ry = rp.y;
 
     var top = Math.max(2, m * 1.3), scale = [];
     for (var i = 4; i >= 0; i--) scale.push({ label: (1 + (top - 1) * i / 4).toFixed(1) + 'x' });
 
-    var players = [];
-    if (s.me) {
-      var me = s.me;
-      players.push({
-        name: 'Ты', initial: 'Я', isMe: true, notMe: false, avBg: '#ffc83d', border: '#ffc83d',
-        betText: fmt(me.amount) + ' TON',
-        multText: me.cashed ? 'x' + me.at.toFixed(2) : (s.phase === 'fly' ? 'в игре' : (me.lost ? 'краш' : 'x1.00')),
-        multColor: me.cashed ? '#2bd46b' : (me.lost ? '#ff5d73' : '#8a90a0'),
-        payText: me.cashed ? '+' + fmt(me.pay) : (me.lost ? '0.00' : fmt(me.amount)),
-        payColor: me.cashed ? '#2bd46b' : (me.lost ? '#ff5d73' : '#ffffff'),
-        hasGift: !!me.gift, giftImg: me.gift ? GIFTS[me.gift].img : '', giftName: me.gift ? GIFTS[me.gift].name : ''
-      });
-    }
-    var sorted = s.bots.slice().sort(function (a, b) { return b.bet - a.bet; });
-    sorted.forEach(function (b) {
-      var lost = s.phase === 'crash' && !b.cashed;
-      players.push({
-        name: b.name, initial: b.name.charAt(0).toUpperCase(), isMe: false, notMe: true, avBg: b.av, border: b.cashed ? 'rgba(43,212,107,0.4)' : '#222838',
-        betText: fmt(b.bet) + ' TON',
-        multText: b.cashed ? 'x' + b.at.toFixed(2) : (lost ? 'x' + s.crashAt.toFixed(2) : 'x1.00'),
-        multColor: b.cashed ? '#2bd46b' : (lost ? '#ff5d73' : '#8a90a0'),
-        payText: b.cashed ? '+' + fmt(b.bet * b.at) : (lost ? '0.00' : fmt(b.bet)),
-        payColor: b.cashed ? '#2bd46b' : (lost ? '#ff5d73' : '#ffffff'),
-        hasGift: !!b.gift, giftImg: b.gift ? GIFTS[b.gift].img : '', giftName: b.gift ? GIFTS[b.gift].name : ''
-      });
+    var me = this.myBet();
+    var bets = r ? r.bets.slice() : [];
+    bets.sort(function (a, b) { var am = net && net.isMe(a.uid) ? 1 : 0, bm = net && net.isMe(b.uid) ? 1 : 0; return bm - am || b.amount - a.amount; });
+    var players = bets.map(function (b) {
+      var mine = !!(net && net.isMe(b.uid)), cashed = !!b.at, lost = s.phase === 'crash' && !cashed;
+      var photo = mine ? ((window.RK && window.RK.user && window.RK.user.photo_url) || b.photo) : b.photo;
+      return {
+        name: mine ? 'Ты' : b.name, initial: (b.name || '?').charAt(0).toUpperCase(),
+        hasPhoto: !!photo, noPhoto: !photo, photo: photo || '',
+        avBg: mine ? '#ffc83d' : avColor(b.uid), border: mine ? '#ffc83d' : (cashed ? 'rgba(43,212,107,0.4)' : '#222838'),
+        betText: fmt(b.amount) + ' TON',
+        multText: cashed ? 'x' + b.at.toFixed(2) : (s.phase === 'fly' ? 'в игре' : (lost ? 'краш' : 'x1.00')),
+        multColor: cashed ? '#2bd46b' : (lost ? '#ff5d73' : '#8a90a0'),
+        payText: cashed ? '+' + fmt(b.pay) : (lost ? '0.00' : fmt(b.amount)),
+        payColor: cashed ? '#2bd46b' : (lost ? '#ff5d73' : '#ffffff'),
+        hasGift: !!b.gift, giftImg: b.gift && GIFTS[b.gift] ? GIFTS[b.gift].img : '', giftName: b.gift && GIFTS[b.gift] ? GIFTS[b.gift].name : ''
+      };
     });
-    var total = 0; s.bots.forEach(function (b) { total += b.bet; }); if (s.me) total += s.me.amount;
+    var total = 0; bets.forEach(function (b) { total += b.amount; });
 
-    var canBetNow = s.phase === 'wait' && !s.me;
-    var showCashout = s.phase === 'fly' && s.me && !s.me.cashed;
+    var canBetNow = s.conn && s.phase === 'wait' && !me && !s.sending;
+    var showCashout = s.phase === 'fly' && me && !me.at;
+    var hist = r ? r.hist : [];
+    var online = net && net.online ? net.online : 0;
 
     return {
-      meAvatar: (window.RK && window.RK.user && window.RK.user.photo_url) || '/_blob/661884b648dd965ea69af44ea8c7ee95',
       balanceText: fmt(s.balance) + ' TON',
       tintOpacity: s.phase === 'crash' ? '1' : '0',
       trailColor: s.phase === 'crash' ? '#ff3b55' : '#3d8bff',
@@ -393,18 +373,19 @@ class Component extends DCLogic {
       speedOp: s.phase === 'fly' ? Math.min(1, Math.max(0, (m - 1.25) / 1.2)).toFixed(2) : '0',
       scale: scale,
       isWait: s.phase === 'wait', isFly: s.phase === 'fly', isCrash: s.phase === 'crash',
-      timerText: timerText, timerColor: timerColor, timerPct: (remain / (WAIT / 1000)) * 100,
+      timerText: timerText, timerColor: timerColor, timerPct: (remain / waitSec) * 100,
+      timerLabel: !s.conn ? 'ПОДКЛЮЧЕНИЕ...' : 'ИГРА ЧЕРЕЗ',
       multText: m.toFixed(2) + 'x',
-      crashText: s.crashAt.toFixed(2) + 'x',
+      crashText: (r && r.crashAt ? r.crashAt : m).toFixed(2) + 'x',
       showRocket: s.phase !== 'crash',
       rocketBox: 'left: ' + (rx - 55).toFixed(1) + 'px; top: ' + (ry - 60).toFixed(1) + 'px; transform: rotate(' + rp.rot.toFixed(1) + 'deg); transition: transform 0.25s linear; opacity: ' + (s.phase === 'wait' ? '0.85' : '1'),
       rocketAnim: 'animation: ' + (s.phase === 'fly' && m > 1.6 ? 'rkShake 0.12s linear infinite' : 'rkBob 0.6s ease-in-out infinite') + '; filter: drop-shadow(0 0 16px rgba(255,160,40,0.55))',
       boomPos: 'left: ' + rx.toFixed(1) + 'px; top: ' + ry.toFixed(1) + 'px',
-      history: s.history.map(function (h) {
+      history: hist.map(function (h) {
         return { label: h.toFixed(2) + 'x', bg: h >= 10 ? 'rgba(255,200,61,0.18)' : (h >= 2 ? 'rgba(42,127,255,0.2)' : 'rgba(255,255,255,0.08)'), color: h >= 10 ? '#ffc83d' : (h >= 2 ? '#7fb2ff' : '#c9cdd6') };
       }),
-      showCashout: showCashout,
-      cashoutText: showCashout ? fmt(s.me.amount * m) + ' TON' : '',
+      showCashout: !!showCashout,
+      cashoutText: showCashout ? fmt(me.amount * m) + ' TON' : '',
       cashout: function () { self.cashout(); },
       showBetPanel: !showCashout,
       betText: fmt(s.bet) + ' TON',
@@ -423,10 +404,10 @@ class Component extends DCLogic {
       betPlus: function () { self.setBet(self.state.bet + 0.5); },
       betHalf: function () { self.setBet(self.state.bet / 2); },
       betDouble: function () { self.setBet(self.state.bet * 2); },
-      betDisabled: s.phase === 'wait' && !!s.me,
-      tonBtnBg: canBetNow || s.phase !== 'wait' ? '#ffc83d' : '#1d2230',
-      tonBtnColor: canBetNow || s.phase !== 'wait' ? '#1a1300' : '#6c7282',
-      tonBtnText: s.phase === 'wait' ? (s.me ? 'Ставка принята' : 'Ставка TON') : (s.queued ? 'Отменить' : 'На след. раунд'),
+      betDisabled: !s.conn || (s.phase === 'wait' && (!!me || s.sending)),
+      tonBtnBg: canBetNow || (s.conn && s.phase !== 'wait') ? '#ffc83d' : '#1d2230',
+      tonBtnColor: canBetNow || (s.conn && s.phase !== 'wait') ? '#1a1300' : '#6c7282',
+      tonBtnText: !s.conn ? 'Нет связи' : (s.phase === 'wait' ? (me ? 'Ставка принята' : (s.sending ? 'Отправляем...' : 'Ставка TON')) : (s.queued ? 'Отменить' : 'На след. раунд')),
       giftBtnColor: s.inv.length ? '#ffffff' : '#5a6070',
       openGift: function () { if (self.state.inv.length) self.setState({ giftPick: !self.state.giftPick }); },
       closeGift: function () { self.setState({ giftPick: false }); },
@@ -435,8 +416,11 @@ class Component extends DCLogic {
       gifts: s.inv.map(function (k) { var g = GIFTS[k]; return { name: g.name, img: g.img, priceText: g.price + ' TON', pick: function () { self.placeGift(k); } }; }),
       hasQueued: !!s.queued,
       queuedText: s.queued ? (s.queued.gift ? GIFTS[s.queued.gift].name : fmt(s.queued.amount) + ' TON') : '',
+      hasErr: !!s.err, errText: s.err,
       players: players,
-      playersInfo: players.length + ' игроков · ' + fmt(total) + ' TON'
+      noPlayers: players.length === 0,
+      emptyText: s.conn ? 'В этом раунде пока никто не поставил — будь первым' : 'Подключаемся к серверу...',
+      playersInfo: (online ? online + ' онлайн · ' : '') + players.length + ' в раунде · ' + fmt(total) + ' TON'
     };
   }
 }

@@ -151,7 +151,7 @@ class Component extends DCLogic {
     var self = this;
     return {
       topUp: function () { if (window.RK) { window.RK.wallet.set(window.RK.wallet.get() + 100); } self.forceUpdate(); },
-      online: this.state.online,
+      online: (window.RK && window.RK.net && window.RK.net.connected && window.RK.net.online) || this.state.online,
       balanceText: (window.RK ? window.RK.wallet.get() : 0).toFixed(2) + ' TON',
       tgName: (window.RK && window.RK.user && window.RK.user.first_name) || 'Гость',
       avatarUrl: (window.RK && window.RK.user && window.RK.user.photo_url) || '/_blob/661884b648dd965ea69af44ea8c7ee95',

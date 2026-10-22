@@ -119,7 +119,73 @@ function track(o) {
   Object.keys(v.days).sort().slice(0, -8).forEach((k) => { delete v.days[k]; });
   store.setJSON('rk_stats', v);
 }
-window.RK = { wallet, inventory, store, stats, track, botName: '', user: (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) || null };
+// ---------- Сеть: общий сервер для «Ракеты» и PvP (реальные игроки) ----------
+// Адрес сервера: window.RK_SERVER (задаётся в index.html), иначе тот же сайт.
+let currentScreen = null; // открытый экран — чтобы выигрыш сразу попал в его баланс
+function addBalance(amount) {
+  const lg = currentScreen && currentScreen.logic;
+  if (lg && lg.state && 'balance' in lg.state) lg.setState({ balance: Math.round((lg.state.balance + amount) * 100) / 100 });
+  else { wallet.set(wallet.get() + amount); if (currentScreen) currentScreen.forceUpdate(); }
+}
+const net = (() => {
+  const handlers = {}; const rooms = new Set();
+  let ws = null, retry = 0, pingIv = null;
+  const api = { connected: false, me: null, online: 0, offset: 0 };
+  function emit(t, m) { (handlers[t] || []).slice().forEach((fn) => { try { fn(m); } catch (e) { console.error(e); } }); }
+  function url() {
+    let base = (window.RK_SERVER || '').trim();
+    if (!base) base = (location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host;
+    return base.replace(/^http/, 'ws').replace(/\/+$/, '') + '/ws';
+  }
+  function guestId() {
+    let id = store.get('rk_guest');
+    if (!id) { id = Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4); store.set('rk_guest', id); }
+    return id;
+  }
+  function raw(m) { if (ws && ws.readyState === 1) { ws.send(JSON.stringify(m)); return true; } return false; }
+  // Зачисления с сервера (выигрыш в PvP, кэшаут в ракете) — один раз, с подтверждением
+  function onCredit(m) {
+    const done = store.getJSON('rk_credits_done', []);
+    if (done.indexOf(m.id) === -1) {
+      addBalance(m.amount);
+      track({ game: m.game, win: m.amount });
+      store.setJSON('rk_credits_done', [m.id].concat(done).slice(0, 100));
+    }
+    raw({ t: 'ack', id: m.id });
+  }
+  function connect() {
+    try { ws = new WebSocket(url()); } catch (e) { return later(); }
+    ws.onopen = () => {
+      retry = 0;
+      raw({ t: 'hello', initData: (tg && tg.initData) || '', guestId: guestId() });
+      rooms.forEach((r) => raw({ t: 'sub', room: r }));
+      clearInterval(pingIv);
+      const ping = () => raw({ t: 'ping', c: Date.now() });
+      ping(); pingIv = setInterval(ping, 10000);
+    };
+    ws.onmessage = (ev) => {
+      let m; try { m = JSON.parse(ev.data); } catch (e) { return; }
+      if (m.t === 'pong') { const now = Date.now(); api.offset = m.now - (m.c + now) / 2; return; }
+      if (m.t === 'welcome') { api.me = m.me; api.online = m.online; api.connected = true; emit('status', api); }
+      if (m.t === 'online') { api.online = m.n; }
+      if (m.t === 'credit') onCredit(m);
+      emit(m.t, m);
+    };
+    ws.onclose = () => { const was = api.connected; api.connected = false; clearInterval(pingIv); if (was) emit('status', api); later(); };
+    ws.onerror = () => {};
+  }
+  function later() { retry = Math.min(retry + 1, 6); setTimeout(connect, 500 * retry); }
+  api.on = (t, fn) => { (handlers[t] = handlers[t] || []).push(fn); return () => { handlers[t] = (handlers[t] || []).filter((f) => f !== fn); }; };
+  api.send = raw;
+  api.sub = (r) => { rooms.add(r); raw({ t: 'sub', room: r }); };
+  api.unsub = (r) => { rooms.delete(r); raw({ t: 'unsub', room: r }); };
+  api.now = () => Date.now() + api.offset; // время сервера
+  api.isMe = (uid) => !!(api.me && api.me.uid === uid);
+  api.start = connect; // подключаемся после загрузки сохранений из облака
+  return api;
+})();
+
+window.RK = { wallet, inventory, store, stats, track, net, botName: '', user: (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) || null };
 
 if (tg) {
   tg.ready();
@@ -186,6 +252,8 @@ window.addEventListener('error', (e) => {
   const el = e.target;
   if (el && el.tagName === 'IMG') {
     if (window.RK && window.RK.user && el.getAttribute('src') === window.RK.user.photo_url) { el.setAttribute('src', 'assets/avatar.jpg'); return; }
+    // Аватар другого игрока не загрузился — показываем заглушку
+    if (el.hasAttribute('data-av')) { el.removeAttribute('data-av'); el.setAttribute('src', 'assets/avatar.jpg'); return; }
     const next = IMG_FALLBACK[el.getAttribute('src')];
     if (next) el.setAttribute('src', next);
   }
@@ -322,8 +390,8 @@ class Screen extends React.Component {
     if (this.logic.state && 'balance' in this.logic.state) this.logic.state.balance = wallet.get();
     this.logic._host = this;
   }
-  componentDidMount() { if (this.logic.componentDidMount) this.logic.componentDidMount(); }
-  componentWillUnmount() { if (this.logic.componentWillUnmount) this.logic.componentWillUnmount(); this.logic._host = null; }
+  componentDidMount() { currentScreen = this; if (this.logic.componentDidMount) this.logic.componentDidMount(); }
+  componentWillUnmount() { if (currentScreen === this) currentScreen = null; if (this.logic.componentWillUnmount) this.logic.componentWillUnmount(); this.logic._host = null; }
   render() {
     const vals = this.logic.renderVals ? this.logic.renderVals() : {};
     return renderNode(this.props.screen.root, [vals], this.props.nav, 'root');
@@ -378,4 +446,4 @@ function fit() {
 }
 window.addEventListener('resize', fit);
 fit();
-loadFromCloud().then(() => createRoot(document.getElementById('app')).render(React.createElement(App)));
+loadFromCloud().then(() => { net.start(); createRoot(document.getElementById('app')).render(React.createElement(App)); });
