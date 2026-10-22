@@ -164,4 +164,18 @@ function rarityColor(p) {
   if (p < 500) return '#ff5d73';
   return '#ffc83d';
 }
-module.exports = { RAW: RAW, IMG: IMG, GIFT_IMG: GIFT_IMG, ALIAS: ALIAS, canon: canon, priceOf: priceOf, rarityColor: rarityColor };
+// Лестница подарков на сегодня: от дешёвых к дорогим
+var _ladder = { day: -1, list: [] };
+function ladder(t) {
+  var d = mskDay(t);
+  if (_ladder.day !== d) {
+    _ladder = { day: d, list: RAW.map(function (r) { return { name: r[0], price: dayPrice(r[0], BASE[r[0]], d) }; })
+      .sort(function (a, b) { return a.price - b.price || (a.name < b.name ? -1 : 1); }) };
+  }
+  return _ladder.list;
+}
+// Самый дорогой подарок, который можно купить на value TON (или null)
+function bestFor(value, t) { var L = ladder(t), best = null; for (var i = 0; i < L.length && L[i].price <= value + 1e-9; i++) best = L[i]; return best; }
+// Следующий подарок дороже, чем price (или null, если дороже нет)
+function nextAbove(price, t) { var L = ladder(t); for (var i = 0; i < L.length; i++) if (L[i].price > price + 1e-9) return L[i]; return null; }
+module.exports = { RAW: RAW, IMG: IMG, GIFT_IMG: GIFT_IMG, ALIAS: ALIAS, canon: canon, priceOf: priceOf, rarityColor: rarityColor, ladder: ladder, bestFor: bestFor, nextAbove: nextAbove };

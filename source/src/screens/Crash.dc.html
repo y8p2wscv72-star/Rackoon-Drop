@@ -198,6 +198,31 @@ a{color:#ffc83d}a:hover{color:#ffe08a}
 </div>
 </sc-if>
 
+<sc-if value="{{showLadder}}" hint-placeholder-val="{{ false }}">
+<div style="background: #151821; border: 1px solid #2c3244; border-radius: 18px; padding: 12px; display: flex; flex-direction: column; gap: 10px">
+<div style="display: flex; align-items: center; gap: 8px">
+<div style="flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; background: #0b0d12; border: 1px solid {{ladCurBorder}}; border-radius: 14px; padding: 8px">
+<img src="{{ladCurImg}}" alt="" style="width: 40px; height: 40px; flex-shrink: 0">
+<span style="display: flex; flex-direction: column; gap: 1px; min-width: 0"><span style="font-size: 10px; font-weight: 700; color: #2bd46b; letter-spacing: 1px">СЕЙЧАС</span><span style="font-size: 12px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{ladCurName}}</span><span style="font-size: 11px; font-weight: 700; color: #ffc83d">{{ladCurPrice}}</span></span>
+</div>
+<svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true" style="flex-shrink: 0"><path d="M4 9 H14 M10 5 L14 9 L10 13" fill="none" stroke="#8a90a0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<div style="flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; background: #0b0d12; border: 1px dashed #2c3244; border-radius: 14px; padding: 8px; opacity: 0.85">
+<sc-if value="{{ladHasNext}}" hint-placeholder-val="{{ true }}"><img src="{{ladNextImg}}" alt="" style="width: 40px; height: 40px; flex-shrink: 0"></sc-if>
+<span style="display: flex; flex-direction: column; gap: 1px; min-width: 0"><span style="font-size: 10px; font-weight: 700; color: #8a90a0; letter-spacing: 1px">{{ladNextLabel}}</span><span style="font-size: 12px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{ladNextName}}</span><span style="font-size: 11px; font-weight: 700; color: #ffc83d">{{ladNextPrice}}</span></span>
+</div>
+</div>
+<div style="height: 6px; border-radius: 3px; background: #0b0d12; overflow: hidden"><div style="height: 6px; border-radius: 3px; background: linear-gradient(to right, #2bd46b, #ffc83d); width: {{ladPct}}%"></div></div>
+<div style="font-size: 11px; color: #8a90a0; text-align: center">Заберёшь сейчас: {{ladCurName}} + {{ladRem}} TON на баланс</div>
+</div>
+</sc-if>
+
+<sc-if value="{{showGiftWin}}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; align-items: center; gap: 12px; background: rgba(43,212,107,0.1); border: 1px solid rgba(43,212,107,0.45); border-radius: 18px; padding: 12px">
+<img src="{{winGiftImg}}" alt="" style="width: 48px; height: 48px; flex-shrink: 0">
+<span style="display: flex; flex-direction: column; gap: 2px; min-width: 0"><span style="font-size: 12px; color: #2bd46b; font-weight: 700">Забрал на x{{winAt}}</span><span style="font-size: 15px; font-weight: 900; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{winGiftName}}</span><span style="font-size: 12px; color: #ffc83d; font-weight: 700">+ {{winTon}} TON на баланс · подарок в инвентаре</span></span>
+</div>
+</sc-if>
+
 <sc-if value="{{showCashout}}" hint-placeholder-val="{{ false }}">
 <button type="button" onClick="{{cashout}}" style="height: 64px; border: 0; border-radius: 18px; font-family: Rubik, system-ui, sans-serif; font-size: 20px; font-weight: 900; font-style: italic; cursor: pointer; background: #2bd46b; color: #06210f; box-shadow: 0 6px 24px rgba(43,212,107,0.4)">ЗАБРАТЬ {{cashoutText}}</button>
 </sc-if>
@@ -314,6 +339,16 @@ var TREND = (function () {
   return out;
 })();
 function fmt(x) { return (Math.floor(x * 100) / 100).toFixed(2); }
+// Ставка подарком на множителе m: какой подарок сейчас «в руках», остаток TON и следующий подарок
+function ladderOf(b, m) {
+  var val = Math.floor(b.amount * m * 100) / 100;
+  var best = window.RK && window.RK.giftBestFor ? window.RK.giftBestFor(val) : null;
+  var cur = best && best.price > b.amount + 1e-9 ? best : (G(b.gift) ? Object.assign({}, G(b.gift), { price: b.amount }) : null);
+  if (!cur) return null;
+  var next = window.RK && window.RK.giftNextAbove ? window.RK.giftNextAbove(cur.price) : null;
+  return { cur: cur, rem: Math.max(0, Math.floor((val - cur.price) * 100) / 100), next: next, val: val,
+    pct: next ? Math.max(0, Math.min(100, (val - cur.price) / (next.price - cur.price) * 100)) : 100, nextMult: next ? next.price / b.amount : 0 };
+}
 function flyMs(c) { return Math.log(Math.max(1, c)) / GROWTH * 1000; }
 
 // Раунды ведёт сервер: все игроки видят одну и ту же ракету и ставки друг друга
@@ -437,6 +472,9 @@ class Component extends DCLogic {
     bets.sort(function (a, b) { var am = net && net.isMe(a.uid) ? 1 : 0, bm = net && net.isMe(b.uid) ? 1 : 0; return bm - am || b.amount - a.amount; });
     var players = bets.map(function (b) {
       var mine = !!(net && net.isMe(b.uid)), cashed = !!b.at, lost = s.phase === 'crash' && !cashed;
+      // подарок в ставке: в полёте показываем, до какого он уже дорос; после вывода — что забрал
+      var gShow = null;
+      if (b.gift) { if (cashed && b.payGift) gShow = G(b.payGift); else if (s.phase === 'fly') { var lb = ladderOf(b, m); gShow = lb ? lb.cur : G(b.gift); } else gShow = G(b.gift); }
       var photo = mine ? ((window.RK && window.RK.user && window.RK.user.photo_url) || b.photo) : b.photo;
       return {
         name: mine ? 'Ты' : b.name, initial: (b.name || '?').charAt(0).toUpperCase(),
@@ -447,13 +485,14 @@ class Component extends DCLogic {
         multColor: cashed ? '#2bd46b' : (lost ? '#ff5d73' : '#8a90a0'),
         payText: cashed ? '+' + fmt(b.pay) : (lost ? '0.00' : fmt(b.amount)),
         payColor: cashed ? '#2bd46b' : (lost ? '#ff5d73' : '#ffffff'),
-        hasGift: !!(b.gift && G(b.gift)), giftImg: b.gift && G(b.gift) ? G(b.gift).img : '', giftName: b.gift && G(b.gift) ? G(b.gift).name : ''
+        hasGift: !!(b.gift && gShow), giftImg: gShow ? gShow.img : '', giftName: gShow ? gShow.name : ''
       };
     });
     var total = 0; bets.forEach(function (b) { total += b.amount; });
 
     var canBetNow = s.conn && s.phase === 'wait' && !me && !s.sending;
     var showCashout = s.phase === 'fly' && me && !me.at;
+    var lad = showCashout && me.gift ? ladderOf(me, m) : null;
     var hist = r ? r.hist : [];
     var online = net && net.online ? net.online : 0;
 
@@ -480,7 +519,16 @@ class Component extends DCLogic {
         return { label: h.toFixed(2) + 'x', bg: h >= 10 ? 'rgba(255,200,61,0.18)' : (h >= 2 ? 'rgba(42,127,255,0.2)' : 'rgba(255,255,255,0.08)'), color: h >= 10 ? '#ffc83d' : (h >= 2 ? '#7fb2ff' : '#c9cdd6') };
       }),
       showCashout: !!showCashout,
-      cashoutText: showCashout ? fmt(me.amount * m) + ' TON' : '',
+      cashoutText: showCashout ? (lad ? lad.cur.name + (lad.rem > 0 ? ' + ' + fmt(lad.rem) + ' TON' : '') : fmt(me.amount * m) + ' TON') : '',
+      showLadder: !!(showCashout && lad),
+      ladCurImg: lad ? lad.cur.img : '', ladCurName: lad ? lad.cur.name : '', ladCurPrice: lad ? fmt(lad.cur.price) + ' TON' : '',
+      ladCurBorder: lad && lad.cur.name !== (G(me.gift) || {}).name ? '#2bd46b' : '#2c3244',
+      ladHasNext: !!(lad && lad.next), ladNextImg: lad && lad.next ? lad.next.img : '',
+      ladNextLabel: lad && lad.next ? 'ДАЛЬШЕ НА x' + lad.nextMult.toFixed(2) : 'МАКСИМУМ', ladNextName: lad && lad.next ? lad.next.name : 'дороже подарков нет',
+      ladNextPrice: lad && lad.next ? fmt(lad.next.price) + ' TON' : '', ladPct: lad ? lad.pct.toFixed(1) : '0', ladRem: lad ? fmt(lad.rem) : '0',
+      showGiftWin: !!(me && me.at && me.payGift),
+      winGiftImg: me && me.payGift && G(me.payGift) ? G(me.payGift).img : '', winGiftName: me && me.payGift ? me.payGift : '',
+      winAt: me && me.at ? me.at.toFixed(2) : '', winTon: me && me.payGift ? fmt(me.payTon || 0) : '',
       cashout: function () { self.cashout(); },
       showBetPanel: !showCashout,
       betText: fmt(s.bet) + ' TON',
