@@ -96,6 +96,22 @@ body{margin:0;background:#0d0f14}
 <span style="font-size: 11px; color: #8a90a0">{{uPending}}</span>
 </div>
 </div>
+<sc-if value="{{uCanBan}}" hint-placeholder-val="{{ false }}">
+<sc-if value="{{uBanned}}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; align-items: center; gap: 10px; background: rgba(255,93,115,0.1); border: 1px solid rgba(255,93,115,0.45); border-radius: 14px; padding: 10px 12px">
+<span style="flex-grow: 1; min-width: 0; font-size: 13px; font-weight: 600; color: #ff8a9a">⛔ {{uBanText}}</span>
+<button type="button" onClick="{{unban}}" disabled="{{btnDisabled}}" style="height: 40px; border-radius: 12px; border: 0; background: #2bd46b; color: #06210f; font-size: 13px; padding: 0 12px; flex-shrink: 0; font-family: Rubik, system-ui, sans-serif; font-weight: 900; cursor: pointer">Разбанить</button>
+</div>
+</sc-if>
+<sc-if value="{{uNotBanned}}" hint-placeholder-val="{{ true }}">
+<div style="display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px">
+<label style="height: 44px; border-radius: 12px; background: #0d0f14; border: 1px solid #262b3a; display: flex; align-items: center; padding: 0 12px; cursor: text">
+<input type="text" enterkeyhint="done" autocomplete="off" aria-label="Причина бана" placeholder="Причина (необязательно)" value="{{banReason}}" onInput="{{onBanReason}}" style="flex-grow: 1; min-width: 0; height: 100%; border: 0; outline: none; background: transparent; font-family: Rubik, system-ui, sans-serif; font-size: 14px; color: #ffffff">
+</label>
+<button type="button" onClick="{{ban}}" disabled="{{btnDisabled}}" style="height: 44px; border-radius: 12px; border: 0; background: {{banBg}}; color: #ffffff; font-size: 13px; padding: 0 14px; font-family: Rubik, system-ui, sans-serif; font-weight: 900; cursor: pointer">{{banText}}</button>
+</div>
+</sc-if>
+</sc-if>
 </sc-if>
 
 <span style="font-size: 12px; font-weight: 700; letter-spacing: 2px; color: #6c7282; margin-top: 4px">СУММА</span>
@@ -115,6 +131,35 @@ body{margin:0;background:#0d0f14}
 <sc-if value="{{hasMsg}}" hint-placeholder-val="{{ false }}">
 <div role="status" style="border-radius: 14px; padding: 12px; font-size: 13px; font-weight: 500; background: {{msgBg}}; border: 1px solid {{msgBorder}}; color: #ffffff; animation: rkAdmPop 0.2s ease-out">{{msg}}</div>
 </sc-if>
+</div>
+
+<div style="background: #151821; border: 1px solid #222838; border-radius: 20px; padding: 14px; display: flex; flex-direction: column; gap: 10px; margin-top: 6px">
+<div style="display: flex; justify-content: space-between; align-items: center">
+<span style="font-size: 12px; font-weight: 700; letter-spacing: 2px; color: #6c7282">РАССЫЛКА ВСЕМ ИГРОКАМ</span>
+<span style="font-size: 12px; color: #8a90a0">{{bcCount}}</span>
+</div>
+<textarea aria-label="Текст рассылки" placeholder="Например: 🔥 Новый кейс уже в игре! Заходи и забирай бесплатный кейс дня" value="{{bcText}}" onInput="{{onBcText}}" rows="4" maxlength="3500" style="width: 100%; box-sizing: border-box; min-height: 96px; resize: vertical; border-radius: 14px; background: #0d0f14; border: 1px solid #262b3a; padding: 12px; outline: none; font-family: Rubik, system-ui, sans-serif; font-size: 14px; line-height: 1.4; color: #ffffff"></textarea>
+<button type="button" onClick="{{toggleBcBtn}}" aria-pressed="{{bcBtnPressed}}" style="display: flex; align-items: center; gap: 10px; height: 40px; border: 0; background: transparent; padding: 0; color: #c9cdd6; font-family: Rubik, system-ui, sans-serif; font-size: 14px; font-weight: 500; cursor: pointer; text-align: left">
+<span style="width: 22px; height: 22px; border-radius: 7px; border: 2px solid {{bcBtnBorder}}; background: {{bcBtnBg}}; color: #1a1300; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 900; flex-shrink: 0">{{bcBtnMark}}</span>Добавить кнопку «🎮 Играть»
+</button>
+<sc-if value="{{bcIdle}}" hint-placeholder-val="{{ true }}">
+<button type="button" onClick="{{bcSend}}" disabled="{{bcDisabled}}" style="height: 52px; border-radius: 14px; border: 0; background: {{bcSendBg}}; color: {{bcSendColor}}; font-size: 15px; font-family: Rubik, system-ui, sans-serif; font-weight: 900; cursor: pointer">{{bcSendText}}</button>
+</sc-if>
+<sc-if value="{{bcRunning}}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; flex-direction: column; gap: 8px">
+<div style="height: 8px; border-radius: 4px; background: #0d0f14; overflow: hidden"><div style="height: 100%; width: {{bcPct}}; background: #ffc83d; transition: width 0.4s"></div></div>
+<div style="display: flex; justify-content: space-between; align-items: center; gap: 8px">
+<span role="status" style="font-size: 13px; color: #c9cdd6">{{bcProgress}}</span>
+<button type="button" onClick="{{bcStop}}" style="height: 36px; border-radius: 10px; border: 1px solid #ff5d73; background: transparent; color: #ff5d73; font-size: 12px; padding: 0 12px; font-family: Rubik, system-ui, sans-serif; font-weight: 900; cursor: pointer">Остановить</button>
+</div>
+</div>
+</sc-if>
+<sc-for list="{{bcHist}}" as="bh" hint-placeholder-count="2">
+<div style="display: flex; flex-direction: column; gap: 2px; background: #0d0f14; border-radius: 12px; padding: 8px 10px">
+<span style="font-size: 13px; color: #ffffff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{bh.text}}</span>
+<span style="font-size: 11px; color: #8a90a0">{{bh.info}}</span>
+</div>
+</sc-for>
 </div>
 
 <div style="display: flex; justify-content: space-between; align-items: baseline; margin-top: 6px">
@@ -187,15 +232,16 @@ function hm(t) { var d = new Date(t + 3 * 3600 * 1000); return ('0' + d.getUTCDa
 class Component extends DCLogic {
   constructor(props) {
     super(props);
-    this.state = { username: '', amount: '', user: null, msg: null, log: [], busy: false, tick: 0, wds: [], confirmRej: null, copied: null };
+    this.state = { username: '', amount: '', user: null, msg: null, log: [], busy: false, tick: 0, wds: [], confirmRej: null, copied: null, banReason: '', confirmBan: false, bcText: '', bcBtn: true, bcConfirm: false, bc: null, bcHist: [] };
     this.offs = [];
   }
   componentDidMount() {
     var self = this, net = NET();
     if (net) {
-      this.offs.push(net.on('admin.user', function (m) { self.setState({ user: m.user, busy: false, msg: null }); }));
+      this.offs.push(net.on('admin.user', function (m) { self.setState({ user: m.user, busy: false, msg: null, confirmBan: false, banReason: '' }); }));
       this.offs.push(net.on('admin.done', function (m) {
         var a = m.amount;
+        if (m.action) { self.setState({ user: m.user, log: m.log, busy: false, banReason: '', confirmBan: false, msg: { ok: true, text: (m.action === 'ban' ? '⛔ Заблокирован' : '✅ Разблокирован') + ' @' + m.user.username } }); return; }
         self.setState({ user: m.user, log: m.log, busy: false, amount: '',
           msg: { ok: true, text: (a > 0 ? 'Выдано +' + a : 'Списано ' + a) + ' TON игроку @' + m.user.username + (m.user.online ? '' : ' (зачислится при входе)') } });
         // через пару секунд обновляем карточку: игра игрока успеет зачислить и сообщить новый баланс
@@ -211,8 +257,9 @@ class Component extends DCLogic {
         list.sort(function (a, b) { return (a.status === 'pending' ? 0 : 1) - (b.status === 'pending' ? 0 : 1) || b.at - a.at; });
         self.setState({ wds: list, busy: false });
       }));
-      this.offs.push(net.on('status', function () { self.forceUpdate(); if (net.connected) net.send({ t: 'admin.log' }); }));
-      if (net.connected) net.send({ t: 'admin.log' });
+      this.offs.push(net.on('admin.bc', function (m) { var st = { bc: m.bc }; if (m.history) st.bcHist = m.history; self.setState(st); }));
+      this.offs.push(net.on('status', function () { self.forceUpdate(); if (net.connected) { net.send({ t: 'admin.log' }); net.send({ t: 'admin.bcStatus' }); } }));
+      if (net.connected) { net.send({ t: 'admin.log' }); net.send({ t: 'admin.bcStatus' }); }
     }
     this.iv = setInterval(function () { self.setState({ tick: self.state.tick + 1 }); }, 1000);
   }
@@ -242,7 +289,7 @@ class Component extends DCLogic {
       noAccess: !admin, hasAccess: admin,
       noAccessText: conn ? 'Нет доступа. Админка доступна только администратору.' : 'Подключаемся к серверу...',
       username: s.username,
-      onUsername: function (e) { self.setState({ username: cleanUser(e && e.target && e.target.value), user: null }); },
+      onUsername: function (e) { self.setState({ username: cleanUser(e && e.target && e.target.value), user: null, confirmBan: false }); },
       onUserKey: function (e) { if (e && e.key === 'Enter') { if (e.target && e.target.blur) e.target.blur(); self.find(); } },
       find: function () { self.find(); },
       hasUser: !!u,
@@ -252,6 +299,34 @@ class Component extends DCLogic {
       uStatusColor: u && u.online ? '#2bd46b' : '#8a90a0',
       uBalance: u ? (u.balance == null ? '— TON' : u.balance.toFixed(2) + ' TON') : '',
       uPending: u ? 'пополнил ' + (u.deposited || 0) + ' · поставил ' + (Math.round((u.wagered || 0) * 100) / 100) + ' · подарков ' + (u.items || 0) : '',
+      uCanBan: !!u && !u.admin, uBanned: !!(u && u.banned), uNotBanned: !!u && !u.banned,
+      uBanText: u && u.banned ? 'Заблокирован ' + hm(u.banned.at) + (u.banned.by ? ' (' + u.banned.by + ')' : '') + (u.banned.reason ? ' · ' + u.banned.reason : '') : '',
+      banReason: s.banReason, onBanReason: function (e) { self.setState({ banReason: String((e && e.target && e.target.value) || '').slice(0, 120) }); },
+      banText: s.confirmBan ? 'Точно?' : 'Забанить', banBg: s.confirmBan ? '#c0283f' : '#ff5d73',
+      ban: function () {
+        if (!self.state.confirmBan) return self.setState({ confirmBan: true });
+        var n = NET(); if (!u || !n || !n.connected) return;
+        self.setState({ busy: true, msg: null, confirmBan: false }); n.send({ t: 'admin.ban', username: u.username, reason: self.state.banReason });
+      },
+      unban: function () { var n = NET(); if (!u || !n || !n.connected) return; self.setState({ busy: true, msg: null }); n.send({ t: 'admin.unban', username: u.username }); },
+      bcText: s.bcText, onBcText: function (e) { self.setState({ bcText: String((e && e.target && e.target.value) || '').slice(0, 3500), bcConfirm: false }); },
+      bcCount: s.bcText ? s.bcText.length + ' / 3500' : '',
+      toggleBcBtn: function () { self.setState({ bcBtn: !self.state.bcBtn }); },
+      bcBtnPressed: s.bcBtn ? 'true' : 'false', bcBtnMark: s.bcBtn ? '✓' : '', bcBtnBg: s.bcBtn ? '#ffc83d' : 'transparent', bcBtnBorder: s.bcBtn ? '#ffc83d' : '#4a5064',
+      bcIdle: !(s.bc && !s.bc.done), bcRunning: !!(s.bc && !s.bc.done),
+      bcDisabled: !(conn && admin && s.bcText.trim().length >= 2),
+      bcSendBg: conn && admin && s.bcText.trim().length >= 2 ? (s.bcConfirm ? '#c0283f' : '#ffc83d') : '#2a2617', bcSendColor: s.bcConfirm ? '#ffffff' : (conn && admin && s.bcText.trim().length >= 2 ? '#1a1300' : '#6b6447'),
+      bcSendText: s.bcConfirm ? 'Точно отправить всем игрокам?' : '📣 Отправить всем',
+      bcSend: function () {
+        if (!self.state.bcConfirm) return self.setState({ bcConfirm: true });
+        var n = NET(); if (!n || !n.connected) return;
+        n.send({ t: 'admin.bcSend', text: self.state.bcText, button: self.state.bcBtn });
+        self.setState({ bcConfirm: false, bcText: '' });
+      },
+      bcStop: function () { var n = NET(); if (n && n.connected) n.send({ t: 'admin.bcStop' }); },
+      bcPct: s.bc && s.bc.total ? Math.round((s.bc.sent + s.bc.failed + s.bc.blocked) / s.bc.total * 100) + '%' : '0%',
+      bcProgress: s.bc ? 'Отправлено ' + s.bc.sent + ' из ' + s.bc.total + (s.bc.blocked ? ' · не запускали бота: ' + s.bc.blocked : '') : '',
+      bcHist: (s.bcHist || []).map(function (h) { return { text: h.text, info: hm(h.at) + ' · доставлено ' + h.sent + ' из ' + h.total + (h.blocked ? ' · не запускали бота ' + h.blocked : '') + (h.failed ? ' · ошибок ' + h.failed : '') + (h.stopped ? ' · остановлена' : '') }; }),
       amount: s.amount,
       onAmount: function (e) { self.setState({ amount: cleanNum(e && e.target && e.target.value) }); },
       chips: [1, 5, 10, 100].map(function (v) { return { label: v + ' TON', pick: function () { self.setState({ amount: String(v) }); } }; }),
@@ -261,7 +336,7 @@ class Component extends DCLogic {
       takeBg: ready ? '#ff5d73' : '#2a1d22', takeColor: ready ? '#2a0610' : '#6b4f56',
       hasMsg: !!s.msg, msg: s.msg ? s.msg.text : '',
       msgBg: s.msg && s.msg.ok ? 'rgba(43,212,107,0.12)' : 'rgba(255,93,115,0.12)', msgBorder: s.msg && s.msg.ok ? 'rgba(43,212,107,0.45)' : 'rgba(255,93,115,0.45)',
-      log: (s.log || []).map(function (l) { return { to: l.to, time: hm(l.at), amount: (l.amount > 0 ? '+' : '') + l.amount + ' TON', color: l.amount > 0 ? '#2bd46b' : '#ff5d73' }; }),
+      log: (s.log || []).map(function (l) { return { to: l.to, time: hm(l.at), amount: l.action === 'ban' ? '⛔ бан' : l.action === 'unban' ? '✅ разбан' : (l.amount > 0 ? '+' : '') + l.amount + ' TON', color: l.action === 'unban' || (!l.action && l.amount > 0) ? '#2bd46b' : '#ff5d73' }; }),
       refresh: function () { var n = NET(); if (n && n.connected) n.send({ t: 'admin.log' }); },
       deps: (s.deps || []).map(function (d) {
         var u = d.username ? '@' + d.username : (d.uid && d.uid.indexOf('tg') === 0 ? 'id ' + d.uid.slice(2) : (d.comment ? '«' + d.comment + '»' : 'без комментария'));

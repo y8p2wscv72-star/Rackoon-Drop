@@ -103,6 +103,18 @@ function showToast(text, ok) {
   toastEl.style.opacity = '1';
   clearTimeout(toastT); toastT = setTimeout(() => { toastEl.style.opacity = '0'; }, 2800);
 }
+// ---------- Экран блокировки (бан) ----------
+function showBanned(reason) {
+  if (document.getElementById('rk-banned')) return;
+  const el = document.createElement('div');
+  el.id = 'rk-banned'; el.setAttribute('role', 'alertdialog'); el.setAttribute('aria-label', 'Аккаунт заблокирован');
+  el.style.cssText = 'position:fixed;inset:0;z-index:100;background:#0b0d12;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:24px;box-sizing:border-box;text-align:center;font-family:Rubik,system-ui,sans-serif;color:#fff';
+  const icon = document.createElement('div'); icon.textContent = '⛔'; icon.style.cssText = 'font-size:56px';
+  const h = document.createElement('div'); h.textContent = 'Аккаунт заблокирован'; h.style.cssText = 'font-size:22px;font-weight:900';
+  const p = document.createElement('div'); p.textContent = reason ? 'Причина: ' + reason : 'Если это ошибка — напиши администрации.'; p.style.cssText = 'font-size:14px;color:#a3a8b5;max-width:300px;line-height:1.45';
+  el.appendChild(icon); el.appendChild(h); el.appendChild(p);
+  document.body.appendChild(el);
+}
 // ---------- Сеть: сервер игры ----------
 // Адрес сервера: window.RK_SERVER (задаётся в index.html), иначе тот же сайт.
 let currentScreen = null; // открытый экран — чтобы новый баланс сразу попал в него
@@ -167,6 +179,7 @@ const net = (() => {
       if (m.t === 'wd.ok' || m.t === 'wd.update') { api.wd = [m.w].concat(api.wd.filter((w) => w.id !== m.w.id)).sort((x, y) => y.at - x.at); }
       if (m.t === 'wd.err') showToast(m.msg, false);
       if (m.t === 'auth.expired') api.expired = true;
+      if (m.t === 'banned') { api.expired = true; api.banned = true; showBanned(m.reason); }
       emit(m.t, m);
     };
     ws.onclose = () => {
