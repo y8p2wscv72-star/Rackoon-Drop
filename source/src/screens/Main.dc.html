@@ -349,7 +349,7 @@ class Component extends DCLogic {
       depCryptoAmount: s.depCryptoAmount, depOnCryptoAmount: function (e) { self.setState({ depCryptoAmount: cleanNum(e && e.target && e.target.value) }); },
       depGiftImgs: DROPS.slice(0, 4).map(function (d) { return { img: d.img, color: colorOf(d.price) }; }),
       depGiftSteps: [
-        { n: 1, text: 'Открой профиль бота RACKOON в Telegram' },
+        { n: 1, text: 'Открой бота @RackoonDropBot в Telegram' },
         { n: 2, text: 'Отправь ему любой NFT-подарок' },
         { n: 3, text: 'Подарок появится в твоём инвентаре' }
       ],
