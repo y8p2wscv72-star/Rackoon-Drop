@@ -190,7 +190,7 @@ const net = (() => {
       if (m.t === 'welcome') {
         // Сброс балансов: сервер сообщает метку, игра обнуляет баланс один раз на каждую новую метку
         if (m.balanceReset && store.get('rk_reset') !== m.balanceReset) { setBalance(0); store.set('rk_reset', m.balanceReset); }
-        api.me = m.me; api.online = m.online; api.deposit = m.deposit || null; api.connected = true; emit('status', api);
+        api.me = m.me; api.online = m.online; api.deposit = m.deposit || null; api.cryptobot = m.cryptobot || null; api.connected = true; emit('status', api);
         raw({ t: 'bal', v: wallet.get() });
       }
       if (m.t === 'online') { api.online = m.n; }
