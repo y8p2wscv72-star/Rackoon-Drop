@@ -30,7 +30,49 @@ body{margin:0;background:#0d0f14}
 </sc-if>
 
 <sc-if value="{{hasAccess}}" hint-placeholder-val="{{ true }}">
-<div style="background: #151821; border: 1px solid #222838; border-radius: 20px; padding: 14px; display: flex; flex-direction: column; gap: 12px">
+<div style="display: flex; justify-content: space-between; align-items: center">
+<span style="display: flex; align-items: center; gap: 8px; font-size: 17px; font-weight: 700">Заявки на вывод<sc-if value="{{hasPending}}" hint-placeholder-val="{{ false }}"><span style="min-width: 22px; height: 22px; border-radius: 11px; background: #ff5d73; color: #ffffff; font-size: 12px; font-weight: 900; display: inline-flex; align-items: center; justify-content: center; padding: 0 6px; box-sizing: border-box">{{pendingCount}}</span></sc-if></span>
+<button type="button" onClick="{{refresh}}" style="height: 32px; border-radius: 10px; border: 1px solid #262b3a; background: #1b1e27; color: #a3a8b5; font-family: Rubik, system-ui, sans-serif; font-size: 12px; font-weight: 700; padding: 0 10px; cursor: pointer">Обновить</button>
+</div>
+<div style="display: flex; flex-direction: column; gap: 8px">
+<sc-if value="{{noWds}}" hint-placeholder-val="{{ false }}">
+<div style="border-radius: 14px; border: 1px dashed #2c3244; padding: 16px; text-align: center; font-size: 13px; color: #8a90a0">Заявок пока нет</div>
+</sc-if>
+<sc-for list="{{wds}}" as="w" hint-placeholder-count="1">
+<div style="background: #151821; border: 1px solid {{w.border}}; border-radius: 16px; padding: 12px; display: flex; flex-direction: column; gap: 8px">
+<div style="display: flex; align-items: center; gap: 8px">
+<span style="flex-grow: 1; min-width: 0; font-size: 15px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{w.who}}</span>
+<span style="font-size: 11px; color: #8a90a0">{{w.time}}</span>
+<span style="font-size: 11px; font-weight: 700; padding: 3px 7px; border-radius: 7px; background: {{w.stBg}}; color: {{w.stColor}}">{{w.status}}</span>
+</div>
+<sc-if value="{{w.isTon}}" hint-placeholder-val="{{ true }}">
+<div style="font-size: 22px; font-weight: 900; color: #ffc83d">{{w.amount}} TON</div>
+<button type="button" onClick="{{w.copy}}" style="text-align: left; border-radius: 10px; border: 1px solid #262b3a; background: #0d0f14; color: #c9cdd6; font-family: ui-monospace, Menlo, monospace; font-size: 11px; padding: 8px 10px; word-break: break-all; cursor: pointer">{{w.address}} <span style="color: #5fb8ff; font-family: Rubik, system-ui, sans-serif; font-weight: 700">· {{w.copyText}}</span></button>
+</sc-if>
+<sc-if value="{{w.isNft}}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; flex-wrap: wrap; gap: 6px">
+<sc-for list="{{w.gifts}}" as="g" hint-placeholder-count="2">
+<span style="display: flex; align-items: center; gap: 4px; background: #0d0f14; border: 1px solid #262b3a; border-radius: 10px; padding: 4px 8px 4px 4px; font-size: 12px; font-weight: 700"><img src="{{g.img}}" alt="" style="width: 26px; height: 26px">{{g.name}}</span>
+</sc-for>
+</div>
+<div style="font-size: 12px; color: #a3a8b5">Передай подарки в Telegram игроку <b style="color: #ffffff">{{w.who}}</b>, затем нажми «Выплачено»</div>
+</sc-if>
+<div style="font-size: 12px; color: #8a90a0; line-height: 1.45">Пополнил (проверено): <b style="color: #ffffff">{{w.dep}}</b> · Уже выведено: <b style="color: #ffffff">{{w.out}}</b> · Баланс в игре: <b style="color: #ffffff">{{w.bal}}</b></div>
+<sc-if value="{{w.warn}}" hint-placeholder-val="{{ false }}">
+<div style="font-size: 12px; font-weight: 700; color: #ff8a5c; background: rgba(255,138,92,0.1); border-radius: 10px; padding: 8px 10px">⚠️ {{w.warnText}}</div>
+</sc-if>
+<sc-if value="{{w.isPending}}" hint-placeholder-val="{{ true }}">
+<div style="display: grid; grid-template-columns: {{w.cols}}; gap: 6px">
+<sc-if value="{{w.isTon}}" hint-placeholder-val="{{ true }}"><button type="button" onClick="{{w.pay}}" style="height: 44px; border-radius: 12px; border: 0; background: #2a7fff; color: #ffffff; font-family: Rubik, system-ui, sans-serif; font-size: 13px; font-weight: 900; cursor: pointer">Оплатить в Tonkeeper</button></sc-if>
+<button type="button" onClick="{{w.paid}}" style="height: 44px; border-radius: 12px; border: 0; background: #2bd46b; color: #06210f; font-family: Rubik, system-ui, sans-serif; font-size: 13px; font-weight: 900; cursor: pointer">Выплачено</button>
+<button type="button" onClick="{{w.reject}}" style="height: 44px; border-radius: 12px; border: 0; background: {{w.rejBg}}; color: #ffffff; font-family: Rubik, system-ui, sans-serif; font-size: 13px; font-weight: 900; cursor: pointer">{{w.rejText}}</button>
+</div>
+</sc-if>
+</div>
+</sc-for>
+</div>
+
+<div style="background: #151821; border: 1px solid #222838; border-radius: 20px; padding: 14px; display: flex; flex-direction: column; gap: 12px; margin-top: 6px">
 <span style="font-size: 12px; font-weight: 700; letter-spacing: 2px; color: #6c7282">ИГРОК</span>
 <div style="display: grid; grid-template-columns: minmax(0, 1fr) 96px; gap: 8px">
 <label style="height: 52px; border-radius: 14px; background: #0d0f14; border: 1px solid #262b3a; display: flex; align-items: center; padding: 0 12px; gap: 4px; cursor: text">
@@ -129,12 +171,21 @@ function ago(t) {
   if (s < 86400) return Math.floor(s / 3600) + ' ч назад';
   return Math.floor(s / 86400) + ' дн назад';
 }
+function openPay(url) {
+  var tg = window.Telegram && window.Telegram.WebApp;
+  try { if (tg && tg.openLink) { tg.openLink(url); return; } } catch (e) {}
+  window.open(url, '_blank');
+}
+function copyText(t) {
+  try { if (navigator.clipboard) { navigator.clipboard.writeText(t); return true; } } catch (e) {}
+  return false;
+}
 function hm(t) { var d = new Date(t + 3 * 3600 * 1000); return ('0' + d.getUTCDate()).slice(-2) + '.' + ('0' + (d.getUTCMonth() + 1)).slice(-2) + ' ' + ('0' + d.getUTCHours()).slice(-2) + ':' + ('0' + d.getUTCMinutes()).slice(-2); }
 
 class Component extends DCLogic {
   constructor(props) {
     super(props);
-    this.state = { username: '', amount: '', user: null, msg: null, log: [], busy: false, tick: 0 };
+    this.state = { username: '', amount: '', user: null, msg: null, log: [], busy: false, tick: 0, wds: [], confirmRej: null, copied: null };
     this.offs = [];
   }
   componentDidMount() {
@@ -150,7 +201,14 @@ class Component extends DCLogic {
         self.rt = setTimeout(function () { var n = NET(); if (n && n.connected) n.send({ t: 'admin.find', username: m.user.username }); }, 3000);
       }));
       this.offs.push(net.on('admin.err', function (m) { self.setState({ busy: false, msg: { ok: false, text: m.msg } }); }));
-      this.offs.push(net.on('admin.log', function (m) { self.setState({ log: m.log, deps: m.deposits || [] }); }));
+      this.offs.push(net.on('admin.log', function (m) { self.setState({ log: m.log, deps: m.deposits || [], wds: m.withdrawals || [] }); }));
+      // новая заявка или решение по ней — обновляем список сразу
+      this.offs.push(net.on('admin.wd', function (m) {
+        var list = (self.state.wds || []).filter(function (w) { return w.id !== m.w.id; });
+        list.unshift(m.w);
+        list.sort(function (a, b) { return (a.status === 'pending' ? 0 : 1) - (b.status === 'pending' ? 0 : 1) || b.at - a.at; });
+        self.setState({ wds: list, busy: false });
+      }));
       this.offs.push(net.on('status', function () { self.forceUpdate(); if (net.connected) net.send({ t: 'admin.log' }); }));
       if (net.connected) net.send({ t: 'admin.log' });
     }
@@ -176,6 +234,7 @@ class Component extends DCLogic {
     var self = this, s = this.state, net = NET();
     var conn = !!(net && net.connected), admin = !!(net && net.me && net.me.admin);
     var u = s.user, ready = conn && admin && !s.busy;
+    var pend = (s.wds || []).filter(function (w) { return w.status === 'pending'; }).length;
     return {
       connText: conn ? 'online' : 'нет связи', connBg: conn ? 'rgba(43,212,107,0.14)' : 'rgba(255,93,115,0.14)', connColor: conn ? '#2bd46b' : '#ff5d73',
       noAccess: !admin, hasAccess: admin,
@@ -208,6 +267,32 @@ class Component extends DCLogic {
         return { who: u, time: hm(d.at), ton: d.ton, status: d.status, statusColor: ok ? '#2bd46b' : '#ff8a5c', border: ok ? '#222838' : 'rgba(255,138,92,0.45)' };
       }),
       noDeps: !(s.deps && s.deps.length),
+      hasPending: pend > 0, pendingCount: pend,
+      noWds: !(s.wds && s.wds.length),
+      wds: (s.wds || []).map(function (w) {
+        var st = { pending: ['Ожидает', '#ffc83d', 'rgba(255,200,61,0.14)'], paid: ['Выплачено', '#2bd46b', 'rgba(43,212,107,0.14)'], rejected: ['Отклонено', '#ff5d73', 'rgba(255,93,115,0.14)'] }[w.status] || ['?', '#a3a8b5', '#1f2330'];
+        var stt = w.stats || {}, dep = stt.deposited || 0, out = stt.withdrawn || 0;
+        var over = w.kind === 'ton' && w.status === 'pending' && w.amount > Math.max(0, dep - out) + 1e-9;
+        var confirming = s.confirmRej === w.id;
+        return {
+          who: w.username ? '@' + w.username : (w.name || w.uid), time: hm(w.at), status: st[0], stColor: st[1], stBg: st[2],
+          border: w.status === 'pending' ? '#4a3d14' : '#222838',
+          isTon: w.kind === 'ton', isNft: w.kind === 'nft', isPending: w.status === 'pending',
+          amount: w.amount, address: w.address, copyText: s.copied === w.id ? 'скопировано' : 'копировать',
+          copy: function () { if (copyText(w.address)) self.setState({ copied: w.id }); },
+          gifts: (w.gifts || []).map(function (g) { var gi = window.RK && window.RK.gift ? window.RK.gift(g) : null; return { name: g, img: gi ? gi.img : '' }; }),
+          dep: dep + ' TON', out: out + ' TON', bal: stt.balance == null ? '—' : stt.balance + ' TON',
+          warn: over, warnText: 'Выводит больше, чем пополнил (' + Math.max(0, Math.round((dep - out) * 100) / 100) + ' TON). Баланс в игре не проверен сервером — проверь игрока, прежде чем платить.',
+          cols: w.kind === 'ton' ? '1.4fr 1fr 1fr' : '1fr 1fr',
+          pay: function () { openPay('https://app.tonkeeper.com/transfer/' + w.address + '?amount=' + Math.round(w.amount * 1e9) + '&text=' + encodeURIComponent('RACKOON вывод ' + w.id)); },
+          paid: function () { var n = NET(); if (n && n.connected && !self.state.busy) { self.setState({ busy: true, confirmRej: null }); n.send({ t: 'admin.wdPaid', id: w.id }); } },
+          reject: function () {
+            if (self.state.confirmRej !== w.id) return self.setState({ confirmRej: w.id });
+            var n = NET(); if (n && n.connected) { self.setState({ busy: true, confirmRej: null }); n.send({ t: 'admin.wdReject', id: w.id }); }
+          },
+          rejText: confirming ? 'Точно?' : 'Отклонить', rejBg: confirming ? '#c0283f' : '#ff5d73'
+        };
+      }),
       noLog: !(s.log && s.log.length), logCount: s.log && s.log.length ? s.log.length + ' шт.' : ''
     };
   }

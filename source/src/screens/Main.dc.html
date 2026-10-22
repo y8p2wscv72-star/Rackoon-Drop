@@ -218,8 +218,9 @@ a{color:#ffc83d}a:hover{color:#ffe08a}
 </sc-if>
 
 <sc-if value="{{isWdMode}}" hint-placeholder-val="{{ false }}">
+<sc-if value="{{wdIsNft}}" hint-placeholder-val="{{ true }}">
 <div style="display: flex; justify-content: space-between; align-items: baseline">
-<span style="font-size: 15px; font-weight: 700">Выбери подарки</span>
+<span style="font-size: 15px; font-weight: 700">Выбери NFT</span>
 <span style="font-size: 12px; color: #8a90a0">{{wdInfo}}</span>
 </div>
 <sc-if value="{{wdHasItems}}" hint-placeholder-val="{{ true }}">
@@ -236,11 +237,30 @@ a{color:#ffc83d}a:hover{color:#ffe08a}
 <sc-if value="{{wdEmpty}}" hint-placeholder-val="{{ false }}">
 <div style="border-radius: 18px; border: 1px dashed #2c3244; padding: 26px 12px; text-align: center; font-size: 13px; color: #8a90a0">В инвентаре пока нет подарков — выбей их в кейсах</div>
 </sc-if>
+<sc-if value="{{wdEmpty}}" hint-placeholder-val="{{ false }}">
+<div style="border-radius: 18px; border: 1px dashed #2c3244; padding: 22px 12px; text-align: center; font-size: 13px; color: #8a90a0">Нет NFT для вывода — выбей их в кейсах. Обычные подарки за ⭐ вывести нельзя.</div>
+</sc-if>
 <div style="display: flex; align-items: center; gap: 10px; border-radius: 16px; background: #0d0f14; border: 1px solid #262b3a; padding: 12px 14px">
 <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 4 L3 11 L9 13 L11 19 L14 15 L19 19Z" fill="none" stroke="#5fb8ff" stroke-width="2" stroke-linejoin="round"></path></svg>
 <span style="display: flex; flex-direction: column; gap: 2px; min-width: 0"><span style="font-size: 12px; color: #8a90a0">Получатель</span><span style="font-size: 14px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{wdTo}}</span></span>
 </div>
-<div style="text-align: center; font-size: 11px; font-weight: 700; letter-spacing: 2px; color: #6c7282">КОМИССИЯ ЗА ВЫВОД 0.1 TON</div>
+<div style="text-align: center; font-size: 11px; font-weight: 700; letter-spacing: 1.5px; color: #6c7282">КОМИССИЯ 0.1 TON · ЗАЯВКУ ПРОВЕРИТ АДМИН</div>
+</sc-if>
+
+<sc-if value="{{hasMyWd}}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; flex-direction: column; gap: 6px">
+<span style="font-size: 13px; font-weight: 700; color: #a3a8b5">Мои заявки</span>
+<div style="display: flex; flex-direction: column; gap: 6px; max-height: 170px; overflow-y: auto; -webkit-overflow-scrolling: touch">
+<sc-for list="{{myWd}}" as="mw" hint-placeholder-count="2">
+<div style="display: flex; align-items: center; gap: 10px; background: #0d0f14; border: 1px solid #262b3a; border-radius: 12px; padding: 8px 10px">
+<span style="flex-grow: 1; min-width: 0; font-size: 13px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{mw.title}}</span>
+<span style="font-size: 11px; color: #8a90a0">{{mw.time}}</span>
+<span style="font-size: 11px; font-weight: 700; padding: 3px 7px; border-radius: 7px; background: {{mw.bg}}; color: {{mw.color}}">{{mw.status}}</span>
+</div>
+</sc-for>
+</div>
+</div>
+</sc-if>
 </sc-if>
 
 <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px">
@@ -303,6 +323,10 @@ var CURS = [
   { code: 'LTC', name: 'Litecoin', sym: 'Ł', color: '#345d9d' },
   { code: 'BNB', name: 'BNB', sym: 'B', color: '#d9a400' }
 ];
+var WD_ADDR_RE = /^(?:[EUk0][Qf][A-Za-z0-9_-]{46}|-?[0-9]:[0-9a-fA-F]{64})$/;
+// NFT для вывода: только настоящие NFT из инвентаря (обычные подарки за ⭐ вывести нельзя)
+function wdNfts() { var R = window.RK; if (!R || !R.inventory) return []; return R.inventory.list().filter(function (it) { var g = R.gift(it.key); return g && !g.star; }); }
+function wdTime(t) { var d = new Date(t + 3 * 3600 * 1000); return ('0' + d.getUTCDate()).slice(-2) + '.' + ('0' + (d.getUTCMonth() + 1)).slice(-2) + ' ' + ('0' + d.getUTCHours()).slice(-2) + ':' + ('0' + d.getUTCMinutes()).slice(-2); }
 function openTgLink(url) {
   var tg = window.Telegram && window.Telegram.WebApp;
   try { if (tg && tg.openTelegramLink && /^https:\/\/t\.me\//.test(url)) { tg.openTelegramLink(url); return; } } catch (e) {}
@@ -334,7 +358,7 @@ class Component extends DCLogic {
     super(props);
     var list = [];
     for (var i = 0; i < 8; i++) list.push(pickDrop());
-    this.state = { drops: list, online: 934, dep: false, depTab: 'ton', depAmount: '', depCur: 0, depNet: 0, depCryptoAmount: '', depToast: 0, depMode: 'dep', wdSel: {}, toast: null };
+    this.state = { drops: list, online: 934, dep: false, depTab: 'ton', depAmount: '', depCur: 0, depNet: 0, depCryptoAmount: '', depToast: 0, depMode: 'dep', wdSel: {}, toast: null, wdKind: 'nft', wdAmount: '', wdAddress: (function () { try { return (window.RK && window.RK.store.get('rk_wd_addr')) || ''; } catch (e) { return ''; } })() };
   }
   componentDidMount() {
     var self = this, net = window.RK && window.RK.net;
@@ -363,14 +387,35 @@ class Component extends DCLogic {
     try { var tg = window.Telegram && window.Telegram.WebApp; if (tg && tg.HapticFeedback) tg.HapticFeedback.notificationOccurred(t.ok ? 'success' : 'warning'); } catch (e) {}
     this.tt = setTimeout(function () { self.setState({ depToast: 0 }); }, 2600);
   }
+  wdSubmit() {
+    var s = this.state, R = window.RK, net = R && R.net;
+    if (!net || !net.connected) return this.showToast({ icon: '⚠️', text: 'Нет связи с сервером, попробуй ещё раз' });
+    if (!net.me || String(net.me.uid).indexOf('tg') !== 0) return this.showToast({ icon: '⚠️', text: 'Вывод доступен только при входе через Telegram' });
+    var bal = R.wallet.get(), id = 'w' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8), w;
+    if (s.wdKind === 'ton') {
+      var amt = Math.round(parseFloat(s.wdAmount) * 100) / 100, addr = String(s.wdAddress || '').trim();
+      if (!(amt >= 1)) return this.showToast({ icon: '⚠️', text: 'Минимальная сумма вывода — 1 TON' });
+      if (amt > bal) return this.showToast({ icon: '⚠️', text: 'Недостаточно TON на балансе' });
+      if (!WD_ADDR_RE.test(addr)) return this.showToast({ icon: '⚠️', text: 'Проверь адрес кошелька — он начинается с UQ или EQ и длиной 48 символов' });
+      try { R.store.set('rk_wd_addr', addr); } catch (e) {}
+      w = { id: id, kind: 'ton', amount: amt, address: addr, gifts: [], fee: 0, at: Date.now() };
+      R.addBalance(-amt);
+    } else {
+      var items = wdNfts().filter(function (it) { return s.wdSel[it.uid]; });
+      if (!items.length) return this.showToast({ icon: '⚠️', text: 'Выбери NFT для вывода' });
+      if (items.length > 10) return this.showToast({ icon: '⚠️', text: 'За раз можно вывести до 10 NFT' });
+      if (bal < 0.1) return this.showToast({ icon: '⚠️', text: 'Нужно 0.1 TON на балансе для комиссии' });
+      w = { id: id, kind: 'nft', amount: 0, address: '', gifts: items.map(function (it) { return it.key; }), fee: 0.1, at: Date.now() };
+      R.inventory.remove(items.map(function (it) { return it.uid; }));
+      R.addBalance(-0.1);
+    }
+    net.withdraw(w);
+    this.setState({ wdAmount: '', wdSel: {} });
+    this.showToast({ icon: '📨', text: 'Заявка создана. Админ проверит её, обычно до 24 часов', ok: true });
+  }
   depSubmit() {
     var s = this.state;
-    if (s.depMode === 'wd') {
-      var n = Object.keys(s.wdSel).length;
-      if (!n) return;
-      this.showToast({ icon: '🚧', text: 'Демо: вывод NFT скоро будет доступен (' + n + ' шт. выбрано)' });
-      return;
-    }
+    if (s.depMode === 'wd') { this.wdSubmit(); return; }
     if (s.depTab === 'ton' && TEST_TOPUP) {
       var v = Math.round(parseFloat(s.depAmount) * 100) / 100;
       if (!(v >= 0.1)) { this.showToast({ icon: '⚠️', text: 'Минимальная сумма — 0.1 TON' }); return; }
@@ -406,7 +451,8 @@ class Component extends DCLogic {
   renderVals() {
     var self = this, s = this.state;
     var cur = CURS[s.depCur] || CURS[0];
-    var inv = s.dep && window.RK && window.RK.inventory ? window.RK.inventory.list() : [];
+    var inv = s.dep ? wdNfts() : [];
+    var myWd = s.dep && window.RK && window.RK.net && window.RK.net.withdrawals ? window.RK.net.withdrawals() : [];
     var wdCount = 0; inv.forEach(function (it) { if (s.wdSel[it.uid]) wdCount++; });
     var tgUser = window.RK && window.RK.user;
     var testOn = TEST_TOPUP && s.depMode === 'dep' && s.depTab === 'ton';
@@ -447,8 +493,8 @@ class Component extends DCLogic {
       modeDepSel: s.depMode === 'dep' ? 'true' : 'false', modeWdSel: s.depMode === 'wd' ? 'true' : 'false',
       modeDepBg: s.depMode === 'dep' ? '#ffc83d' : 'transparent', modeDepColor: s.depMode === 'dep' ? '#1a1300' : '#a3a8b5',
       modeWdBg: s.depMode === 'wd' ? '#ffc83d' : 'transparent', modeWdColor: s.depMode === 'wd' ? '#1a1300' : '#a3a8b5',
-      badgeText: testOn ? 'ТЕСТ · сумма сразу зачисляется на баланс' : (liveTon ? 'Оплата через Tonkeeper · зачисление автоматически' : liveCb ? 'Оплата через @CryptoBot · зачисление автоматически' : 'ДЕМО · ' + (s.depMode === 'wd' ? 'вывод' : 'пополнение') + ' скоро будет доступно'),
-      badgeColor: testOn || liveTon || liveCb ? '#2bd46b' : '#ffc83d', badgeBg: testOn || liveTon || liveCb ? 'rgba(43,212,107,0.12)' : 'rgba(255,200,61,0.12)', badgeBorder: testOn || liveTon || liveCb ? 'rgba(43,212,107,0.4)' : 'rgba(255,200,61,0.35)',
+      badgeText: s.depMode === 'wd' ? 'Вывод NFT по заявке · проверяет администратор' : testOn ? 'ТЕСТ · сумма сразу зачисляется на баланс' : (liveTon ? 'Оплата через Tonkeeper · зачисление автоматически' : liveCb ? 'Оплата через @CryptoBot · зачисление автоматически' : 'ДЕМО · ' + (s.depMode === 'wd' ? 'вывод' : 'пополнение') + ' скоро будет доступно'),
+      badgeColor: s.depMode === 'wd' || testOn || liveTon || liveCb ? '#2bd46b' : '#ffc83d', badgeBg: s.depMode === 'wd' || testOn || liveTon || liveCb ? 'rgba(43,212,107,0.12)' : 'rgba(255,200,61,0.12)', badgeBorder: s.depMode === 'wd' || testOn || liveTon || liveCb ? 'rgba(43,212,107,0.4)' : 'rgba(255,200,61,0.35)',
       depComment: depInfo ? depInfo.comment : '', hasDepComment: !!depInfo,
       waiting: !!s.waitingDeposit && s.depTab === 'ton',
       cbWaiting: !!s.cbWaiting && s.depTab === 'crypto',
@@ -461,9 +507,23 @@ class Component extends DCLogic {
       wdHasItems: inv.length > 0, wdEmpty: inv.length === 0,
       wdInfo: wdCount ? 'выбрано ' + wdCount + ' из ' + inv.length : inv.length + ' шт. в инвентаре',
       wdTo: tgUser && tgUser.username ? '@' + tgUser.username : ((tgUser && tgUser.first_name) || 'твой Telegram-аккаунт'),
-      depBtnText: s.depMode === 'wd' ? (wdCount ? 'Вывести ' + wdCount + ' NFT' : 'Выбери NFT') : (s.depTab === 'gift' ? 'Открыть бота' : 'Пополнить'),
-      depBtnDisabled: s.depMode === 'wd' && !wdCount,
-      depBtnBg: s.depMode === 'wd' && !wdCount ? '#3a3420' : '#ffc83d',
+      depBtnText: s.depMode === 'wd' ? (s.wdKind === 'ton' ? (parseFloat(s.wdAmount) > 0 ? 'Вывести ' + s.wdAmount + ' TON' : 'Вывести TON') : (wdCount ? 'Вывести ' + wdCount + ' NFT' : 'Выбери NFT')) : (s.depTab === 'gift' ? 'Открыть бота' : 'Пополнить'),
+      depBtnDisabled: s.depMode === 'wd' && s.wdKind === 'nft' && !wdCount,
+      depBtnBg: s.depMode === 'wd' && s.wdKind === 'nft' && !wdCount ? '#3a3420' : '#ffc83d',
+      wdIsTon: s.wdKind === 'ton', wdIsNft: s.wdKind === 'nft',
+      wdPickTon: function () { self.setState({ wdKind: 'ton' }); }, wdPickNft: function () { self.setState({ wdKind: 'nft' }); },
+      wdTonSel: s.wdKind === 'ton' ? 'true' : 'false', wdNftSel: s.wdKind === 'nft' ? 'true' : 'false',
+      wdTonBorder: s.wdKind === 'ton' ? '#ffc83d' : '#262b3a', wdTonBg: s.wdKind === 'ton' ? '#2a2410' : '#1b1e27',
+      wdNftBorder: s.wdKind === 'nft' ? '#ffc83d' : '#262b3a', wdNftBg: s.wdKind === 'nft' ? '#2a2410' : '#1b1e27',
+      wdAmount: s.wdAmount, onWdAmount: function (e) { self.setState({ wdAmount: cleanNum(e && e.target && e.target.value) }); },
+      wdAll: function () { var b = window.RK ? Math.floor(window.RK.wallet.get() * 100) / 100 : 0; self.setState({ wdAmount: b > 0 ? String(b) : '' }); },
+      wdAddress: s.wdAddress, onWdAddress: function (e) { self.setState({ wdAddress: String((e && e.target && e.target.value) || '').trim().slice(0, 70) }); },
+      wdAddrBorder: s.wdAddress && !WD_ADDR_RE.test(s.wdAddress) ? '#ff5d73' : '#262b3a',
+      hasMyWd: myWd.length > 0,
+      myWd: myWd.slice(0, 10).map(function (w) {
+        var st = { pending: ['Ожидает', '#ffc83d', 'rgba(255,200,61,0.14)'], paid: ['Выплачено', '#2bd46b', 'rgba(43,212,107,0.14)'], rejected: ['Отклонено', '#ff5d73', 'rgba(255,93,115,0.14)'] }[w.status] || ['…', '#a3a8b5', '#1f2330'];
+        return { title: w.kind === 'ton' ? w.amount + ' TON → ' + String(w.address || '').slice(0, 4) + '…' + String(w.address || '').slice(-4) : (w.gifts || []).join(', '), time: wdTime(w.at), status: st[0], color: st[1], bg: st[2] };
+      }),
       toastIcon: s.toast ? s.toast.icon : '', toastText: s.toast ? s.toast.text : '', toastBorder: s.toast && s.toast.ok ? '#2bd46b' : '#ffc83d',
       depSubmit: function () { self.depSubmit(); },
       depToast: !!s.depToast,
