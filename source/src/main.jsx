@@ -168,8 +168,11 @@ const net = (() => {
         const cur = lg && lg.state && 'balance' in lg.state ? lg.state.balance : wallet.get();
         addBalance(Math.max(m.amount, -cur));
       } else {
-        addBalance(m.amount);
-        track({ game: m.game, win: m.amount });
+        let giftVal = 0;
+        if (m.gift) { const gi = giftInfo(m.gift); if (gi) { inventory.add(gi.name); giftVal = gi.price; } } // выигранный подарок — в инвентарь
+        if (m.amount) addBalance(m.amount);
+        else if (currentScreen) currentScreen.forceUpdate();
+        track({ game: m.game, win: Math.round((m.amount + giftVal) * 100) / 100 });
       }
       store.setJSON('rk_credits_done', [m.id].concat(done).slice(0, 100));
     }
@@ -220,7 +223,10 @@ function giftInfo(name) {
   const local = GIFTCAT.IMG[n] || GIFTCAT.GIFT_IMG;
   return { name: n, price, color: GIFTCAT.rarityColor(price), img: window.rkThumb ? window.rkThumb(n, local) : fixAssets(local) };
 }
-window.RK = { wallet, inventory, store, stats, track, net, gift: giftInfo, botName: 'RackoonDropBot', user: (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) || null };
+// Лестница подарков: самый дорогой на сумму / следующий дороже
+function giftBestFor(v) { const b = GIFTCAT.bestFor(v); return b ? giftInfo(b.name) : null; }
+function giftNextAbove(p) { const b = GIFTCAT.nextAbove(p); return b ? giftInfo(b.name) : null; }
+window.RK = { wallet, inventory, store, stats, track, net, gift: giftInfo, giftBestFor, giftNextAbove, botName: 'RackoonDropBot', user: (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) || null };
 
 if (tg) {
   tg.ready();
