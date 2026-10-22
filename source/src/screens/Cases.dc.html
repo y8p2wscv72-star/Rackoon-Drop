@@ -56,7 +56,7 @@ a{color:#ffc83d}a:hover{color:#ffe08a}
 <sc-for list="{{grid}}" as="c" hint-placeholder-count="6">
 <sc-if value="{{c.hasArt}}" hint-placeholder-val="{{ true }}">
 <button type="button" onClick="{{c.open}}" aria-label="{{c.name}}, {{c.priceText}}" style="position: relative; min-width: 0; border: 0; border-radius: 20px; overflow: hidden; padding: 0; cursor: pointer; background: {{c.bg}}; box-shadow: 0 6px 20px {{c.shadow}}">
-<img src="{{c.art}}" alt="" style="width: 100%; display: block; aspect-ratio: 384 / 418; object-fit: cover">
+<img src="{{c.art}}" alt="" style="width: 100%; display: block; aspect-ratio: {{c.ratio}}; object-fit: cover">
 </button>
 </sc-if>
 <sc-if value="{{c.noArt}}" hint-placeholder-val="{{ false }}">
@@ -96,7 +96,7 @@ a{color:#ffc83d}a:hover{color:#ffe08a}
 <sc-if value="{{inDetail}}" hint-placeholder-val="{{ false }}">
 <sc-if value="{{dHasArt}}" hint-placeholder-val="{{ false }}">
 <div style="display: flex; gap: 14px; align-items: stretch; border-radius: 24px; padding: 10px; background: {{dBg}}; border: 1px solid {{dEdge}}; box-shadow: inset 0 -50px 60px -20px {{dGlow}}">
-<img src="{{dArt}}" alt="{{dName}}" style="width: 150px; height: 163px; border-radius: 16px; object-fit: cover; flex-shrink: 0">
+<img src="{{dArt}}" alt="{{dName}}" style="width: 150px; height: {{dArtH}}px; border-radius: 16px; object-fit: cover; flex-shrink: 0">
 <div style="display: flex; flex-direction: column; justify-content: center; gap: 6px; min-width: 0">
 <div style="font-size: 24px; font-weight: 900; font-style: italic; line-height: 1.05">{{dName}}</div>
 <div style="font-size: 18px; font-weight: 900; color: #ffc83d">{{dPriceText}}</div>
@@ -387,15 +387,14 @@ var CASE_TABS = [
   { id: 'free', label: 'Бесплатные', hint: 'Раз в сутки · TON на баланс' }
 ];
 // cat: cheap — дешёвые (обычные подарки за ⭐ + немного NFT), mid — средние (только NFT), exp — дорогие, free — бесплатный.
-// Картинки для новых кейсов докинем позже — пока они рисуются коробкой с главным призом.
 var CASES = [
-  { id: 's05', cat: 'cheap', name: 'Мелочь', price: 0.5, color: '#ff7ab8', dark: '#c4447f', bg: '#2e1022', glow: 'rgba(255,122,184,0.9)', edge: '#5a1c3e', opened: 0, isNew: true,
+  { id: 's05', cat: 'cheap', art: 'assets/case-s05.jpg', ratio: '1 / 1', name: 'Мелочь', price: 0.5, color: '#ff7ab8', dark: '#c4447f', bg: '#2e1022', glow: 'rgba(255,122,184,0.9)', edge: '#5a1c3e', opened: 0, isNew: true,
     pool: ['Heart', 'Teddy Bear', 'Rose', 'Gift Box', 'Cake', 'Bouquet', 'Ring', 'Lol Pop'] },
-  { id: 's1', cat: 'cheap', name: 'Плюшевый', price: 1, color: '#c98a5a', dark: '#94582e', bg: '#2a1a10', glow: 'rgba(201,138,90,0.9)', edge: '#4f3220', opened: 0, isNew: true,
+  { id: 's1', cat: 'cheap', art: 'assets/case-s1.jpg', ratio: '1 / 1', name: 'Плюшевый', price: 1, color: '#c98a5a', dark: '#94582e', bg: '#2a1a10', glow: 'rgba(201,138,90,0.9)', edge: '#4f3220', opened: 0, isNew: true,
     pool: ['Teddy Bear', 'Heart', 'Rose', 'Cake', 'Ring', 'Trophy', 'Lol Pop', 'Chill Flame', 'Ice Cream', 'B-Day Candle'] },
-  { id: 's2', cat: 'cheap', name: 'Сладкий', price: 2, color: '#ff9f43', dark: '#c46a12', bg: '#2e1d0c', glow: 'rgba(255,159,67,0.9)', edge: '#5a3714', opened: 0, isNew: true,
+  { id: 's2', cat: 'cheap', art: 'assets/case-s2.jpg', ratio: '1 / 1', name: 'Сладкий', price: 2, color: '#ff9f43', dark: '#c46a12', bg: '#2e1d0c', glow: 'rgba(255,159,67,0.9)', edge: '#5a3714', opened: 0, isNew: true,
     pool: ['Cake', 'Bouquet', 'Ring', 'Trophy', 'Diamond', 'Lol Pop', 'Instant Ramen', 'Candy Cane', 'Homemade Cake', 'Snow Globe', 'Desk Calendar', 'Jester Hat'] },
-  { id: 's35', cat: 'cheap', name: 'Колечко', price: 3.5, color: '#7fd6ff', dark: '#3f9ccc', bg: '#0e2230', glow: 'rgba(127,214,255,0.9)', edge: '#1d4560', opened: 0, isNew: true,
+  { id: 's35', cat: 'cheap', art: 'assets/case-s35.jpg', ratio: '1 / 1', name: 'Колечко', price: 3.5, color: '#7fd6ff', dark: '#3f9ccc', bg: '#0e2230', glow: 'rgba(127,214,255,0.9)', edge: '#1d4560', opened: 0, isNew: true,
     pool: ['Ring', 'Lol Pop', 'Candy Cane', 'Hypno Lollipop', 'B-Day Candle', 'Homemade Cake', 'Snow Globe', 'Spy Agaric', 'Light Sword', 'Jelly Bunny', 'Bunny Muffin', 'Berry Box', 'Top Hat'] },
   { id: 'c1', cat: 'mid', art: '/_blob/fcf5bf14ee8b1ae499c387610e4d1977', name: 'Карманник', price: 5, color: '#2bbf5a', dark: '#1a8a3e', bg: '#10291a', glow: 'rgba(43,191,90,0.9)', edge: '#1f4a2c', opened: 2591 },
   { id: 'c2', cat: 'mid', art: '/_blob/06ce572b9077b276c1d8a7b06b5e8713', name: 'Конфетный', price: 10, color: '#f2c218', dark: '#b88f00', bg: '#2a240c', glow: 'rgba(242,194,24,0.9)', edge: '#4a4010', opened: 1036, isNew: true },
@@ -531,12 +530,12 @@ class Component extends DCLogic {
         return {
           name: x.name, priceText: x.free ? 'Бесплатно' : fmt(x.price), opened: x.opened.toLocaleString('ru-RU') + ' откр.',
           color: x.color, dark: x.dark, bg: x.bg, glow: x.glow, edge: x.edge, isNew: !!x.isNew,
-          hasArt: !!x.art, noArt: !x.art, art: x.art || '', shadow: x.glow.replace('0.9', '0.35').replace('0.95', '0.35'),
+          hasArt: !!x.art, noArt: !x.art, art: x.art || '', ratio: x.ratio || '384 / 418', shadow: x.glow.replace('0.9', '0.35').replace('0.95', '0.35'),
           prizeImg: CAT[x.top].img, locked: !!x.locked || fl, lockText: x.locked ? x.lockText : 'Через ' + hms(freeLeft),
           open: function () { if (!x.locked) self.openCase(x.id); }
         };
       }),
-      dHasArt: !!(c && c.art), dNoArt: !(c && c.art), dArt: c && c.art ? c.art : '',
+      dHasArt: !!(c && c.art), dNoArt: !(c && c.art), dArt: c && c.art ? c.art : '', dArtH: c && c.ratio === '1 / 1' ? 150 : 163,
       dName: c ? c.name : '', dPriceText: c ? (c.free ? 'Бесплатно раз в сутки' : fmt(c.price)) : '',
       dOpened: c ? 'Открыто ' + c.opened.toLocaleString('ru-RU') + ' раз' : '',
       dBg: c ? c.bg : '#151821', dEdge: c ? c.edge : '#222838', dGlow: c ? c.glow : 'transparent',
