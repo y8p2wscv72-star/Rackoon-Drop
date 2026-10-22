@@ -3824,6 +3824,14 @@ body{margin:0;background:#0d0f14}
 </sc-if>
 
 <sc-if value="{{hasAccess}}" hint-placeholder-val="{{ true }}">
+<div style="display: flex; align-items: center; gap: 10px; background: #151821; border: 1px solid #222838; border-radius: 16px; padding: 12px 14px">
+<span style="width: 10px; height: 10px; border-radius: 50%; background: #2bd46b; flex-shrink: 0"></span>
+<span style="flex-grow: 1; font-size: 14px; color: #c9cdd6">\u0420\u0435\u0430\u043B\u044C\u043D\u043E \u0432 \u0438\u0433\u0440\u0435 \u0441\u0435\u0439\u0447\u0430\u0441</span>
+<span style="font-size: 20px; font-weight: 900; color: #ffffff">{{realOnline}}</span>
+</div>
+<sc-if value="{{demoOn}}" hint-placeholder-val="{{ false }}">
+<div style="font-size: 12px; line-height: 1.45; color: #ffc83d; background: rgba(255,200,61,0.08); border: 1px solid rgba(255,200,61,0.35); border-radius: 12px; padding: 8px 10px">\u{1F9EA} \u0414\u0435\u043C\u043E-\u0430\u043A\u0442\u0438\u0432\u043D\u043E\u0441\u0442\u044C \u0432\u043A\u043B\u044E\u0447\u0435\u043D\u0430: \u0442\u044B \u0438 \u0442\u0435\u0441\u0442\u0435\u0440\u044B \u0432\u0438\u0434\u0438\u0442\u0435 \u0432\u044B\u0434\u0443\u043C\u0430\u043D\u043D\u044B\u0439 \u043E\u043D\u043B\u0430\u0439\u043D (100\u2013300) \u0438 \u0432\u044B\u0438\u0433\u0440\u044B\u0448\u0438 \u0432 \u043B\u0435\u043D\u0442\u0435. \u041E\u0431\u044B\u0447\u043D\u044B\u0435 \u0438\u0433\u0440\u043E\u043A\u0438 \u0432\u0438\u0434\u044F\u0442 \u043D\u0430\u0441\u0442\u043E\u044F\u0449\u0438\u0435 \u0446\u0438\u0444\u0440\u044B.</div>
+</sc-if>
 <div style="display: flex; justify-content: space-between; align-items: center">
 <span style="display: flex; align-items: center; gap: 8px; font-size: 17px; font-weight: 700">\u0417\u0430\u044F\u0432\u043A\u0438 \u043D\u0430 \u0432\u044B\u0432\u043E\u0434<sc-if value="{{hasPending}}" hint-placeholder-val="{{ false }}"><span style="min-width: 22px; height: 22px; border-radius: 11px; background: #ff5d73; color: #ffffff; font-size: 12px; font-weight: 900; display: inline-flex; align-items: center; justify-content: center; padding: 0 6px; box-sizing: border-box">{{pendingCount}}</span></sc-if></span>
 <button type="button" onClick="{{refresh}}" style="height: 32px; border-radius: 10px; border: 1px solid #262b3a; background: #1b1e27; color: #a3a8b5; font-family: Rubik, system-ui, sans-serif; font-size: 12px; font-weight: 700; padding: 0 10px; cursor: pointer">\u041E\u0431\u043D\u043E\u0432\u0438\u0442\u044C</button>
@@ -4043,7 +4051,7 @@ class Component extends DCLogic {
         self.rt = setTimeout(function () { var n = NET(); if (n && n.connected) n.send({ t: 'admin.find', username: m.user.username }); }, 3000);
       }));
       this.offs.push(net.on('admin.err', function (m) { self.setState({ busy: false, msg: { ok: false, text: m.msg } }); }));
-      this.offs.push(net.on('admin.log', function (m) { self.setState({ log: m.log, deps: m.deposits || [], wds: m.withdrawals || [], biz: m.business || null, bizLoaded: true }); }));
+      this.offs.push(net.on('admin.log', function (m) { self.setState({ realOnline: m.realOnline, demoOn: !!m.demo, log: m.log, deps: m.deposits || [], wds: m.withdrawals || [], biz: m.business || null, bizLoaded: true }); }));
       // \u043D\u043E\u0432\u0430\u044F \u0437\u0430\u044F\u0432\u043A\u0430 \u0438\u043B\u0438 \u0440\u0435\u0448\u0435\u043D\u0438\u0435 \u043F\u043E \u043D\u0435\u0439 \u2014 \u043E\u0431\u043D\u043E\u0432\u043B\u044F\u0435\u043C \u0441\u043F\u0438\u0441\u043E\u043A \u0441\u0440\u0430\u0437\u0443
       this.offs.push(net.on('admin.wd', function (m) {
         var list = (self.state.wds || []).filter(function (w) { return w.id !== m.w.id; });
@@ -4053,6 +4061,7 @@ class Component extends DCLogic {
       }));
       this.offs.push(net.on('admin.bc', function (m) { var st = { bc: m.bc }; if (m.history) st.bcHist = m.history; self.setState(st); }));
       var load = function () { if (net.connected && net.pinOk) { net.send({ t: 'admin.log' }); net.send({ t: 'admin.bcStatus' }); } };
+      this.offs.push(net.on('admin.online', function (m) { self.setState({ realOnline: m.n }); }));
       this.offs.push(net.on('admin.pinOk', function () { self.setState({ pin: '', pinMsg: '' }); load(); }));
       this.offs.push(net.on('admin.pinBad', function (m) { self.setState({ pin: '', pinMsg: '\u041D\u0435\u0432\u0435\u0440\u043D\u044B\u0439 PIN. \u041E\u0441\u0442\u0430\u043B\u043E\u0441\u044C \u043F\u043E\u043F\u044B\u0442\u043E\u043A: ' + m.left }); }));
       this.offs.push(net.on('status', function () { self.forceUpdate(); load(); }));
@@ -4155,6 +4164,7 @@ class Component extends DCLogic {
       }),
       noDeps: !(s.deps && s.deps.length),
       hasPending: pend > 0, pendingCount: pend,
+      realOnline: s.realOnline == null ? '\u2014' : s.realOnline, demoOn: !!s.demoOn,
       bizText: !s.bizLoaded ? '' : s.biz ? '\u{1F916} \u0411\u0438\u0437\u043D\u0435\u0441-\u0430\u043A\u043A\u0430\u0443\u043D\u0442 @' + s.biz.username + ': \u043F\u0440\u0438\u0451\u043C NFT ' + (s.biz.canView ? '\u0432\u043A\u043B\u044E\u0447\u0451\u043D' : '\u043D\u0435\u0442 \u043F\u0440\u0430\u0432\u0430 \xAB\u043F\u0440\u043E\u0441\u043C\u043E\u0442\u0440 \u043F\u043E\u0434\u0430\u0440\u043A\u043E\u0432\xBB') + ' \xB7 \u0430\u0432\u0442\u043E\u0432\u044B\u0432\u043E\u0434 ' + (s.biz.canTransfer ? '\u0432\u043A\u043B\u044E\u0447\u0451\u043D' : '\u043D\u0435\u0442 \u043F\u0440\u0430\u0432\u0430 \xAB\u043F\u0435\u0440\u0435\u0434\u0430\u0447\u0430 \u043F\u043E\u0434\u0430\u0440\u043A\u043E\u0432\xBB') : '\u{1F916} \u0411\u0438\u0437\u043D\u0435\u0441-\u0430\u043A\u043A\u0430\u0443\u043D\u0442 \u043D\u0435 \u043F\u043E\u0434\u043A\u043B\u044E\u0447\u0451\u043D: \u043F\u0440\u0438\u0451\u043C NFT \u0438 \u0430\u0432\u0442\u043E\u0432\u044B\u0432\u043E\u0434 \u0432\u044B\u043A\u043B\u044E\u0447\u0435\u043D\u044B',
       bizColor: s.biz && s.biz.canView && s.biz.canTransfer ? '#2bd46b' : '#a3a8b5',
       noWds: !(s.wds && s.wds.length),

@@ -42,6 +42,14 @@ body{margin:0;background:#0d0f14}
 </sc-if>
 
 <sc-if value="{{hasAccess}}" hint-placeholder-val="{{ true }}">
+<div style="display: flex; align-items: center; gap: 10px; background: #151821; border: 1px solid #222838; border-radius: 16px; padding: 12px 14px">
+<span style="width: 10px; height: 10px; border-radius: 50%; background: #2bd46b; flex-shrink: 0"></span>
+<span style="flex-grow: 1; font-size: 14px; color: #c9cdd6">Реально в игре сейчас</span>
+<span style="font-size: 20px; font-weight: 900; color: #ffffff">{{realOnline}}</span>
+</div>
+<sc-if value="{{demoOn}}" hint-placeholder-val="{{ false }}">
+<div style="font-size: 12px; line-height: 1.45; color: #ffc83d; background: rgba(255,200,61,0.08); border: 1px solid rgba(255,200,61,0.35); border-radius: 12px; padding: 8px 10px">🧪 Демо-активность включена: ты и тестеры видите выдуманный онлайн (100–300) и выигрыши в ленте. Обычные игроки видят настоящие цифры.</div>
+</sc-if>
 <div style="display: flex; justify-content: space-between; align-items: center">
 <span style="display: flex; align-items: center; gap: 8px; font-size: 17px; font-weight: 700">Заявки на вывод<sc-if value="{{hasPending}}" hint-placeholder-val="{{ false }}"><span style="min-width: 22px; height: 22px; border-radius: 11px; background: #ff5d73; color: #ffffff; font-size: 12px; font-weight: 900; display: inline-flex; align-items: center; justify-content: center; padding: 0 6px; box-sizing: border-box">{{pendingCount}}</span></sc-if></span>
 <button type="button" onClick="{{refresh}}" style="height: 32px; border-radius: 10px; border: 1px solid #262b3a; background: #1b1e27; color: #a3a8b5; font-family: Rubik, system-ui, sans-serif; font-size: 12px; font-weight: 700; padding: 0 10px; cursor: pointer">Обновить</button>
@@ -261,7 +269,7 @@ class Component extends DCLogic {
         self.rt = setTimeout(function () { var n = NET(); if (n && n.connected) n.send({ t: 'admin.find', username: m.user.username }); }, 3000);
       }));
       this.offs.push(net.on('admin.err', function (m) { self.setState({ busy: false, msg: { ok: false, text: m.msg } }); }));
-      this.offs.push(net.on('admin.log', function (m) { self.setState({ log: m.log, deps: m.deposits || [], wds: m.withdrawals || [], biz: m.business || null, bizLoaded: true }); }));
+      this.offs.push(net.on('admin.log', function (m) { self.setState({ realOnline: m.realOnline, demoOn: !!m.demo, log: m.log, deps: m.deposits || [], wds: m.withdrawals || [], biz: m.business || null, bizLoaded: true }); }));
       // новая заявка или решение по ней — обновляем список сразу
       this.offs.push(net.on('admin.wd', function (m) {
         var list = (self.state.wds || []).filter(function (w) { return w.id !== m.w.id; });
@@ -271,6 +279,7 @@ class Component extends DCLogic {
       }));
       this.offs.push(net.on('admin.bc', function (m) { var st = { bc: m.bc }; if (m.history) st.bcHist = m.history; self.setState(st); }));
       var load = function () { if (net.connected && net.pinOk) { net.send({ t: 'admin.log' }); net.send({ t: 'admin.bcStatus' }); } };
+      this.offs.push(net.on('admin.online', function (m) { self.setState({ realOnline: m.n }); }));
       this.offs.push(net.on('admin.pinOk', function () { self.setState({ pin: '', pinMsg: '' }); load(); }));
       this.offs.push(net.on('admin.pinBad', function (m) { self.setState({ pin: '', pinMsg: 'Неверный PIN. Осталось попыток: ' + m.left }); }));
       this.offs.push(net.on('status', function () { self.forceUpdate(); load(); }));
@@ -373,6 +382,7 @@ class Component extends DCLogic {
       }),
       noDeps: !(s.deps && s.deps.length),
       hasPending: pend > 0, pendingCount: pend,
+      realOnline: s.realOnline == null ? '—' : s.realOnline, demoOn: !!s.demoOn,
       bizText: !s.bizLoaded ? '' : s.biz ? '🤖 Бизнес-аккаунт @' + s.biz.username + ': приём NFT ' + (s.biz.canView ? 'включён' : 'нет права «просмотр подарков»') + ' · автовывод ' + (s.biz.canTransfer ? 'включён' : 'нет права «передача подарков»') : '🤖 Бизнес-аккаунт не подключён: приём NFT и автовывод выключены',
       bizColor: s.biz && s.biz.canView && s.biz.canTransfer ? '#2bd46b' : '#a3a8b5',
       noWds: !(s.wds && s.wds.length),
