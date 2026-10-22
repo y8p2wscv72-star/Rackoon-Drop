@@ -1301,7 +1301,7 @@ class Component extends DCLogic {
     this.state = {
       inv: loadInv(), own: [], target: null, angle: 0, spinning: false,
       result: null, overlay: false, lastChance: 0, lastSide: 'right',
-      side: 'right', fast: true, history: (function () { var S = typeof window !== 'undefined' && window.RK && window.RK.store; var v = S ? S.getJSON('rk_upg_hist', null) : null; return Array.isArray(v) ? v : []; })(), res: null, nextId: 100, q: ''
+      side: 'right', fast: false, history: (function () { var S = typeof window !== 'undefined' && window.RK && window.RK.store; var v = S ? S.getJSON('rk_upg_hist', null) : null; return Array.isArray(v) ? v : []; })(), res: null, nextId: 100, q: ''
     };
     this.timer = null;
   }
@@ -1942,7 +1942,7 @@ class Component extends DCLogic {
     super(props);
     var drops = []; for (var i = 0; i < 7; i++) drops.push(randomDrop().name);
     this.state = {
-      caseId: null, tab: 'paid', balance: 500, fast: true, spinning: false,
+      caseId: null, tab: 'paid', balance: 500, fast: false, spinning: false,
       strip: [], offset: 0, anim: false, won: null, overlay: false, loot: [], nextId: 1,
       freeAt: getFreeAt(), now: Date.now(), drops: drops
     };

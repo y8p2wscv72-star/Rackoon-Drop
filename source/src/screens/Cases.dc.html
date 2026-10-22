@@ -436,7 +436,7 @@ class Component extends DCLogic {
     super(props);
     var drops = []; for (var i = 0; i < 7; i++) drops.push(randomDrop().name);
     this.state = {
-      caseId: null, tab: 'paid', balance: 500, fast: true, spinning: false,
+      caseId: null, tab: 'paid', balance: 500, fast: false, spinning: false,
       strip: [], offset: 0, anim: false, won: null, overlay: false, loot: [], nextId: 1,
       freeAt: getFreeAt(), now: Date.now(), drops: drops
     };
