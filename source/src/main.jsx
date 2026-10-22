@@ -216,17 +216,23 @@ const net = (() => {
 })();
 
 // Подарок из общего каталога: название, сегодняшняя цена, картинка, цвет редкости (или null)
+// Картинка-эмодзи для звёздных подарков (настоящие картинки докинем позже)
+function emojiImg(e) { return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><text x='32' y='50' font-size='46' text-anchor='middle'>" + e + '</text></svg>'); }
+function starGifts() {
+  return GIFTCAT.STARS.map((r) => { const g = GIFTCAT.STAR[r[0]]; return { name: g.name, star: true, stars: g.stars, supply: 0, base: g.price, price: g.price, prev: g.price, img: emojiImg(g.emoji), color: '#8fa3c7' }; });
+}
 function giftInfo(name) {
   const n = GIFTCAT.canon(name);
   if (!n) return null;
   const price = GIFTCAT.priceOf(n);
+  if (GIFTCAT.isStar(n)) { const g = GIFTCAT.STAR[n]; return { name: n, price, color: '#8fa3c7', star: true, stars: g.stars, img: emojiImg(g.emoji) }; }
   const local = GIFTCAT.IMG[n] || GIFTCAT.GIFT_IMG;
   return { name: n, price, color: GIFTCAT.rarityColor(price), img: window.rkThumb ? window.rkThumb(n, local) : fixAssets(local) };
 }
 // Лестница подарков: самый дорогой на сумму / следующий дороже
 function giftBestFor(v) { const b = GIFTCAT.bestFor(v); return b ? giftInfo(b.name) : null; }
 function giftNextAbove(p) { const b = GIFTCAT.nextAbove(p); return b ? giftInfo(b.name) : null; }
-window.RK = { wallet, inventory, store, stats, track, net, gift: giftInfo, giftBestFor, giftNextAbove, botName: 'RackoonDropBot', user: (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) || null };
+window.RK = { wallet, inventory, store, stats, track, net, gift: giftInfo, giftBestFor, giftNextAbove, starGifts, botName: 'RackoonDropBot', user: (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) || null };
 
 if (tg) {
   tg.ready();

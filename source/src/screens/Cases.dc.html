@@ -45,10 +45,12 @@ a{color:#ffc83d}a:hover{color:#ffe08a}
 </sc-for>
 </div>
 
-<div role="tablist" style="display: flex; gap: 18px; align-items: baseline">
-<button type="button" role="tab" onClick="{{tabPaid}}" aria-selected="{{paidSel}}" style="border: 0; background: transparent; padding: 6px 0; font-family: Rubik, system-ui, sans-serif; font-size: 20px; font-weight: 700; cursor: pointer; color: {{paidColor}}">Платные</button>
-<button type="button" role="tab" onClick="{{tabFree}}" aria-selected="{{freeSel}}" style="border: 0; background: transparent; padding: 6px 0; font-family: Rubik, system-ui, sans-serif; font-size: 20px; font-weight: 700; cursor: pointer; color: {{freeColor}}">Бесплатные</button>
+<div role="tablist" style="display: flex; gap: 14px; align-items: baseline; overflow-x: auto; -webkit-overflow-scrolling: touch">
+<sc-for list="{{tabs}}" as="tb" hint-placeholder-count="4">
+<button type="button" role="tab" onClick="{{tb.pick}}" aria-selected="{{tb.sel}}" style="flex-shrink: 0; border: 0; border-bottom: 3px solid {{tb.line}}; background: transparent; padding: 6px 0; font-family: Rubik, system-ui, sans-serif; font-size: 16px; font-weight: 700; cursor: pointer; color: {{tb.color}}">{{tb.label}}</button>
+</sc-for>
 </div>
+<div style="font-size: 12px; color: #8a90a0; margin-top: -6px">{{tabHint}}</div>
 
 <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px">
 <sc-for list="{{grid}}" as="c" hint-placeholder-count="6">
@@ -369,24 +371,42 @@ var CAT_LIST = RAW.map(function (r) {
   CAT[r[0]] = c;
   return c;
 }).sort(function (a, b) { return a.price - b.price; });
+// Обычные подарки Telegram за звёзды (мишки, сердечки, торты, кольца…): есть в каталоге, но не NFT
+if (window.RK && window.RK.starGifts) window.RK.starGifts().forEach(function (g) { CAT[g.name] = g; });
 function chg(c) { return (c.price / c.prev - 1) * 100; }
 function chgText(c) { var v = chg(c); return (v >= 0 ? '▲ ' : '▼ ') + Math.abs(v).toFixed(1) + '%'; }
 function chgColor(c) { return chg(c) >= 0 ? '#2bd46b' : '#ff5d73'; }
-function supplyText(c) { return c.supply ? c.supply.toLocaleString('ru-RU') + ' шт.' : 'новая коллекция'; }
+function supplyText(c) { if (c.star) return c.stars + ' ⭐ · обычный подарок'; return c.supply ? c.supply.toLocaleString('ru-RU') + ' шт.' : 'новая коллекция'; }
 
 var RTP = 0.90;
 var FREE_COOLDOWN = 24 * 3600 * 1000;
+var CASE_TABS = [
+  { id: 'cheap', label: 'Дешёвые', hint: 'От 0.5 TON · мишки, сердечки, торты, кольца и NFT' },
+  { id: 'mid', label: 'Средние', hint: 'Только NFT-подарки' },
+  { id: 'exp', label: 'Дорогие', hint: 'Редкие и дорогие NFT' },
+  { id: 'free', label: 'Бесплатные', hint: 'Раз в сутки · TON на баланс' }
+];
+// cat: cheap — дешёвые (обычные подарки за ⭐ + немного NFT), mid — средние (только NFT), exp — дорогие, free — бесплатный.
+// Картинки для новых кейсов докинем позже — пока они рисуются коробкой с главным призом.
 var CASES = [
-  { id: 'c1', art: '/_blob/fcf5bf14ee8b1ae499c387610e4d1977', name: 'Карманник', price: 5, color: '#2bbf5a', dark: '#1a8a3e', bg: '#10291a', glow: 'rgba(43,191,90,0.9)', edge: '#1f4a2c', opened: 2591 },
-  { id: 'c2', art: '/_blob/06ce572b9077b276c1d8a7b06b5e8713', name: 'Конфетный', price: 10, color: '#f2c218', dark: '#b88f00', bg: '#2a240c', glow: 'rgba(242,194,24,0.9)', edge: '#4a4010', opened: 1036, isNew: true },
-  { id: 'c3', art: '/_blob/9e1537bfc41c71475ce556a1aaf4884f', name: 'Пиратский', price: 15, color: '#2f86ff', dark: '#1a5ccc', bg: '#0f1d33', glow: 'rgba(47,134,255,0.9)', edge: '#1c3560', opened: 1554 },
-  { id: 'c4', art: '/_blob/c0847d0dc5fbcb1a68d80763032f0675', name: 'Налётчик', price: 25, color: '#ff4d4d', dark: '#c02a2a', bg: '#2e1212', glow: 'rgba(255,77,77,0.9)', edge: '#5a2020', opened: 2591, isNew: true },
-  { id: 'c5', art: '/_blob/db1a02051117bc41aa898a143cdc3d48', name: 'Медвежатник', price: 50, color: '#ff8a1f', dark: '#c45f00', bg: '#2e1c0c', glow: 'rgba(255,138,31,0.9)', edge: '#5a3612', opened: 5181 },
-  { id: 'c6', art: '/_blob/72f77fc4af6bf75c8e7d10aa33580007', name: 'Ночной рейд', price: 100, color: '#9b5cff', dark: '#6a32d0', bg: '#1d1233', glow: 'rgba(155,92,255,0.9)', edge: '#3a2460', opened: 311 },
-  { id: 'c7', art: '/_blob/b289144243be3c7e4e7176e3a0070caa', name: 'Сейф', price: 250, color: '#14c8c8', dark: '#0a8c8c', bg: '#0c2a2a', glow: 'rgba(20,200,200,0.9)', edge: '#164a4a', opened: 518 },
-  { id: 'c8', art: '/_blob/313d5daa64736bbfb70ecfcd97ed3141', name: 'Крёстный енот', price: 500, color: '#ffc83d', dark: '#c79400', bg: '#2e250c', glow: 'rgba(255,200,61,0.95)', edge: '#5a4a14', opened: 10362 },
+  { id: 's05', cat: 'cheap', name: 'Мелочь', price: 0.5, color: '#ff7ab8', dark: '#c4447f', bg: '#2e1022', glow: 'rgba(255,122,184,0.9)', edge: '#5a1c3e', opened: 0, isNew: true,
+    pool: ['Heart', 'Teddy Bear', 'Rose', 'Gift Box', 'Cake', 'Bouquet', 'Ring', 'Lol Pop'] },
+  { id: 's1', cat: 'cheap', name: 'Плюшевый', price: 1, color: '#c98a5a', dark: '#94582e', bg: '#2a1a10', glow: 'rgba(201,138,90,0.9)', edge: '#4f3220', opened: 0, isNew: true,
+    pool: ['Teddy Bear', 'Heart', 'Rose', 'Cake', 'Ring', 'Trophy', 'Lol Pop', 'Chill Flame', 'Ice Cream', 'B-Day Candle'] },
+  { id: 's2', cat: 'cheap', name: 'Сладкий', price: 2, color: '#ff9f43', dark: '#c46a12', bg: '#2e1d0c', glow: 'rgba(255,159,67,0.9)', edge: '#5a3714', opened: 0, isNew: true,
+    pool: ['Cake', 'Bouquet', 'Ring', 'Trophy', 'Diamond', 'Lol Pop', 'Instant Ramen', 'Candy Cane', 'Homemade Cake', 'Snow Globe', 'Desk Calendar', 'Jester Hat'] },
+  { id: 's35', cat: 'cheap', name: 'Колечко', price: 3.5, color: '#7fd6ff', dark: '#3f9ccc', bg: '#0e2230', glow: 'rgba(127,214,255,0.9)', edge: '#1d4560', opened: 0, isNew: true,
+    pool: ['Ring', 'Lol Pop', 'Candy Cane', 'Hypno Lollipop', 'B-Day Candle', 'Homemade Cake', 'Snow Globe', 'Spy Agaric', 'Light Sword', 'Jelly Bunny', 'Bunny Muffin', 'Berry Box', 'Top Hat'] },
+  { id: 'c1', cat: 'mid', art: '/_blob/fcf5bf14ee8b1ae499c387610e4d1977', name: 'Карманник', price: 5, color: '#2bbf5a', dark: '#1a8a3e', bg: '#10291a', glow: 'rgba(43,191,90,0.9)', edge: '#1f4a2c', opened: 2591 },
+  { id: 'c2', cat: 'mid', art: '/_blob/06ce572b9077b276c1d8a7b06b5e8713', name: 'Конфетный', price: 10, color: '#f2c218', dark: '#b88f00', bg: '#2a240c', glow: 'rgba(242,194,24,0.9)', edge: '#4a4010', opened: 1036, isNew: true },
+  { id: 'c3', cat: 'mid', art: '/_blob/9e1537bfc41c71475ce556a1aaf4884f', name: 'Пиратский', price: 15, color: '#2f86ff', dark: '#1a5ccc', bg: '#0f1d33', glow: 'rgba(47,134,255,0.9)', edge: '#1c3560', opened: 1554 },
+  { id: 'c4', cat: 'mid', art: '/_blob/c0847d0dc5fbcb1a68d80763032f0675', name: 'Налётчик', price: 25, color: '#ff4d4d', dark: '#c02a2a', bg: '#2e1212', glow: 'rgba(255,77,77,0.9)', edge: '#5a2020', opened: 2591, isNew: true },
+  { id: 'c5', cat: 'exp', art: '/_blob/db1a02051117bc41aa898a143cdc3d48', name: 'Медвежатник', price: 50, color: '#ff8a1f', dark: '#c45f00', bg: '#2e1c0c', glow: 'rgba(255,138,31,0.9)', edge: '#5a3612', opened: 5181 },
+  { id: 'c6', cat: 'exp', art: '/_blob/72f77fc4af6bf75c8e7d10aa33580007', name: 'Ночной рейд', price: 100, color: '#9b5cff', dark: '#6a32d0', bg: '#1d1233', glow: 'rgba(155,92,255,0.9)', edge: '#3a2460', opened: 311 },
+  { id: 'c7', cat: 'exp', art: '/_blob/b289144243be3c7e4e7176e3a0070caa', name: 'Сейф', price: 250, color: '#14c8c8', dark: '#0a8c8c', bg: '#0c2a2a', glow: 'rgba(20,200,200,0.9)', edge: '#164a4a', opened: 518 },
+  { id: 'c8', cat: 'exp', art: '/_blob/313d5daa64736bbfb70ecfcd97ed3141', name: 'Крёстный енот', price: 500, color: '#ffc83d', dark: '#c79400', bg: '#2e250c', glow: 'rgba(255,200,61,0.95)', edge: '#5a4a14', opened: 10362 },
   // Единственный бесплатный кейс: раз в сутки, внутри TON на баланс
-  { id: 'free', name: 'Ежедневный', price: 0, free: true, color: '#5fd4ff', dark: '#2fa0d0', bg: '#0c2430', glow: 'rgba(95,212,255,0.9)', edge: '#18465a', opened: 8812,
+  { id: 'free', cat: 'free', name: 'Ежедневный', price: 0, free: true, color: '#5fd4ff', dark: '#2fa0d0', bg: '#0c2430', glow: 'rgba(95,212,255,0.9)', edge: '#18465a', opened: 8812,
     pool: ['TON_0.1', 'TON_1'], probs: [0.99, 0.01] }
 ];
 // Призы-TON (зачисляются сразу на баланс, в инвентарь не попадают)
@@ -406,7 +426,7 @@ function buildPool(P) {
 CASES.forEach(function (c) {
   if (c.free) { /* pool и probs заданы в CASES */ }
   else {
-    c.pool = buildPool(c.price);
+    c.pool = (c.pool || buildPool(c.price)).filter(function (k) { return CAT[k]; });
     var prices = c.pool.map(function (k) { return CAT[k].price; });
     var target = c.price * RTP;
     var ev = function (a) { var S = 0, E = 0; prices.forEach(function (p) { var w = Math.pow(p, -a); S += w; E += w * p; }); return E / S; };
@@ -436,7 +456,7 @@ class Component extends DCLogic {
     super(props);
     var drops = []; for (var i = 0; i < 7; i++) drops.push(randomDrop().name);
     this.state = {
-      caseId: null, tab: 'paid', balance: 500, fast: false, spinning: false,
+      caseId: null, tab: 'cheap', balance: 500, fast: false, spinning: false,
       strip: [], offset: 0, anim: false, won: null, overlay: false, loot: [], nextId: 1,
       freeAt: getFreeAt(), now: Date.now(), drops: drops
     };
@@ -495,7 +515,7 @@ class Component extends DCLogic {
     var won = s.won ? CAT[s.won.key] : null;
     var wonCase = s.won ? caseById(s.won.caseId) : null;
     var mult = won && wonCase && wonCase.price ? won.price / wonCase.price : 0;
-    var list = CASES.filter(function (x) { return s.tab === 'free' ? x.free : !x.free; });
+    var list = CASES.filter(function (x) { return x.cat === s.tab; });
 
     return {
       balanceText: fmt(s.balance),
@@ -504,9 +524,8 @@ class Component extends DCLogic {
       inGrid: !c, inDetail: !!c,
       toGrid: function () { if (!self.state.spinning) self.setState({ caseId: null, overlay: false }); },
       liveDrops: s.drops.map(function (k) { var it = CAT[k]; return { name: it.name, img: it.img, color: it.color }; }),
-      tabPaid: function () { self.setState({ tab: 'paid' }); }, tabFree: function () { self.setState({ tab: 'free' }); },
-      paidSel: s.tab === 'paid' ? 'true' : 'false', freeSel: s.tab === 'free' ? 'true' : 'false',
-      paidColor: s.tab === 'paid' ? '#ffffff' : '#6c7282', freeColor: s.tab === 'free' ? '#ffffff' : '#6c7282',
+      tabs: CASE_TABS.map(function (t) { var sel = s.tab === t.id; return { label: t.label, sel: sel ? 'true' : 'false', color: sel ? '#ffffff' : '#6c7282', line: sel ? '#ffc83d' : 'transparent', pick: function () { self.setState({ tab: t.id }); } }; }),
+      tabHint: (CASE_TABS.filter(function (t) { return t.id === s.tab; })[0] || {}).hint || '',
       grid: list.map(function (x) {
         var fl = x.free && !x.locked && freeLeft > 0;
         return {
