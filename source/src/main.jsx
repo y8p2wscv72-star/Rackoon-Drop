@@ -194,7 +194,7 @@ const net = (() => {
   return api;
 })();
 
-window.RK = { wallet, inventory, store, stats, track, net, botName: '', user: (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) || null };
+window.RK = { wallet, inventory, store, stats, track, net, botName: 'RackoonDropBot', user: (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) || null };
 
 if (tg) {
   tg.ready();

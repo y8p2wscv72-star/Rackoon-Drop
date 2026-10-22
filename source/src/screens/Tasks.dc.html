@@ -145,7 +145,7 @@ class Component extends DCLogic {
   }
   refLink() {
     var r = R(), uid = r && r.user && r.user.id ? r.user.id : 'guest';
-    var bot = r && r.botName ? r.botName : 'rackoon_bot';
+    var bot = r && r.botName ? r.botName : 'RackoonDropBot';
     return 'https://t.me/' + bot + '?start=ref_' + uid;
   }
   renderVals() {
