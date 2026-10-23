@@ -29,7 +29,7 @@ var CASES = [
     pool: ['TON_0.1', 'TON_1'], probs: [0.99, 0.01] },
   // Промо-кейс: открывается промокодом (каждый код — один раз на игрока), внутри TON на баланс
   { id: 'promo', cat: 'free', name: 'Промо-кейс', price: 0, free: true, promo: true, color: '#c77dff', dark: '#8a45d6', bg: '#1d1233', glow: 'rgba(199,125,255,0.9)', edge: '#3a2460', opened: 0, isNew: true,
-    pool: ['TON_0.1', 'TON_0.25', 'TON_0.5', 'TON_1', 'TON_3'], probs: [0.55, 0.25, 0.12, 0.07, 0.01] }
+    pool: ['TON_0.1', 'TON_0.25', 'TON_0.5', 'TON_1', 'TON_3'], probs: [0.75, 0.23, 0.015, 0.004, 0.001] }
 ];
 // Состав кейса без явного pool: 12 NFT от ~¼ до ~40 цен кейса (по сегодняшним ценам)
 function nftList(t) {
