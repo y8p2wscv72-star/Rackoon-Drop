@@ -206,6 +206,14 @@ body{margin:0;background:#0d0f14}
 <button type="button" onClick="{{lbReset}}" style="height: 44px; border-radius: 12px; border: 0; background: {{lbBg}}; color: #ffffff; font-family: Rubik, system-ui, sans-serif; font-size: 13px; font-weight: 900; padding: 0 14px; cursor: pointer; flex-shrink: 0">{{lbText}}</button>
 </div>
 
+<div style="background: #151821; border: 1px solid #3a1d26; border-radius: 20px; padding: 14px; display: flex; align-items: center; gap: 10px">
+<div style="display: flex; flex-direction: column; gap: 2px; flex-grow: 1; min-width: 0">
+<span style="font-size: 12px; font-weight: 700; letter-spacing: 2px; color: #ff8a9a">БАЛАНСЫ ИГРОКОВ</span>
+<span style="font-size: 12px; color: #8a90a0">Обнулить TON у всех. Подарки в инвентаре остаются</span>
+</div>
+<button type="button" onClick="{{balReset}}" style="height: 44px; border-radius: 12px; border: 0; background: {{balBg}}; color: #ffffff; font-family: Rubik, system-ui, sans-serif; font-size: 13px; font-weight: 900; padding: 0 12px; cursor: pointer; flex-shrink: 0">{{balText}}</button>
+</div>
+
 <div style="display: flex; justify-content: space-between; align-items: baseline; margin-top: 6px">
 <span style="font-size: 17px; font-weight: 700">Последние операции</span>
 <span style="font-size: 12px; color: #8a90a0">{{logCount}}</span>
@@ -285,6 +293,7 @@ class Component extends DCLogic {
       this.offs.push(net.on('admin.user', function (m) { self.setState({ user: m.user, busy: false, msg: null, confirmBan: false, banReason: '' }); }));
       this.offs.push(net.on('admin.done', function (m) {
         var a = m.amount;
+        if (m.action === 'balreset') { self.setState({ log: m.log, busy: false, confirmBal: 0, user: null, msg: { ok: true, text: '🧹 Балансы обнулены: ' + (m.count || 0) + ' игроков, всего ' + Math.abs(m.amount || 0) + ' TON' } }); return; }
         if (m.action === 'lbreset') { self.setState({ log: m.log, busy: false, confirmLb: false, msg: { ok: true, text: '🏆 Рейтинг сброшен — таблица лидеров начинается заново' } }); return; }
         if (m.action) { self.setState({ user: m.user, log: m.log, busy: false, banReason: '', confirmBan: false, msg: { ok: true, text: (m.action === 'ban' ? '⛔ Заблокирован' : '✅ Разблокирован') + ' @' + m.user.username } }); return; }
         self.setState({ user: m.user, log: m.log, busy: false, amount: '',
@@ -397,7 +406,7 @@ class Component extends DCLogic {
       takeBg: ready ? '#ff5d73' : '#2a1d22', takeColor: ready ? '#2a0610' : '#6b4f56',
       hasMsg: !!s.msg, msg: s.msg ? s.msg.text : '',
       msgBg: s.msg && s.msg.ok ? 'rgba(43,212,107,0.12)' : 'rgba(255,93,115,0.12)', msgBorder: s.msg && s.msg.ok ? 'rgba(43,212,107,0.45)' : 'rgba(255,93,115,0.45)',
-      log: (s.log || []).map(function (l) { return { to: l.to, time: hm(l.at), amount: l.action === 'lbreset' ? '🔄 сброс' : l.action === 'ban' ? '⛔ бан' : l.action === 'unban' ? '✅ разбан' : (l.amount > 0 ? '+' : '') + l.amount + ' TON', color: l.action === 'unban' || (!l.action && l.amount > 0) ? '#2bd46b' : '#ff5d73' }; }),
+      log: (s.log || []).map(function (l) { return { to: l.to, time: hm(l.at), amount: l.action === 'balreset' ? '🧹 ' + l.amount + ' TON' : l.action === 'lbreset' ? '🔄 сброс' : l.action === 'ban' ? '⛔ бан' : l.action === 'unban' ? '✅ разбан' : (l.amount > 0 ? '+' : '') + l.amount + ' TON', color: l.action === 'unban' || (!l.action && l.amount > 0) ? '#2bd46b' : '#ff5d73' }; }),
       refresh: function () { var n = NET(); if (n && n.connected) { n.send({ t: 'admin.log' }); n.send({ t: 'admin.promos' }); } },
       deps: (s.deps || []).map(function (d) {
         var u = d.username ? '@' + d.username : (d.uid && d.uid.indexOf('tg') === 0 ? 'id ' + d.uid.slice(2) : (d.comment ? '«' + d.comment + '»' : 'без комментария'));
@@ -407,6 +416,12 @@ class Component extends DCLogic {
       }),
       noDeps: !(s.deps && s.deps.length),
       hasPending: pend > 0, pendingCount: pend,
+      balText: s.confirmBal === 2 ? 'ТОЧНО ВСЕМ?' : s.confirmBal === 1 ? 'Уверен?' : 'Обнулить', balBg: s.confirmBal ? '#c0283f' : '#ff5d73',
+      balReset: function () {
+        var c = self.state.confirmBal || 0;
+        if (c < 2) return self.setState({ confirmBal: c + 1 });
+        var n = NET(); if (n && n.connected) { self.setState({ busy: true, confirmBal: 0 }); n.send({ t: 'admin.balanceReset' }); }
+      },
       lbText: s.confirmLb ? 'Точно сбросить?' : 'Сбросить', lbBg: s.confirmLb ? '#c0283f' : '#ff5d73',
       lbReset: function () {
         if (!self.state.confirmLb) return self.setState({ confirmLb: true });

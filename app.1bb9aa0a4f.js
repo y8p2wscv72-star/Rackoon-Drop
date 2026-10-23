@@ -4015,6 +4015,14 @@ body{margin:0;background:#0d0f14}
 <button type="button" onClick="{{lbReset}}" style="height: 44px; border-radius: 12px; border: 0; background: {{lbBg}}; color: #ffffff; font-family: Rubik, system-ui, sans-serif; font-size: 13px; font-weight: 900; padding: 0 14px; cursor: pointer; flex-shrink: 0">{{lbText}}</button>
 </div>
 
+<div style="background: #151821; border: 1px solid #3a1d26; border-radius: 20px; padding: 14px; display: flex; align-items: center; gap: 10px">
+<div style="display: flex; flex-direction: column; gap: 2px; flex-grow: 1; min-width: 0">
+<span style="font-size: 12px; font-weight: 700; letter-spacing: 2px; color: #ff8a9a">\u0411\u0410\u041B\u0410\u041D\u0421\u042B \u0418\u0413\u0420\u041E\u041A\u041E\u0412</span>
+<span style="font-size: 12px; color: #8a90a0">\u041E\u0431\u043D\u0443\u043B\u0438\u0442\u044C TON \u0443 \u0432\u0441\u0435\u0445. \u041F\u043E\u0434\u0430\u0440\u043A\u0438 \u0432 \u0438\u043D\u0432\u0435\u043D\u0442\u0430\u0440\u0435 \u043E\u0441\u0442\u0430\u044E\u0442\u0441\u044F</span>
+</div>
+<button type="button" onClick="{{balReset}}" style="height: 44px; border-radius: 12px; border: 0; background: {{balBg}}; color: #ffffff; font-family: Rubik, system-ui, sans-serif; font-size: 13px; font-weight: 900; padding: 0 12px; cursor: pointer; flex-shrink: 0">{{balText}}</button>
+</div>
+
 <div style="display: flex; justify-content: space-between; align-items: baseline; margin-top: 6px">
 <span style="font-size: 17px; font-weight: 700">\u041F\u043E\u0441\u043B\u0435\u0434\u043D\u0438\u0435 \u043E\u043F\u0435\u0440\u0430\u0446\u0438\u0438</span>
 <span style="font-size: 12px; color: #8a90a0">{{logCount}}</span>
@@ -4094,6 +4102,7 @@ class Component extends DCLogic {
       this.offs.push(net.on('admin.user', function (m) { self.setState({ user: m.user, busy: false, msg: null, confirmBan: false, banReason: '' }); }));
       this.offs.push(net.on('admin.done', function (m) {
         var a = m.amount;
+        if (m.action === 'balreset') { self.setState({ log: m.log, busy: false, confirmBal: 0, user: null, msg: { ok: true, text: '\u{1F9F9} \u0411\u0430\u043B\u0430\u043D\u0441\u044B \u043E\u0431\u043D\u0443\u043B\u0435\u043D\u044B: ' + (m.count || 0) + ' \u0438\u0433\u0440\u043E\u043A\u043E\u0432, \u0432\u0441\u0435\u0433\u043E ' + Math.abs(m.amount || 0) + ' TON' } }); return; }
         if (m.action === 'lbreset') { self.setState({ log: m.log, busy: false, confirmLb: false, msg: { ok: true, text: '\u{1F3C6} \u0420\u0435\u0439\u0442\u0438\u043D\u0433 \u0441\u0431\u0440\u043E\u0448\u0435\u043D \u2014 \u0442\u0430\u0431\u043B\u0438\u0446\u0430 \u043B\u0438\u0434\u0435\u0440\u043E\u0432 \u043D\u0430\u0447\u0438\u043D\u0430\u0435\u0442\u0441\u044F \u0437\u0430\u043D\u043E\u0432\u043E' } }); return; }
         if (m.action) { self.setState({ user: m.user, log: m.log, busy: false, banReason: '', confirmBan: false, msg: { ok: true, text: (m.action === 'ban' ? '\u26D4 \u0417\u0430\u0431\u043B\u043E\u043A\u0438\u0440\u043E\u0432\u0430\u043D' : '\u2705 \u0420\u0430\u0437\u0431\u043B\u043E\u043A\u0438\u0440\u043E\u0432\u0430\u043D') + ' @' + m.user.username } }); return; }
         self.setState({ user: m.user, log: m.log, busy: false, amount: '',
@@ -4206,7 +4215,7 @@ class Component extends DCLogic {
       takeBg: ready ? '#ff5d73' : '#2a1d22', takeColor: ready ? '#2a0610' : '#6b4f56',
       hasMsg: !!s.msg, msg: s.msg ? s.msg.text : '',
       msgBg: s.msg && s.msg.ok ? 'rgba(43,212,107,0.12)' : 'rgba(255,93,115,0.12)', msgBorder: s.msg && s.msg.ok ? 'rgba(43,212,107,0.45)' : 'rgba(255,93,115,0.45)',
-      log: (s.log || []).map(function (l) { return { to: l.to, time: hm(l.at), amount: l.action === 'lbreset' ? '\u{1F504} \u0441\u0431\u0440\u043E\u0441' : l.action === 'ban' ? '\u26D4 \u0431\u0430\u043D' : l.action === 'unban' ? '\u2705 \u0440\u0430\u0437\u0431\u0430\u043D' : (l.amount > 0 ? '+' : '') + l.amount + ' TON', color: l.action === 'unban' || (!l.action && l.amount > 0) ? '#2bd46b' : '#ff5d73' }; }),
+      log: (s.log || []).map(function (l) { return { to: l.to, time: hm(l.at), amount: l.action === 'balreset' ? '\u{1F9F9} ' + l.amount + ' TON' : l.action === 'lbreset' ? '\u{1F504} \u0441\u0431\u0440\u043E\u0441' : l.action === 'ban' ? '\u26D4 \u0431\u0430\u043D' : l.action === 'unban' ? '\u2705 \u0440\u0430\u0437\u0431\u0430\u043D' : (l.amount > 0 ? '+' : '') + l.amount + ' TON', color: l.action === 'unban' || (!l.action && l.amount > 0) ? '#2bd46b' : '#ff5d73' }; }),
       refresh: function () { var n = NET(); if (n && n.connected) { n.send({ t: 'admin.log' }); n.send({ t: 'admin.promos' }); } },
       deps: (s.deps || []).map(function (d) {
         var u = d.username ? '@' + d.username : (d.uid && d.uid.indexOf('tg') === 0 ? 'id ' + d.uid.slice(2) : (d.comment ? '\xAB' + d.comment + '\xBB' : '\u0431\u0435\u0437 \u043A\u043E\u043C\u043C\u0435\u043D\u0442\u0430\u0440\u0438\u044F'));
@@ -4216,6 +4225,12 @@ class Component extends DCLogic {
       }),
       noDeps: !(s.deps && s.deps.length),
       hasPending: pend > 0, pendingCount: pend,
+      balText: s.confirmBal === 2 ? '\u0422\u041E\u0427\u041D\u041E \u0412\u0421\u0415\u041C?' : s.confirmBal === 1 ? '\u0423\u0432\u0435\u0440\u0435\u043D?' : '\u041E\u0431\u043D\u0443\u043B\u0438\u0442\u044C', balBg: s.confirmBal ? '#c0283f' : '#ff5d73',
+      balReset: function () {
+        var c = self.state.confirmBal || 0;
+        if (c < 2) return self.setState({ confirmBal: c + 1 });
+        var n = NET(); if (n && n.connected) { self.setState({ busy: true, confirmBal: 0 }); n.send({ t: 'admin.balanceReset' }); }
+      },
       lbText: s.confirmLb ? '\u0422\u043E\u0447\u043D\u043E \u0441\u0431\u0440\u043E\u0441\u0438\u0442\u044C?' : '\u0421\u0431\u0440\u043E\u0441\u0438\u0442\u044C', lbBg: s.confirmLb ? '#c0283f' : '#ff5d73',
       lbReset: function () {
         if (!self.state.confirmLb) return self.setState({ confirmLb: true });
