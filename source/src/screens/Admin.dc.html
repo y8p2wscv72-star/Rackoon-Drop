@@ -174,6 +174,30 @@ body{margin:0;background:#0d0f14}
 </sc-for>
 </div>
 
+<div style="background: #151821; border: 1px solid #222838; border-radius: 20px; padding: 14px; display: flex; flex-direction: column; gap: 10px; margin-top: 6px">
+<div style="display: flex; justify-content: space-between; align-items: center">
+<span style="font-size: 12px; font-weight: 700; letter-spacing: 2px; color: #6c7282">ПРОМОКОДЫ · ПРОМО-КЕЙС</span>
+<span style="font-size: 12px; color: #8a90a0">{{promoCount}}</span>
+</div>
+<div style="display: grid; grid-template-columns: minmax(0, 1fr) 76px 64px; gap: 6px">
+<label style="height: 44px; border-radius: 12px; background: #0d0f14; border: 1px solid #262b3a; display: flex; align-items: center; padding: 0 10px; cursor: text">
+<input type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-label="Новый промокод" placeholder="НОВЫЙКОД" value="{{promoNew}}" onInput="{{onPromoNew}}" style="flex-grow: 1; min-width: 0; height: 100%; border: 0; outline: none; background: transparent; font-family: Rubik, system-ui, sans-serif; font-size: 14px; font-weight: 700; color: #ffffff">
+</label>
+<label style="height: 44px; border-radius: 12px; background: #0d0f14; border: 1px solid #262b3a; display: flex; align-items: center; padding: 0 8px; cursor: text">
+<input type="text" inputmode="numeric" autocomplete="off" aria-label="Сколько активаций" placeholder="100" value="{{promoMax}}" onInput="{{onPromoMax}}" style="width: 100%; height: 100%; border: 0; outline: none; background: transparent; font-family: Rubik, system-ui, sans-serif; font-size: 14px; font-weight: 700; color: #ffffff; text-align: center">
+</label>
+<button type="button" onClick="{{promoAdd}}" style="height: 44px; border-radius: 12px; border: 0; background: #c77dff; color: #1d0b33; font-family: Rubik, system-ui, sans-serif; font-size: 13px; font-weight: 900; cursor: pointer">+ Код</button>
+</div>
+<span style="font-size: 11px; color: #6c7282">Каждый код — один раз на игрока. Второе поле — сколько всего игроков может его активировать (0 — без ограничений).</span>
+<sc-for list="{{promos}}" as="pc" hint-placeholder-count="3">
+<div style="display: flex; align-items: center; gap: 8px; background: #0d0f14; border-radius: 12px; padding: 8px 10px; opacity: {{pc.opacity}}">
+<span style="flex-grow: 1; min-width: 0; font-size: 14px; font-weight: 700; letter-spacing: 0.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{pc.code}}</span>
+<span style="font-size: 12px; color: #a3a8b5; flex-shrink: 0">{{pc.uses}}</span>
+<button type="button" onClick="{{pc.toggle}}" style="height: 30px; border-radius: 8px; border: 1px solid #2c3244; background: transparent; color: {{pc.btnColor}}; font-family: Rubik, system-ui, sans-serif; font-size: 12px; font-weight: 700; padding: 0 8px; cursor: pointer; flex-shrink: 0">{{pc.btnText}}</button>
+</div>
+</sc-for>
+</div>
+
 <div style="display: flex; justify-content: space-between; align-items: baseline; margin-top: 6px">
 <span style="font-size: 17px; font-weight: 700">Последние операции</span>
 <span style="font-size: 12px; color: #8a90a0">{{logCount}}</span>
@@ -244,7 +268,7 @@ function hm(t) { var d = new Date(t + 3 * 3600 * 1000); return ('0' + d.getUTCDa
 class Component extends DCLogic {
   constructor(props) {
     super(props);
-    this.state = { pin: '', pinMsg: '', username: '', amount: '', user: null, msg: null, log: [], busy: false, tick: 0, wds: [], confirmRej: null, copied: null, banReason: '', confirmBan: false, bcText: '', bcBtn: true, bcConfirm: false, bc: null, bcHist: [] };
+    this.state = { promos: [], promoNew: '', promoMax: '100', pin: '', pinMsg: '', username: '', amount: '', user: null, msg: null, log: [], busy: false, tick: 0, wds: [], confirmRej: null, copied: null, banReason: '', confirmBan: false, bcText: '', bcBtn: true, bcConfirm: false, bc: null, bcHist: [] };
     this.offs = [];
   }
   componentDidMount() {
@@ -270,7 +294,8 @@ class Component extends DCLogic {
         self.setState({ wds: list, busy: false });
       }));
       this.offs.push(net.on('admin.bc', function (m) { var st = { bc: m.bc }; if (m.history) st.bcHist = m.history; self.setState(st); }));
-      var load = function () { if (net.connected && net.pinOk) { net.send({ t: 'admin.log' }); net.send({ t: 'admin.bcStatus' }); } };
+      var load = function () { if (net.connected && net.pinOk) { net.send({ t: 'admin.log' }); net.send({ t: 'admin.bcStatus' }); net.send({ t: 'admin.promos' }); } };
+      this.offs.push(net.on('admin.promos', function (m) { self.setState({ promos: m.list || [], busy: false }); }));
       this.offs.push(net.on('admin.pinOk', function () { self.setState({ pin: '', pinMsg: '' }); load(); }));
       this.offs.push(net.on('admin.pinBad', function (m) { self.setState({ pin: '', pinMsg: 'Неверный PIN. Осталось попыток: ' + m.left }); }));
       this.offs.push(net.on('status', function () { self.forceUpdate(); load(); }));
@@ -364,7 +389,7 @@ class Component extends DCLogic {
       hasMsg: !!s.msg, msg: s.msg ? s.msg.text : '',
       msgBg: s.msg && s.msg.ok ? 'rgba(43,212,107,0.12)' : 'rgba(255,93,115,0.12)', msgBorder: s.msg && s.msg.ok ? 'rgba(43,212,107,0.45)' : 'rgba(255,93,115,0.45)',
       log: (s.log || []).map(function (l) { return { to: l.to, time: hm(l.at), amount: l.action === 'ban' ? '⛔ бан' : l.action === 'unban' ? '✅ разбан' : (l.amount > 0 ? '+' : '') + l.amount + ' TON', color: l.action === 'unban' || (!l.action && l.amount > 0) ? '#2bd46b' : '#ff5d73' }; }),
-      refresh: function () { var n = NET(); if (n && n.connected) n.send({ t: 'admin.log' }); },
+      refresh: function () { var n = NET(); if (n && n.connected) { n.send({ t: 'admin.log' }); n.send({ t: 'admin.promos' }); } },
       deps: (s.deps || []).map(function (d) {
         var u = d.username ? '@' + d.username : (d.uid && d.uid.indexOf('tg') === 0 ? 'id ' + d.uid.slice(2) : (d.comment ? '«' + d.comment + '»' : 'без комментария'));
         var ok = String(d.status || '').indexOf('зачислено') === 0;
@@ -373,6 +398,20 @@ class Component extends DCLogic {
       }),
       noDeps: !(s.deps && s.deps.length),
       hasPending: pend > 0, pendingCount: pend,
+      promoNew: s.promoNew, promoMax: s.promoMax,
+      onPromoNew: function (e) { self.setState({ promoNew: String((e && e.target && e.target.value) || '').toUpperCase().replace(/[^A-Z0-9_]/g, '').slice(0, 24) }); },
+      onPromoMax: function (e) { self.setState({ promoMax: String((e && e.target && e.target.value) || '').replace(/\D/g, '').slice(0, 6) }); },
+      promoAdd: function () {
+        var n = NET(); if (!n || !n.connected) return;
+        if (self.state.promoNew.length < 4) return self.setState({ msg: { ok: false, text: 'Промокод: от 4 латинских букв или цифр' } });
+        n.send({ t: 'admin.promoAdd', code: self.state.promoNew, max: parseInt(self.state.promoMax || '0', 10) }); self.setState({ promoNew: '' });
+      },
+      promoCount: (s.promos || []).length ? (s.promos || []).filter(function (p) { return p.active; }).length + ' активных' : '',
+      promos: (s.promos || []).map(function (p) {
+        return { code: p.code, uses: (p.uses || 0) + ' / ' + (p.max ? p.max : '∞'), opacity: p.active ? 1 : 0.45,
+          btnText: p.active ? 'Выключить' : 'Включить', btnColor: p.active ? '#ff8a9a' : '#2bd46b',
+          toggle: function () { var n = NET(); if (n && n.connected) n.send({ t: 'admin.promoToggle', code: p.code }); } };
+      }),
       bizText: !s.bizLoaded ? '' : s.biz ? '🤖 Бизнес-аккаунт @' + s.biz.username + ': приём NFT ' + (s.biz.canView ? 'включён' : 'нет права «просмотр подарков»') + ' · автовывод ' + (s.biz.canTransfer ? 'включён' : 'нет права «передача подарков»') : '🤖 Бизнес-аккаунт не подключён: приём NFT и автовывод выключены',
       bizColor: s.biz && s.biz.canView && s.biz.canTransfer ? '#2bd46b' : '#a3a8b5',
       noWds: !(s.wds && s.wds.length),

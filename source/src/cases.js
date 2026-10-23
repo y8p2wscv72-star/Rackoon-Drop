@@ -4,7 +4,7 @@
 var GIFTCAT = require('./gifts.js');
 var RTP = 0.90;                       // кейсы в среднем возвращают 90% цены
 var FREE_COOLDOWN = 24 * 3600 * 1000; // бесплатный кейс — раз в сутки
-var TON_PRIZES = { 'TON_0.1': 0.1, 'TON_1': 1 }; // призы-TON: сразу на баланс
+var TON_PRIZES = { 'TON_0.1': 0.1, 'TON_0.25': 0.25, 'TON_0.5': 0.5, 'TON_1': 1, 'TON_3': 3 }; // призы-TON: сразу на баланс
 var CASES = [
   { id: 's05', cat: 'cheap', art: 'assets/case-s05.jpg', ratio: '1 / 1', name: 'Мелочь', price: 0.5, color: '#ff7ab8', dark: '#c4447f', bg: '#2e1022', glow: 'rgba(255,122,184,0.9)', edge: '#5a1c3e', opened: 0, isNew: true,
     pool: ['Heart', 'Teddy Bear', 'Rose', 'Gift Box', 'Cake', 'Bouquet', 'Ring', 'Lol Pop'] },
@@ -24,7 +24,10 @@ var CASES = [
   { id: 'c8', cat: 'exp', art: 'assets/case-c8.jpg', name: 'Крёстный енот', price: 500, color: '#ffc83d', dark: '#c79400', bg: '#2e250c', glow: 'rgba(255,200,61,0.95)', edge: '#5a4a14', opened: 10362 },
   // Единственный бесплатный кейс: раз в сутки, внутри TON на баланс
   { id: 'free', cat: 'free', name: 'Ежедневный', price: 0, free: true, color: '#5fd4ff', dark: '#2fa0d0', bg: '#0c2430', glow: 'rgba(95,212,255,0.9)', edge: '#18465a', opened: 8812,
-    pool: ['TON_0.1', 'TON_1'], probs: [0.99, 0.01] }
+    pool: ['TON_0.1', 'TON_1'], probs: [0.99, 0.01] },
+  // Промо-кейс: открывается промокодом (каждый код — один раз на игрока), внутри TON на баланс
+  { id: 'promo', cat: 'free', name: 'Промо-кейс', price: 0, free: true, promo: true, color: '#c77dff', dark: '#8a45d6', bg: '#1d1233', glow: 'rgba(199,125,255,0.9)', edge: '#3a2460', opened: 0, isNew: true,
+    pool: ['TON_0.1', 'TON_0.25', 'TON_0.5', 'TON_1', 'TON_3'], probs: [0.55, 0.25, 0.12, 0.07, 0.01] }
 ];
 // Состав кейса без явного pool: 12 NFT от ~¼ до ~40 цен кейса (по сегодняшним ценам)
 function nftList(t) {
@@ -48,7 +51,7 @@ function build(t) {
   if (_cache.day === day) return _cache.map;
   var list = nftList(t), map = {};
   CASES.forEach(function (c0) {
-    var c = { id: c0.id, price: c0.price, free: !!c0.free };
+    var c = { id: c0.id, price: c0.price, free: !!c0.free, promo: !!c0.promo };
     if (c0.free) { c.pool = c0.pool.slice(); c.probs = c0.probs.slice(); }
     else {
       c.pool = (c0.pool || buildPool(c0.price, list)).filter(function (k) { return prizePrice(k, t) != null; });
