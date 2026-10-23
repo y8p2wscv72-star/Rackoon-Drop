@@ -141,7 +141,7 @@ function showSubPrompt(channel) {
 // Адрес сервера: window.RK_SERVER (задаётся в index.html), иначе тот же сайт.
 let currentScreen = null; // открытый экран — чтобы новый баланс сразу попал в него
 function applyAcct(a) {
-  acct.bal = Math.round((a.bal || 0) * 100) / 100; acct.inv = Array.isArray(a.inv) ? a.inv : []; if (a.freeAt != null) acct.freeAt = a.freeAt; acct.loaded = true;
+  acct.bal = Math.round((a.bal || 0) * 100) / 100; acct.inv = Array.isArray(a.inv) ? a.inv : []; if (a.freeAt != null) acct.freeAt = a.freeAt; if (a.promoDone != null) acct.promoDone = !!a.promoDone; acct.loaded = true;
   const lg = currentScreen && currentScreen.logic;
   if (lg && lg.state && 'balance' in lg.state) lg.state.balance = acct.bal;
   if (currentScreen) currentScreen.forceUpdate();

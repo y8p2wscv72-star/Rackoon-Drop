@@ -411,6 +411,7 @@ function roll(c) { var r = Math.random(), acc = 0; for (var i = 0; i < c.pool.le
 function previewStrip(c) { var s = []; for (var i = 0; i < N; i++) s.push(c.free ? roll(c) : c.pool[i % c.pool.length]); return s; }
 function fmtChance(p) { var v = p * 100; return v >= 10 ? v.toFixed(1) + '%' : (v >= 1 ? v.toFixed(2) + '%' : v.toFixed(3) + '%'); }
 function NET() { return window.RK && window.RK.net; }
+function promoDone() { return !!(window.RK && window.RK.acct && window.RK.acct.promoDone); }
 function freeAt() { return (window.RK && window.RK.acct && window.RK.acct.freeAt) || 0; }
 function hms(ms) { var s = Math.ceil(ms / 1000), h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), x = s % 60; return h + ':' + ('0' + m).slice(-2) + ':' + ('0' + x).slice(-2); }
 // LIVE-лента: настоящие выпадения игроков (сервер присылает их всем)
@@ -443,7 +444,7 @@ class Component extends DCLogic {
   open() {
     var s = this.state, c = caseById(s.caseId), self = this, net = NET();
     if (!c || s.spinning) return;
-    if (c.promo) { if (s.promoCode.trim().length < 3) return; }
+    if (c.promo) { if (promoDone() || s.promoCode.trim().length < 3) return; }
     else if (c.free) { if (this.freeLeft() > 0) return; }
     else if (s.balance < c.price) return;
     this.setState({ spinning: true, overlay: false, won: null, shownBal: Math.round((s.balance - (c.free ? 0 : c.price)) * 100) / 100 });
@@ -469,7 +470,7 @@ class Component extends DCLogic {
     var c = s.caseId ? caseById(s.caseId) : null;
     var dur = s.fast ? 1.1 : 4.8;
     var freeLeft = this.freeLeft();
-    var canOpen = c && !s.spinning && (c.promo ? s.promoCode.trim().length >= 3 : c.free ? freeLeft === 0 : s.balance >= c.price);
+    var canOpen = c && !s.spinning && (c.promo ? !promoDone() && s.promoCode.trim().length >= 3 : c.free ? freeLeft === 0 : s.balance >= c.price);
     var invNow = window.RK.inventory.list().filter(function (it) { return CAT[it.key]; });
     var won = s.won ? CAT[s.won.key] : null;
     var wonCase = s.won ? caseById(s.won.caseId) : null;
@@ -487,17 +488,18 @@ class Component extends DCLogic {
       tabHint: (CASE_TABS.filter(function (t) { return t.id === s.tab; })[0] || {}).hint || '',
       grid: list.map(function (x) {
         var fl = x.free && !x.promo && !x.locked && freeLeft > 0;
+        var pd = !!x.promo && promoDone();
         return {
           name: x.name, priceText: x.promo ? 'Промокод' : x.free ? 'Бесплатно' : fmt(x.price), opened: x.opened.toLocaleString('ru-RU') + ' откр.',
           color: x.color, dark: x.dark, bg: x.bg, glow: x.glow, edge: x.edge, isNew: !!x.isNew,
           hasArt: !!x.art, noArt: !x.art, art: x.art || '', ratio: x.ratio || '384 / 418', shadow: x.glow.replace('0.9', '0.35').replace('0.95', '0.35'),
-          prizeImg: CAT[x.top].img, locked: !!x.locked || fl, lockText: x.locked ? x.lockText : 'Через ' + hms(freeLeft),
+          prizeImg: CAT[x.top].img, locked: !!x.locked || fl || pd, lockText: x.locked ? x.lockText : pd ? 'Уже открыт' : 'Через ' + hms(freeLeft),
           open: function () { if (!x.locked) self.openCase(x.id); }
         };
       }),
       dHasArt: !!(c && c.art), dNoArt: !(c && c.art), dArt: c && c.art ? c.art : '', dArtH: c && c.ratio === '1 / 1' ? 150 : 163,
-      dName: c ? c.name : '', dPriceText: c ? (c.promo ? 'По промокоду · нужна подписка на канал' : c.free ? 'Бесплатно раз в сутки · нужна подписка на канал' : fmt(c.price)) : '',
-      isPromo: !!(c && c.promo), promoCode: s.promoCode, promoBorder: s.promoCode ? '#c77dff' : '#262b3a',
+      dName: c ? c.name : '', dPriceText: c ? (c.promo ? (promoDone() ? 'Ты уже открыл промо-кейс — он доступен 1 раз' : 'По промокоду · 1 раз на аккаунт · нужна подписка') : c.free ? 'Бесплатно раз в сутки · нужна подписка на канал' : fmt(c.price)) : '',
+      isPromo: !!(c && c.promo) && !promoDone(), promoCode: s.promoCode, promoBorder: s.promoCode ? '#c77dff' : '#262b3a',
       onPromo: function (e) { self.setState({ promoCode: String((e && e.target && e.target.value) || '').toUpperCase().replace(/[^A-Z0-9_]/g, '').slice(0, 24) }); },
       onPromoKey: function (e) { if (e && e.key === 'Enter') { if (e.target && e.target.blur) e.target.blur(); self.open(); } },
       dOpened: c ? 'Открыто ' + c.opened.toLocaleString('ru-RU') + ' раз' : '',
@@ -509,7 +511,7 @@ class Component extends DCLogic {
       openDisabled: !canOpen,
       btnBg: canOpen ? '#ffc83d' : '#1d2230', btnColor: canOpen ? '#1a1300' : '#6c7282',
       btnShadow: canOpen ? '0 6px 24px rgba(255,200,61,0.35)' : 'none',
-      btnText: !c ? '' : (s.spinning ? 'ОТКРЫВАЕМ...' : (c.promo ? 'ОТКРЫТЬ ПО ПРОМОКОДУ' : c.free ? (freeLeft > 0 ? 'ЧЕРЕЗ ' + hms(freeLeft) : 'ОТКРЫТЬ БЕСПЛАТНО') : (s.balance >= c.price ? 'ОТКРЫТЬ · ' + fmt(c.price) : 'НЕ ХВАТАЕТ TON'))),
+      btnText: !c ? '' : (s.spinning ? 'ОТКРЫВАЕМ...' : (c.promo ? (promoDone() ? 'УЖЕ ОТКРЫТ' : 'ОТКРЫТЬ ПО ПРОМОКОДУ') : c.free ? (freeLeft > 0 ? 'ЧЕРЕЗ ' + hms(freeLeft) : 'ОТКРЫТЬ БЕСПЛАТНО') : (s.balance >= c.price ? 'ОТКРЫТЬ · ' + fmt(c.price) : 'НЕ ХВАТАЕТ TON'))),
       contents: c ? c.pool.map(function (k, i) { var it = CAT[k]; return { name: it.name, img: it.img, priceText: fmt(it.price), color: it.color, chanceText: fmtChance(c.probs[i]) }; }).reverse() : [],
       loot: invNow.slice(0, 3).map(function (l) { var it = CAT[l.key]; return { name: it.name, img: it.img, priceText: fmt(it.price) }; }),
       invInfo: invNow.length ? invNow.length + ' шт. · продать или вывести' : 'Забирай дропы, они попадут сюда',
