@@ -453,7 +453,7 @@ class Component extends DCLogic {
       if (!useXr && !n2.cryptobot) { this.showToast({ icon: '\u{1F6A7}', text: '\u041F\u043E\u043F\u043E\u043B\u043D\u0435\u043D\u0438\u0435 \u0447\u0435\u0440\u0435\u0437 CryptoBot \u0441\u043A\u043E\u0440\u043E \u0431\u0443\u0434\u0435\u0442 \u0434\u043E\u0441\u0442\u0443\u043F\u043D\u043E' }); return; }
       if (this.state.cbCreating) return;
       this.setState({ cbCreating: true });
-      if (useXr) n2.send({ t: 'xr.create', asset: 'TON', amount: a2 });
+      if (useXr) { var xa = (n2.xrocket.assets || ['TON']), code = CURS[s.depCur].code; n2.send({ t: 'xr.create', asset: xa.indexOf(code) !== -1 ? code : 'TON', amount: a2 }); }
       else n2.send({ t: 'cb.create', asset: CURS[s.depCur].code, amount: a2 });
       return;
     }
@@ -474,7 +474,8 @@ class Component extends DCLogic {
     var liveTon = !TEST_TOPUP && s.depMode === 'dep' && s.depTab === 'ton';
     var NN = window.RK && window.RK.net, hasCb = !!(NN && NN.cryptobot), hasXr = !!(NN && NN.xrocket), hasBoth = hasCb && hasXr;
     var isXr = s.depProv === 'xr' ? hasXr : (!hasCb && hasXr);
-    if (isXr) cur = CURS[1]; // xRocket \u2014 \u0442\u043E\u043B\u044C\u043A\u043E TON
+    var xrAssets = (NN && NN.xrocket && NN.xrocket.assets) || ['TON'];
+    if (isXr && xrAssets.indexOf(cur.code) === -1) cur = CURS[1]; // xRocket \u2014 \u0442\u043E\u043B\u044C\u043A\u043E TON \u0438 USDT
     var liveCb = s.depMode === 'dep' && s.depTab === 'crypto' && (isXr ? hasXr : hasCb);
     return {
       topUp: function () { self.setState({ dep: true }); },
@@ -492,14 +493,14 @@ class Component extends DCLogic {
       curCode: cur.code, curName: cur.name, curSym: cur.sym, curColor: cur.color,
       curToggle: function () { self.setState({ curOpen: !self.state.curOpen }); },
       curOpen: !!s.curOpen, curOpenAttr: s.curOpen ? 'true' : 'false', curArrow: s.curOpen ? 180 : 0, curBtnBorder: s.curOpen ? '#ffc83d' : '#262b3a',
-      provToggle: function () { var n = window.RK && window.RK.net; var next = self.state.depProv === 'xr' ? 'cb' : 'xr'; if (next === 'xr' && !(n && n.xrocket)) return self.showToast({ icon: '\u{1F6A7}', text: '\u041F\u043E\u043F\u043E\u043B\u043D\u0435\u043D\u0438\u0435 \u0447\u0435\u0440\u0435\u0437 xRocket \u0441\u043A\u043E\u0440\u043E \u0431\u0443\u0434\u0435\u0442 \u0434\u043E\u0441\u0442\u0443\u043F\u043D\u043E' }); if (next === 'cb' && !(n && n.cryptobot)) return self.showToast({ icon: '\u{1F6A7}', text: '\u041F\u043E\u043F\u043E\u043B\u043D\u0435\u043D\u0438\u0435 \u0447\u0435\u0440\u0435\u0437 CryptoBot \u0441\u043A\u043E\u0440\u043E \u0431\u0443\u0434\u0435\u0442 \u0434\u043E\u0441\u0442\u0443\u043F\u043D\u043E' }); var st = { depProv: next, curOpen: false }; if (next === 'xr') st.depCur = 1; self.setState(st); },
+      provToggle: function () { var n = window.RK && window.RK.net; var next = self.state.depProv === 'xr' ? 'cb' : 'xr'; if (next === 'xr' && !(n && n.xrocket)) return self.showToast({ icon: '\u{1F6A7}', text: '\u041F\u043E\u043F\u043E\u043B\u043D\u0435\u043D\u0438\u0435 \u0447\u0435\u0440\u0435\u0437 xRocket \u0441\u043A\u043E\u0440\u043E \u0431\u0443\u0434\u0435\u0442 \u0434\u043E\u0441\u0442\u0443\u043F\u043D\u043E' }); if (next === 'cb' && !(n && n.cryptobot)) return self.showToast({ icon: '\u{1F6A7}', text: '\u041F\u043E\u043F\u043E\u043B\u043D\u0435\u043D\u0438\u0435 \u0447\u0435\u0440\u0435\u0437 CryptoBot \u0441\u043A\u043E\u0440\u043E \u0431\u0443\u0434\u0435\u0442 \u0434\u043E\u0441\u0442\u0443\u043F\u043D\u043E' }); var st = { depProv: next, curOpen: false }; if (next === 'xr' && (n.xrocket.assets || ['TON']).indexOf(CURS[self.state.depCur].code) === -1) st.depCur = 1; self.setState(st); },
       provName: isXr ? 'xRocket' : 'CryptoBot', provHint: hasBoth ? '\u043D\u0430\u0436\u043C\u0438, \u0447\u0442\u043E\u0431\u044B \u0441\u043C\u0435\u043D\u0438\u0442\u044C' : '\u0432 Telegram', provColor: isXr ? '#7b5cff' : '#1a8cff', provBorder: hasBoth ? '#3a3f55' : '#262b3a',
       provIcon: isXr ? 'M12 2 C16 6 17 10 15 15 L9 15 C7 10 8 6 12 2Z M9 16 L15 16 L13 21 L11 21Z' : 'M21 4 L3 11 L9 13 L11 19 L14 15 L19 19Z',
       curList: CURS.map(function (c, i) {
         var sel = i === s.depCur;
         return { code: c.code, name: c.name, sym: c.sym, color: c.color, sel: sel ? 'true' : 'false', border: sel ? '#ffc83d' : '#262b3a', bg: sel ? '#2a2410' : '#151821',
           pick: function () { self.setState({ depCur: i, curOpen: false }); } };
-      }).filter(function (c) { return !isXr || c.code === 'TON'; }),
+      }).filter(function (c) { return !isXr || xrAssets.indexOf(c.code) !== -1; }),
       depCryptoAmount: s.depCryptoAmount, depOnCryptoAmount: function (e) { self.setState({ depCryptoAmount: cleanNum(e && e.target && e.target.value) }); },
       depGiftImgs: DROPS.slice(0, 4).map(function (d) { return { img: d.img, color: colorOf(d.price) }; }),
       depGiftSteps: giftAcc ? [
