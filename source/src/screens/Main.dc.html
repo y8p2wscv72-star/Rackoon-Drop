@@ -450,7 +450,7 @@ class Component extends DCLogic {
       return;
     }
     var ga = window.RK && window.RK.net && window.RK.net.gifts;
-    if (s.depTab === 'gift' && ga && ga.username) { openLink('https://t.me/' + ga.username + (ga.hi !== false ? '?text=hi' : '')); return; } // чат с банком, «hi» уже вписан
+    if (s.depTab === 'gift' && ga && ga.username) { openTgLink('https://t.me/' + ga.username + (ga.hi !== false ? '?text=hi' : '')); return; } // чат с банком, «hi» уже вписан
     this.showToast({ icon: '🚧', text: 'Приём NFT-подарков скоро будет доступен' });
   }
   renderVals() {
