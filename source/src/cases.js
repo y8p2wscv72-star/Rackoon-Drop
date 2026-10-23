@@ -3,8 +3,8 @@
 // cat: cheap — дешёвые (обычные подарки за ⭐ + немного NFT), mid — средние (только NFT), exp — дорогие, free — бесплатный.
 var GIFTCAT = require('./gifts.js');
 var RTP = 0.90;                       // кейсы дешевле 1 TON в среднем возвращают 90% цены
-// RTP по цене кейса: до 15 TON — 65%, дороже 15 TON — 80%
-function rtpFor(price) { return price > 15 ? 0.80 : 0.65; }
+// RTP по цене кейса: до 15 TON — 65%, дороже 15 TON — 70%
+function rtpFor(price) { return price > 15 ? 0.70 : 0.65; }
 var FREE_COOLDOWN = 24 * 3600 * 1000; // бесплатный кейс — раз в сутки
 var TON_PRIZES = { 'TON_0.1': 0.1, 'TON_0.25': 0.25, 'TON_0.5': 0.5, 'TON_1': 1, 'TON_3': 3 }; // призы-TON: сразу на баланс
 var CASES = [
