@@ -344,7 +344,7 @@ function openLink(url) {
   window.open(url, '_blank');
 }
 var NFT_FALLBACK = '/_blob/a64ccb23ba5a5ab0f1f789ab412cf3af';
-var DEP_TABS = [{ id: 'ton', label: 'TON' }, { id: 'crypto', label: 'Crypto' }, { id: 'gift', label: 'Подарки' }];
+var DEP_TABS = [{ id: 'ton', label: 'TON' }, { id: 'crypto', label: 'Crypto' }, { id: 'gift', label: 'NFT' }];
 function cleanNum(v) {
   v = String(v || '').replace(',', '.').replace(/[^0-9.]/g, '');
   var parts = v.split('.'); if (parts.length > 2) v = parts[0] + '.' + parts.slice(1).join('');
@@ -495,11 +495,15 @@ class Component extends DCLogic {
       }).filter(function (c) { return !isXr || xrAssets.indexOf(c.code) !== -1; }),
       depCryptoAmount: s.depCryptoAmount, depOnCryptoAmount: function (e) { self.setState({ depCryptoAmount: cleanNum(e && e.target && e.target.value) }); },
       depGiftImgs: DROPS.slice(0, 4).map(function (d) { return { img: d.img, color: colorOf(d.price) }; }),
-      depGiftSteps: giftAcc ? [
+      depGiftSteps: giftAcc ? (giftAcc.hi ? [
+        { n: 1, text: 'Напиши «hi» в личку @' + giftAcc.username },
+        { n: 2, text: 'Подари ему NFT: профиль → «Подарить» → твой NFT' },
+        { n: 3, text: 'Через ~20 секунд NFT появится в инвентаре' }
+      ] : [
         { n: 1, text: 'Открой профиль @' + giftAcc.username + ' в Telegram' },
         { n: 2, text: 'Нажми «Подарить» и выбери NFT из своих подарков' },
         { n: 3, text: 'Через ~20 секунд такой же NFT появится в инвентаре' }
-      ] : [
+      ]) : [
         { n: 1, text: 'Приём NFT-подарков скоро заработает' },
         { n: 2, text: 'Ты сможешь подарить NFT аккаунту игры' },
         { n: 3, text: 'Подарок появится в твоём инвентаре' }
@@ -524,7 +528,7 @@ class Component extends DCLogic {
       wdHasItems: inv.length > 0, wdEmpty: inv.length === 0,
       wdInfo: wdCount ? 'выбрано ' + wdCount + ' из ' + inv.length : inv.length + ' шт. в инвентаре',
       wdTo: tgUser && tgUser.username ? '@' + tgUser.username : ((tgUser && tgUser.first_name) || 'твой Telegram-аккаунт'),
-      depBtnText: s.depMode === 'wd' ? (s.wdKind === 'ton' ? (parseFloat(s.wdAmount) > 0 ? 'Вывести ' + s.wdAmount + ' TON' : 'Вывести TON') : (wdCount ? 'Вывести ' + wdCount + ' NFT' : 'Выбери NFT')) : (s.depTab === 'gift' ? (giftAcc ? 'Открыть @' + giftAcc.username : 'Скоро') : 'Пополнить'),
+      depBtnText: s.depMode === 'wd' ? (s.wdKind === 'ton' ? (parseFloat(s.wdAmount) > 0 ? 'Вывести ' + s.wdAmount + ' TON' : 'Вывести TON') : (wdCount ? 'Вывести ' + wdCount + ' NFT' : 'Выбери NFT')) : (s.depTab === 'gift' ? (giftAcc ? 'Пополнить NFT' : 'Скоро') : 'Пополнить'),
       depBtnDisabled: s.depMode === 'wd' && s.wdKind === 'nft' && !wdCount,
       depBtnBg: s.depMode === 'wd' && s.wdKind === 'nft' && !wdCount ? '#3a3420' : '#ffc83d',
       wdIsTon: s.wdKind === 'ton', wdIsNft: s.wdKind === 'nft',

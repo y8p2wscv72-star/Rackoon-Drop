@@ -352,7 +352,7 @@ function openLink(url) {
   window.open(url, '_blank');
 }
 var NFT_FALLBACK = '/_blob/a64ccb23ba5a5ab0f1f789ab412cf3af';
-var DEP_TABS = [{ id: 'ton', label: 'TON' }, { id: 'crypto', label: 'Crypto' }, { id: 'gift', label: '\u041F\u043E\u0434\u0430\u0440\u043A\u0438' }];
+var DEP_TABS = [{ id: 'ton', label: 'TON' }, { id: 'crypto', label: 'Crypto' }, { id: 'gift', label: 'NFT' }];
 function cleanNum(v) {
   v = String(v || '').replace(',', '.').replace(/[^0-9.]/g, '');
   var parts = v.split('.'); if (parts.length > 2) v = parts[0] + '.' + parts.slice(1).join('');
@@ -503,11 +503,15 @@ class Component extends DCLogic {
       }).filter(function (c) { return !isXr || xrAssets.indexOf(c.code) !== -1; }),
       depCryptoAmount: s.depCryptoAmount, depOnCryptoAmount: function (e) { self.setState({ depCryptoAmount: cleanNum(e && e.target && e.target.value) }); },
       depGiftImgs: DROPS.slice(0, 4).map(function (d) { return { img: d.img, color: colorOf(d.price) }; }),
-      depGiftSteps: giftAcc ? [
+      depGiftSteps: giftAcc ? (giftAcc.hi ? [
+        { n: 1, text: '\u041D\u0430\u043F\u0438\u0448\u0438 \xABhi\xBB \u0432 \u043B\u0438\u0447\u043A\u0443 @' + giftAcc.username },
+        { n: 2, text: '\u041F\u043E\u0434\u0430\u0440\u0438 \u0435\u043C\u0443 NFT: \u043F\u0440\u043E\u0444\u0438\u043B\u044C \u2192 \xAB\u041F\u043E\u0434\u0430\u0440\u0438\u0442\u044C\xBB \u2192 \u0442\u0432\u043E\u0439 NFT' },
+        { n: 3, text: '\u0427\u0435\u0440\u0435\u0437 ~20 \u0441\u0435\u043A\u0443\u043D\u0434 NFT \u043F\u043E\u044F\u0432\u0438\u0442\u0441\u044F \u0432 \u0438\u043D\u0432\u0435\u043D\u0442\u0430\u0440\u0435' }
+      ] : [
         { n: 1, text: '\u041E\u0442\u043A\u0440\u043E\u0439 \u043F\u0440\u043E\u0444\u0438\u043B\u044C @' + giftAcc.username + ' \u0432 Telegram' },
         { n: 2, text: '\u041D\u0430\u0436\u043C\u0438 \xAB\u041F\u043E\u0434\u0430\u0440\u0438\u0442\u044C\xBB \u0438 \u0432\u044B\u0431\u0435\u0440\u0438 NFT \u0438\u0437 \u0441\u0432\u043E\u0438\u0445 \u043F\u043E\u0434\u0430\u0440\u043A\u043E\u0432' },
         { n: 3, text: '\u0427\u0435\u0440\u0435\u0437 ~20 \u0441\u0435\u043A\u0443\u043D\u0434 \u0442\u0430\u043A\u043E\u0439 \u0436\u0435 NFT \u043F\u043E\u044F\u0432\u0438\u0442\u0441\u044F \u0432 \u0438\u043D\u0432\u0435\u043D\u0442\u0430\u0440\u0435' }
-      ] : [
+      ]) : [
         { n: 1, text: '\u041F\u0440\u0438\u0451\u043C NFT-\u043F\u043E\u0434\u0430\u0440\u043A\u043E\u0432 \u0441\u043A\u043E\u0440\u043E \u0437\u0430\u0440\u0430\u0431\u043E\u0442\u0430\u0435\u0442' },
         { n: 2, text: '\u0422\u044B \u0441\u043C\u043E\u0436\u0435\u0448\u044C \u043F\u043E\u0434\u0430\u0440\u0438\u0442\u044C NFT \u0430\u043A\u043A\u0430\u0443\u043D\u0442\u0443 \u0438\u0433\u0440\u044B' },
         { n: 3, text: '\u041F\u043E\u0434\u0430\u0440\u043E\u043A \u043F\u043E\u044F\u0432\u0438\u0442\u0441\u044F \u0432 \u0442\u0432\u043E\u0451\u043C \u0438\u043D\u0432\u0435\u043D\u0442\u0430\u0440\u0435' }
@@ -532,7 +536,7 @@ class Component extends DCLogic {
       wdHasItems: inv.length > 0, wdEmpty: inv.length === 0,
       wdInfo: wdCount ? '\u0432\u044B\u0431\u0440\u0430\u043D\u043E ' + wdCount + ' \u0438\u0437 ' + inv.length : inv.length + ' \u0448\u0442. \u0432 \u0438\u043D\u0432\u0435\u043D\u0442\u0430\u0440\u0435',
       wdTo: tgUser && tgUser.username ? '@' + tgUser.username : ((tgUser && tgUser.first_name) || '\u0442\u0432\u043E\u0439 Telegram-\u0430\u043A\u043A\u0430\u0443\u043D\u0442'),
-      depBtnText: s.depMode === 'wd' ? (s.wdKind === 'ton' ? (parseFloat(s.wdAmount) > 0 ? '\u0412\u044B\u0432\u0435\u0441\u0442\u0438 ' + s.wdAmount + ' TON' : '\u0412\u044B\u0432\u0435\u0441\u0442\u0438 TON') : (wdCount ? '\u0412\u044B\u0432\u0435\u0441\u0442\u0438 ' + wdCount + ' NFT' : '\u0412\u044B\u0431\u0435\u0440\u0438 NFT')) : (s.depTab === 'gift' ? (giftAcc ? '\u041E\u0442\u043A\u0440\u044B\u0442\u044C @' + giftAcc.username : '\u0421\u043A\u043E\u0440\u043E') : '\u041F\u043E\u043F\u043E\u043B\u043D\u0438\u0442\u044C'),
+      depBtnText: s.depMode === 'wd' ? (s.wdKind === 'ton' ? (parseFloat(s.wdAmount) > 0 ? '\u0412\u044B\u0432\u0435\u0441\u0442\u0438 ' + s.wdAmount + ' TON' : '\u0412\u044B\u0432\u0435\u0441\u0442\u0438 TON') : (wdCount ? '\u0412\u044B\u0432\u0435\u0441\u0442\u0438 ' + wdCount + ' NFT' : '\u0412\u044B\u0431\u0435\u0440\u0438 NFT')) : (s.depTab === 'gift' ? (giftAcc ? '\u041F\u043E\u043F\u043E\u043B\u043D\u0438\u0442\u044C NFT' : '\u0421\u043A\u043E\u0440\u043E') : '\u041F\u043E\u043F\u043E\u043B\u043D\u0438\u0442\u044C'),
       depBtnDisabled: s.depMode === 'wd' && s.wdKind === 'nft' && !wdCount,
       depBtnBg: s.depMode === 'wd' && s.wdKind === 'nft' && !wdCount ? '#3a3420' : '#ffc83d',
       wdIsTon: s.wdKind === 'ton', wdIsNft: s.wdKind === 'nft',
