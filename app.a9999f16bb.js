@@ -458,7 +458,7 @@ class Component extends DCLogic {
       return;
     }
     var ga = window.RK && window.RK.net && window.RK.net.gifts;
-    if (s.depTab === 'gift' && ga && ga.username) { openLink('https://t.me/' + ga.username); return; }
+    if (s.depTab === 'gift' && ga && ga.username) { openLink('https://t.me/' + ga.username + (ga.hi !== false ? '?text=hi' : '')); return; } // \u0447\u0430\u0442 \u0441 \u0431\u0430\u043D\u043A\u043E\u043C, \xABhi\xBB \u0443\u0436\u0435 \u0432\u043F\u0438\u0441\u0430\u043D
     this.showToast({ icon: '\u{1F6A7}', text: '\u041F\u0440\u0438\u0451\u043C NFT-\u043F\u043E\u0434\u0430\u0440\u043A\u043E\u0432 \u0441\u043A\u043E\u0440\u043E \u0431\u0443\u0434\u0435\u0442 \u0434\u043E\u0441\u0442\u0443\u043F\u0435\u043D' });
   }
   renderVals() {
