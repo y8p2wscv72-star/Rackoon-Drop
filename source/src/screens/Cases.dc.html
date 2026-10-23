@@ -385,7 +385,7 @@ var CASE_TABS = [
   { id: 'cheap', label: 'Дешёвые', hint: 'От 0.5 TON · мишки, сердечки, торты, кольца и NFT' },
   { id: 'mid', label: 'Средние', hint: 'Только NFT-подарки' },
   { id: 'exp', label: 'Дорогие', hint: 'Редкие и дорогие NFT' },
-  { id: 'free', label: 'Бесплатные', hint: 'Раз в сутки · TON на баланс' }
+  { id: 'free', label: 'Бесплатные', hint: 'Раз в сутки для подписчиков канала · TON на баланс' }
 ];
 var BUILT = CM.build();
 var CASES = CM.CASES.map(function (c0) { var b = BUILT[c0.id]; return Object.assign({}, c0, { pool: b.pool, probs: b.probs, top: b.top }); });
@@ -485,7 +485,7 @@ class Component extends DCLogic {
         };
       }),
       dHasArt: !!(c && c.art), dNoArt: !(c && c.art), dArt: c && c.art ? c.art : '', dArtH: c && c.ratio === '1 / 1' ? 150 : 163,
-      dName: c ? c.name : '', dPriceText: c ? (c.free ? 'Бесплатно раз в сутки' : fmt(c.price)) : '',
+      dName: c ? c.name : '', dPriceText: c ? (c.free ? 'Бесплатно раз в сутки · нужна подписка на канал' : fmt(c.price)) : '',
       dOpened: c ? 'Открыто ' + c.opened.toLocaleString('ru-RU') + ' раз' : '',
       dBg: c ? c.bg : '#151821', dEdge: c ? c.edge : '#222838', dGlow: c ? c.glow : 'transparent',
       dColor: c ? c.color : '#3a3f4d', dDark: c ? c.dark : '#2a2e3a', dPrizeImg: c ? CAT[c.top].img : GIFT_IMG,

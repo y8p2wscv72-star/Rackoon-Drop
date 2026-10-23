@@ -115,6 +115,28 @@ function showBanned(reason) {
   el.appendChild(icon); el.appendChild(h); el.appendChild(p);
   document.body.appendChild(el);
 }
+// ---------- Окно «подпишись на канал» (для бесплатного бонуса и кейса) ----------
+function showSubPrompt(channel) {
+  if (document.getElementById('rk-sub')) return;
+  const url = 'https://t.me/' + channel;
+  const wrap = document.createElement('div');
+  wrap.id = 'rk-sub'; wrap.setAttribute('role', 'dialog'); wrap.setAttribute('aria-label', 'Подписка на канал');
+  wrap.style.cssText = 'position:fixed;inset:0;z-index:95;background:rgba(5,6,10,.72);display:flex;align-items:flex-end;justify-content:center;font-family:Rubik,system-ui,sans-serif';
+  const box = document.createElement('div');
+  box.style.cssText = 'width:100%;max-width:390px;box-sizing:border-box;background:#151821;border-top:1px solid #262b3a;border-radius:24px 24px 0 0;padding:22px 18px 26px;display:flex;flex-direction:column;align-items:center;gap:12px;color:#fff;text-align:center';
+  const ic = document.createElement('div'); ic.textContent = '📣'; ic.style.cssText = 'font-size:44px';
+  const h = document.createElement('div'); h.textContent = 'Подпишись на канал'; h.style.cssText = 'font-size:20px;font-weight:900';
+  const p = document.createElement('div'); p.textContent = 'Ежедневный бонус и бесплатный кейс — для подписчиков @' + channel + '. Подпишись и возвращайся за наградой.'; p.style.cssText = 'font-size:14px;color:#a3a8b5;line-height:1.45;max-width:320px';
+  const go = document.createElement('button'); go.type = 'button'; go.textContent = 'Подписаться';
+  go.style.cssText = 'width:100%;height:54px;border:0;border-radius:16px;background:#ffc83d;color:#1a1300;font:900 16px Rubik,system-ui,sans-serif;cursor:pointer;margin-top:4px';
+  const close = document.createElement('button'); close.type = 'button'; close.textContent = 'Позже';
+  close.style.cssText = 'width:100%;height:46px;border:0;border-radius:14px;background:transparent;color:#8a90a0;font:700 14px Rubik,system-ui,sans-serif;cursor:pointer';
+  const done = () => { if (wrap.parentNode) wrap.parentNode.removeChild(wrap); };
+  go.onclick = () => { const tg = window.Telegram && window.Telegram.WebApp; try { if (tg && tg.openTelegramLink) tg.openTelegramLink(url); else window.open(url, '_blank'); } catch (e) { window.open(url, '_blank'); } done(); };
+  close.onclick = done; wrap.onclick = (e) => { if (e.target === wrap) done(); };
+  box.appendChild(ic); box.appendChild(h); box.appendChild(p); box.appendChild(go); box.appendChild(close); wrap.appendChild(box);
+  document.body.appendChild(wrap);
+}
 // ---------- Сеть: сервер игры ----------
 // Адрес сервера: window.RK_SERVER (задаётся в index.html), иначе тот же сайт.
 let currentScreen = null; // открытый экран — чтобы новый баланс сразу попал в него
@@ -146,7 +168,7 @@ const net = (() => {
     const rid = 'q' + (++ridN);
     if (!raw({ t: 'req', rid, op, args: args || {} })) return resolve({ ok: false, err: 'Нет связи с сервером' });
     const timer = setTimeout(() => { delete pending[rid]; resolve({ ok: false, err: 'Сервер не ответил, попробуй ещё раз' }); }, 15000);
-    pending[rid] = (m) => { clearTimeout(timer); resolve(m); };
+    pending[rid] = (m) => { clearTimeout(timer); if (m.needSub) { showSubPrompt(m.needSub); m.err = 'Нужна подписка на канал'; } resolve(m); };
   });
   api.withdrawals = () => api.wd.slice();
   api.withdraw = (w) => raw({ t: 'wd.create', id: w.id, kind: w.kind, amount: w.amount, address: w.address, items: w.items });

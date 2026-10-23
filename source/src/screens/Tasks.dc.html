@@ -35,7 +35,7 @@ a{color:#ffc83d}a:hover{color:#ffe08a}
 <img src="/_blob/661884b648dd965ea69af44ea8c7ee95" alt="" style="width: 72px; height: 72px; border-radius: 50%; object-fit: cover; border: 3px solid #ffc83d; box-sizing: border-box; flex-shrink: 0">
 <div style="display: flex; flex-direction: column; gap: 4px; flex-grow: 1; min-width: 0">
 <div style="font-size: 18px; font-weight: 900">Ежедневный бонус</div>
-<div style="font-size: 13px; color: #e6d7a8">Заходи каждый день и забирай {{bonusAmount}}</div>
+<div style="font-size: 13px; color: #e6d7a8">{{bonusAmount}} каждый день для подписчиков канала</div>
 </div>
 <button type="button" onClick="{{claimBonus}}" disabled="{{bonusDisabled}}" style="height: 44px; border-radius: 12px; border: 0; padding: 0 14px; font-family: Rubik, system-ui, sans-serif; font-size: 14px; font-weight: 900; cursor: pointer; flex-shrink: 0; background: {{bonusBg}}; color: {{bonusColor}}">{{bonusText}}</button>
 </div>
@@ -112,7 +112,7 @@ var DAILY = [
   { id: 'wager20', title: 'Поставь в сумме 20 TON', key: 'wagered', goal: 20, reward: 1, href: 'Crash.dc.html', icon: '/_blob/a8d1e2a1f1626c9b8edd4755d9c32150', iconBg: '#1d1233' }
 ];
 var REFS = [
-  { title: 'Друг пришёл и сыграл на 1 TON', reward: '0.1 TON' },
+  { title: 'Друг пополнил и сыграл на 1 TON', reward: '0.1 TON' },
   { title: 'Друг сыграл на 10 TON', reward: '1 TON' },
   { title: 'Друг сыграл на 100 TON', reward: '5 TON' }
 ];
