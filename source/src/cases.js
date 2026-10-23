@@ -2,7 +2,9 @@
 // поэтому шансы, которые видит игрок, совпадают с тем, как реально крутит сервер.
 // cat: cheap — дешёвые (обычные подарки за ⭐ + немного NFT), mid — средние (только NFT), exp — дорогие, free — бесплатный.
 var GIFTCAT = require('./gifts.js');
-var RTP = 0.90;                       // кейсы в среднем возвращают 90% цены
+var RTP = 0.90;                       // кейсы дешевле 1 TON в среднем возвращают 90% цены
+// RTP по цене кейса: 1–15 TON — 85%, дороже 15 TON — 80%
+function rtpFor(price) { return price > 15 ? 0.80 : price >= 1 ? 0.85 : RTP; }
 var FREE_COOLDOWN = 24 * 3600 * 1000; // бесплатный кейс — раз в сутки
 var TON_PRIZES = { 'TON_0.1': 0.1, 'TON_0.25': 0.25, 'TON_0.5': 0.5, 'TON_1': 1, 'TON_3': 3 }; // призы-TON: сразу на баланс
 var CASES = [
@@ -56,7 +58,7 @@ function build(t) {
     else {
       c.pool = (c0.pool || buildPool(c0.price, list)).filter(function (k) { return prizePrice(k, t) != null; });
       var prices = c.pool.map(function (k) { return prizePrice(k, t); });
-      var target = c0.price * RTP;
+      var target = c0.price * rtpFor(c0.price);
       var ev = function (a) { var S = 0, E = 0; prices.forEach(function (p) { var w = Math.pow(p, -a); S += w; E += w * p; }); return E / S; };
       var lo = -5, hi = 12;
       for (var i = 0; i < 80; i++) { var mid = (lo + hi) / 2; if (ev(mid) > target) lo = mid; else hi = mid; }
@@ -72,4 +74,4 @@ function build(t) {
 }
 // Розыгрыш: r — случайное число [0, 1)
 function roll(c, r) { var acc = 0; for (var i = 0; i < c.pool.length; i++) { acc += c.probs[i]; if (r < acc) return c.pool[i]; } return c.pool[c.pool.length - 1]; }
-module.exports = { CASES: CASES, RTP: RTP, FREE_COOLDOWN: FREE_COOLDOWN, TON_PRIZES: TON_PRIZES, build: build, roll: roll, prizePrice: prizePrice };
+module.exports = { CASES: CASES, RTP: RTP, rtpFor: rtpFor, FREE_COOLDOWN: FREE_COOLDOWN, TON_PRIZES: TON_PRIZES, build: build, roll: roll, prizePrice: prizePrice };
