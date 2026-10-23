@@ -3853,7 +3853,7 @@ body{margin:0;background:#0d0f14}
 <sc-if value="{{hasAccess}}" hint-placeholder-val="{{ true }}">
 <div style="display: flex; align-items: center; gap: 10px; background: #151821; border: 1px solid #222838; border-radius: 16px; padding: 12px 14px">
 <span style="width: 10px; height: 10px; border-radius: 50%; background: #2bd46b; flex-shrink: 0"></span>
-<span style="display: flex; flex-direction: column; gap: 2px; flex-grow: 1; min-width: 0"><span style="font-size: 14px; color: #c9cdd6">\u0420\u0435\u0430\u043B\u044C\u043D\u043E \u0432 \u0438\u0433\u0440\u0435 \u0441\u0435\u0439\u0447\u0430\u0441</span><sc-if value="{{demoOn}}" hint-placeholder-val="{{ false }}"><span style="font-size: 11px; color: #ffc83d">\u{1F9EA} \u0442\u0435\u0431\u0435 \u0438 \u0442\u0435\u0441\u0442\u0435\u0440\u0430\u043C \u043D\u0430 \u0433\u043B\u0430\u0432\u043D\u043E\u0439 \u043F\u043E\u043A\u0430\u0437\u044B\u0432\u0430\u0435\u0442\u0441\u044F +100\u2013200</span></sc-if></span>
+<span style="display: flex; flex-direction: column; gap: 2px; flex-grow: 1; min-width: 0"><span style="font-size: 14px; color: #c9cdd6">\u0420\u0435\u0430\u043B\u044C\u043D\u043E \u0432 \u0438\u0433\u0440\u0435 \u0441\u0435\u0439\u0447\u0430\u0441</span><sc-if value="{{demoOn}}" hint-placeholder-val="{{ false }}"><span style="font-size: 11px; color: {{demoColor}}">{{demoText}}</span></sc-if></span>
 <span style="font-size: 20px; font-weight: 900; color: #ffffff">{{realOnline}}</span>
 </div>
 <div style="display: flex; justify-content: space-between; align-items: center">
@@ -4117,7 +4117,7 @@ class Component extends DCLogic {
         self.rt = setTimeout(function () { var n = NET(); if (n && n.connected) n.send({ t: 'admin.find', username: m.user.username }); }, 3000);
       }));
       this.offs.push(net.on('admin.err', function (m) { self.setState({ busy: false, msg: { ok: false, text: m.msg } }); }));
-      this.offs.push(net.on('admin.log', function (m) { self.setState({ realOnline: m.realOnline, demoOn: !!m.demoOnline, log: m.log, deps: m.deposits || [], wds: m.withdrawals || [], biz: m.business || null, bizLoaded: true }); }));
+      this.offs.push(net.on('admin.log', function (m) { self.setState({ realOnline: m.realOnline, demoOn: !!m.demoOnline, demoAll: !!m.demoAll, log: m.log, deps: m.deposits || [], wds: m.withdrawals || [], biz: m.business || null, bizLoaded: true }); }));
       // \u043D\u043E\u0432\u0430\u044F \u0437\u0430\u044F\u0432\u043A\u0430 \u0438\u043B\u0438 \u0440\u0435\u0448\u0435\u043D\u0438\u0435 \u043F\u043E \u043D\u0435\u0439 \u2014 \u043E\u0431\u043D\u043E\u0432\u043B\u044F\u0435\u043C \u0441\u043F\u0438\u0441\u043E\u043A \u0441\u0440\u0430\u0437\u0443
       this.offs.push(net.on('admin.wd', function (m) {
         var list = (self.state.wds || []).filter(function (w) { return w.id !== m.w.id; });
@@ -4232,6 +4232,7 @@ class Component extends DCLogic {
       noDeps: !(s.deps && s.deps.length),
       hasPending: pend > 0, pendingCount: pend,
       realOnline: s.realOnline == null ? '\u2014' : s.realOnline, demoOn: !!s.demoOn,
+      demoText: s.demoAll ? '\u26A0\uFE0F \u0412\u0421\u0415 \u0432\u0438\u0434\u044F\u0442 \u043E\u043D\u043B\u0430\u0439\u043D +100\u2013200 (\u0432\u044B\u043A\u043B\u044E\u0447\u0438\u0442\u0441\u044F \u0441\u0430\u043C \u043F\u0440\u0438 \u043F\u0435\u0440\u0432\u043E\u043C \u043F\u043E\u043F\u043E\u043B\u043D\u0435\u043D\u0438\u0438)' : '\u{1F9EA} \u0442\u0435\u0431\u0435 \u0438 \u0442\u0435\u0441\u0442\u0435\u0440\u0430\u043C \u043D\u0430 \u0433\u043B\u0430\u0432\u043D\u043E\u0439 \u043F\u043E\u043A\u0430\u0437\u044B\u0432\u0430\u0435\u0442\u0441\u044F +100\u2013200', demoColor: s.demoAll ? '#ff8a5c' : '#ffc83d',
       balText: s.confirmBal === 2 ? '\u0422\u041E\u0427\u041D\u041E \u0412\u0421\u0415\u041C?' : s.confirmBal === 1 ? '\u0423\u0432\u0435\u0440\u0435\u043D?' : '\u041E\u0431\u043D\u0443\u043B\u0438\u0442\u044C', balBg: s.confirmBal ? '#c0283f' : '#ff5d73',
       balReset: function () {
         var c = self.state.confirmBal || 0;
