@@ -145,6 +145,12 @@ a{color:#ffc83d}a:hover{color:#ffe08a}
 <svg width="20" height="12" viewBox="0 0 20 12" aria-hidden="true" style="position: absolute; left: 169px; bottom: 0"><path d="M0 12 H20 L10 0Z" fill="#ffc83d"></path></svg>
 </div>
 
+<sc-if value="{{isPromo}}" hint-placeholder-val="{{ false }}">
+<label style="height: 56px; border-radius: 16px; background: #0d0f14; border: 2px solid {{promoBorder}}; display: flex; align-items: center; gap: 10px; padding: 0 14px; cursor: text">
+<span style="font-size: 20px" aria-hidden="true">🎟️</span>
+<input type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" enterkeyhint="go" aria-label="Промокод" placeholder="Введи промокод" value="{{promoCode}}" onInput="{{onPromo}}" onKeyDown="{{onPromoKey}}" style="flex-grow: 1; min-width: 0; height: 100%; border: 0; outline: none; background: transparent; font-family: Rubik, system-ui, sans-serif; font-size: 18px; font-weight: 900; letter-spacing: 1px; color: #ffffff; text-transform: uppercase">
+</label>
+</sc-if>
 <button type="button" onClick="{{open}}" disabled="{{openDisabled}}" style="height: 60px; border: 0; border-radius: 18px; font-family: Rubik, system-ui, sans-serif; font-size: 20px; font-weight: 900; font-style: italic; letter-spacing: 0.5px; cursor: pointer; background: {{btnBg}}; color: {{btnColor}}; box-shadow: {{btnShadow}}">{{btnText}}</button>
 
 <div style="display: flex; flex-direction: column; gap: 2px; margin-top: 6px">
@@ -385,7 +391,7 @@ var CASE_TABS = [
   { id: 'cheap', label: 'Дешёвые', hint: 'От 0.5 TON · мишки, сердечки, торты, кольца и NFT' },
   { id: 'mid', label: 'Средние', hint: 'Только NFT-подарки' },
   { id: 'exp', label: 'Дорогие', hint: 'Редкие и дорогие NFT' },
-  { id: 'free', label: 'Бесплатные', hint: 'Раз в сутки для подписчиков канала · TON на баланс' }
+  { id: 'free', label: 'Бесплатные', hint: 'Для подписчиков канала · ежедневный и по промокоду' }
 ];
 var BUILT = CM.build();
 var CASES = CM.CASES.map(function (c0) { var b = BUILT[c0.id]; return Object.assign({}, c0, { pool: b.pool, probs: b.probs, top: b.top }); });
@@ -393,6 +399,9 @@ var CASES = CM.CASES.map(function (c0) { var b = BUILT[c0.id]; return Object.ass
 var TON_IMG = 'assets/ton.svg';
 CAT['TON_0.1'] = { name: '0.1 TON', supply: 0, base: 0.1, price: 0.1, prev: 0.1, img: TON_IMG, color: '#5fd4ff', ton: true };
 CAT['TON_1'] = { name: '1 TON', supply: 0, base: 1, price: 1, prev: 1, img: TON_IMG, color: '#ffc83d', ton: true };
+CAT['TON_0.25'] = { name: '0.25 TON', supply: 0, base: 0.25, price: 0.25, prev: 0.25, img: TON_IMG, color: '#5fd4ff', ton: true };
+CAT['TON_0.5'] = { name: '0.5 TON', supply: 0, base: 0.5, price: 0.5, prev: 0.5, img: TON_IMG, color: '#c77dff', ton: true };
+CAT['TON_3'] = { name: '3 TON', supply: 0, base: 3, price: 3, prev: 3, img: TON_IMG, color: '#ff5d73', ton: true };
 CASES.forEach(function (c) { c.pool = c.pool.filter(function (k) { return CAT[k]; }); });
 
 var TILE = 92, GAP = 6, STEP = TILE + GAP, N = 44, WIN_IDX = 38, CENTER = 179;
@@ -412,7 +421,7 @@ class Component extends DCLogic {
     super(props);
     this.state = {
       caseId: null, tab: 'cheap', balance: 0, fast: false, spinning: false,
-      strip: [], offset: 0, anim: false, won: null, overlay: false, now: Date.now(), shownBal: null
+      strip: [], offset: 0, anim: false, won: null, overlay: false, now: Date.now(), shownBal: null, promoCode: ''
     };
   }
   componentDidMount() {
@@ -434,10 +443,12 @@ class Component extends DCLogic {
   open() {
     var s = this.state, c = caseById(s.caseId), self = this, net = NET();
     if (!c || s.spinning) return;
-    if (c.free) { if (this.freeLeft() > 0) return; }
+    if (c.promo) { if (s.promoCode.trim().length < 3) return; }
+    else if (c.free) { if (this.freeLeft() > 0) return; }
     else if (s.balance < c.price) return;
     this.setState({ spinning: true, overlay: false, won: null, shownBal: Math.round((s.balance - (c.free ? 0 : c.price)) * 100) / 100 });
-    net.req('case.open', { id: c.id }).then(function (r) {
+    net.req('case.open', c.promo ? { id: c.id, code: s.promoCode.trim() } : { id: c.id }).then(function (r) {
+      if (r.ok && c.promo) self.setState({ promoCode: '' });
       if (!r.ok) { self.setState({ spinning: false, shownBal: null }); if (window.RK.toast) window.RK.toast(r.err, false); return; }
       var won = r.data.won, strip = [];
       for (var i = 0; i < N; i++) strip.push(i === WIN_IDX ? won : roll(c));
@@ -458,7 +469,7 @@ class Component extends DCLogic {
     var c = s.caseId ? caseById(s.caseId) : null;
     var dur = s.fast ? 1.1 : 4.8;
     var freeLeft = this.freeLeft();
-    var canOpen = c && !s.spinning && (c.free ? freeLeft === 0 : s.balance >= c.price);
+    var canOpen = c && !s.spinning && (c.promo ? s.promoCode.trim().length >= 3 : c.free ? freeLeft === 0 : s.balance >= c.price);
     var invNow = window.RK.inventory.list().filter(function (it) { return CAT[it.key]; });
     var won = s.won ? CAT[s.won.key] : null;
     var wonCase = s.won ? caseById(s.won.caseId) : null;
@@ -475,9 +486,9 @@ class Component extends DCLogic {
       tabs: CASE_TABS.map(function (t) { var sel = s.tab === t.id; return { label: t.label, sel: sel ? 'true' : 'false', color: sel ? '#ffffff' : '#6c7282', line: sel ? '#ffc83d' : 'transparent', pick: function () { self.setState({ tab: t.id }); } }; }),
       tabHint: (CASE_TABS.filter(function (t) { return t.id === s.tab; })[0] || {}).hint || '',
       grid: list.map(function (x) {
-        var fl = x.free && !x.locked && freeLeft > 0;
+        var fl = x.free && !x.promo && !x.locked && freeLeft > 0;
         return {
-          name: x.name, priceText: x.free ? 'Бесплатно' : fmt(x.price), opened: x.opened.toLocaleString('ru-RU') + ' откр.',
+          name: x.name, priceText: x.promo ? 'Промокод' : x.free ? 'Бесплатно' : fmt(x.price), opened: x.opened.toLocaleString('ru-RU') + ' откр.',
           color: x.color, dark: x.dark, bg: x.bg, glow: x.glow, edge: x.edge, isNew: !!x.isNew,
           hasArt: !!x.art, noArt: !x.art, art: x.art || '', ratio: x.ratio || '384 / 418', shadow: x.glow.replace('0.9', '0.35').replace('0.95', '0.35'),
           prizeImg: CAT[x.top].img, locked: !!x.locked || fl, lockText: x.locked ? x.lockText : 'Через ' + hms(freeLeft),
@@ -485,7 +496,10 @@ class Component extends DCLogic {
         };
       }),
       dHasArt: !!(c && c.art), dNoArt: !(c && c.art), dArt: c && c.art ? c.art : '', dArtH: c && c.ratio === '1 / 1' ? 150 : 163,
-      dName: c ? c.name : '', dPriceText: c ? (c.free ? 'Бесплатно раз в сутки · нужна подписка на канал' : fmt(c.price)) : '',
+      dName: c ? c.name : '', dPriceText: c ? (c.promo ? 'По промокоду · нужна подписка на канал' : c.free ? 'Бесплатно раз в сутки · нужна подписка на канал' : fmt(c.price)) : '',
+      isPromo: !!(c && c.promo), promoCode: s.promoCode, promoBorder: s.promoCode ? '#c77dff' : '#262b3a',
+      onPromo: function (e) { self.setState({ promoCode: String((e && e.target && e.target.value) || '').toUpperCase().replace(/[^A-Z0-9_]/g, '').slice(0, 24) }); },
+      onPromoKey: function (e) { if (e && e.key === 'Enter') { if (e.target && e.target.blur) e.target.blur(); self.open(); } },
       dOpened: c ? 'Открыто ' + c.opened.toLocaleString('ru-RU') + ' раз' : '',
       dBg: c ? c.bg : '#151821', dEdge: c ? c.edge : '#222838', dGlow: c ? c.glow : 'transparent',
       dColor: c ? c.color : '#3a3f4d', dDark: c ? c.dark : '#2a2e3a', dPrizeImg: c ? CAT[c.top].img : GIFT_IMG,
@@ -495,7 +509,7 @@ class Component extends DCLogic {
       openDisabled: !canOpen,
       btnBg: canOpen ? '#ffc83d' : '#1d2230', btnColor: canOpen ? '#1a1300' : '#6c7282',
       btnShadow: canOpen ? '0 6px 24px rgba(255,200,61,0.35)' : 'none',
-      btnText: !c ? '' : (s.spinning ? 'ОТКРЫВАЕМ...' : (c.free ? (freeLeft > 0 ? 'ЧЕРЕЗ ' + hms(freeLeft) : 'ОТКРЫТЬ БЕСПЛАТНО') : (s.balance >= c.price ? 'ОТКРЫТЬ · ' + fmt(c.price) : 'НЕ ХВАТАЕТ TON'))),
+      btnText: !c ? '' : (s.spinning ? 'ОТКРЫВАЕМ...' : (c.promo ? 'ОТКРЫТЬ ПО ПРОМОКОДУ' : c.free ? (freeLeft > 0 ? 'ЧЕРЕЗ ' + hms(freeLeft) : 'ОТКРЫТЬ БЕСПЛАТНО') : (s.balance >= c.price ? 'ОТКРЫТЬ · ' + fmt(c.price) : 'НЕ ХВАТАЕТ TON'))),
       contents: c ? c.pool.map(function (k, i) { var it = CAT[k]; return { name: it.name, img: it.img, priceText: fmt(it.price), color: it.color, chanceText: fmtChance(c.probs[i]) }; }).reverse() : [],
       loot: invNow.slice(0, 3).map(function (l) { var it = CAT[l.key]; return { name: it.name, img: it.img, priceText: fmt(it.price) }; }),
       invInfo: invNow.length ? invNow.length + ' шт. · продать или вывести' : 'Забирай дропы, они попадут сюда',

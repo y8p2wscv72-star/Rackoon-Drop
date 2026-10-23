@@ -174,10 +174,10 @@ a{color:#ffc83d}a:hover{color:#ffe08a}
 </div>
 <div style="display: flex; flex-direction: column; gap: 6px">
 <span style="font-size: 11px; font-weight: 700; letter-spacing: 2px; color: #6c7282">ОПЛАТА</span>
-<div style="height: 60px; box-sizing: border-box; border-radius: 16px; border: 1px solid #262b3a; background: #0d0f14; display: flex; align-items: center; gap: 10px; padding: 0 12px">
-<span style="width: 32px; height: 32px; border-radius: 10px; background: #1a8cff; display: flex; align-items: center; justify-content: center; flex-shrink: 0"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 4 L3 11 L9 13 L11 19 L14 15 L19 19Z" fill="#ffffff"></path></svg></span>
-<span style="display: flex; flex-direction: column; gap: 1px; min-width: 0"><span style="font-size: 15px; font-weight: 900">CryptoBot</span><span style="font-size: 11px; color: #8a90a0">в Telegram</span></span>
-</div>
+<button type="button" onClick="{{provToggle}}" aria-label="Сменить способ оплаты" style="height: 60px; box-sizing: border-box; border-radius: 16px; border: 1px solid {{provBorder}}; background: #0d0f14; color: #ffffff; display: flex; align-items: center; gap: 10px; padding: 0 12px; cursor: pointer; font-family: Rubik, system-ui, sans-serif; text-align: left">
+<span style="width: 32px; height: 32px; border-radius: 10px; background: {{provColor}}; display: flex; align-items: center; justify-content: center; flex-shrink: 0"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="{{provIcon}}" fill="#ffffff"></path></svg></span>
+<span style="display: flex; flex-direction: column; gap: 1px; min-width: 0; flex-grow: 1"><span style="font-size: 15px; font-weight: 900">{{provName}}</span><span style="font-size: 11px; color: #8a90a0">{{provHint}}</span></span>
+</button>
 </div>
 </div>
 <sc-if value="{{curOpen}}" hint-placeholder-val="{{ false }}">
@@ -370,7 +370,7 @@ class Component extends DCLogic {
       else if (m.amount < 0) self.showToast({ icon: '➖', text: 'Списано ' + m.amount + ' TON' });
     });
     if (net) {
-      this.offCb1 = net.on('cb.invoice', function (m) { self.setState({ cbCreating: false, cbWaiting: Date.now(), waitingDeposit: Date.now() }); openTgLink(m.url); self.showToast({ icon: '⏳', text: 'Счёт на ' + m.amount + ' ' + m.asset + ' открыт в CryptoBot. После оплаты баланс зачислится сам' }); });
+      this.offCb1 = net.on('cb.invoice', function (m) { self.setState({ cbCreating: false, cbWaiting: Date.now(), waitingDeposit: Date.now() }); openTgLink(m.url); self.showToast({ icon: '⏳', text: 'Счёт на ' + m.amount + ' ' + m.asset + ' открыт в ' + (m.provider || 'CryptoBot') + '. После оплаты баланс зачислится сам' }); });
       this.offCb2 = net.on('cb.err', function (m) { self.setState({ cbCreating: false }); self.showToast({ icon: '⚠️', text: m.msg }); });
     }
     // вернулся из кошелька — просим сервер проверить переводы пораньше
@@ -441,10 +441,12 @@ class Component extends DCLogic {
       var n2 = window.RK && window.RK.net, a2 = parseFloat(s.depCryptoAmount);
       if (!(a2 > 0)) { this.showToast({ icon: '⚠️', text: 'Введи сумму' }); return; }
       if (!n2 || !n2.connected) { this.showToast({ icon: '⚠️', text: 'Нет связи с сервером, попробуй ещё раз' }); return; }
-      if (!n2.cryptobot) { this.showToast({ icon: '🚧', text: 'Пополнение через CryptoBot скоро будет доступно' }); return; }
+      var useXr = s.depProv === 'xr' ? !!n2.xrocket : (!n2.cryptobot && !!n2.xrocket);
+      if (!useXr && !n2.cryptobot) { this.showToast({ icon: '🚧', text: 'Пополнение через CryptoBot скоро будет доступно' }); return; }
       if (this.state.cbCreating) return;
       this.setState({ cbCreating: true });
-      n2.send({ t: 'cb.create', asset: CURS[s.depCur].code, amount: a2 });
+      if (useXr) n2.send({ t: 'xr.create', asset: 'TON', amount: a2 });
+      else n2.send({ t: 'cb.create', asset: CURS[s.depCur].code, amount: a2 });
       return;
     }
     var ga = window.RK && window.RK.net && window.RK.net.gifts;
@@ -462,7 +464,10 @@ class Component extends DCLogic {
     var testOn = TEST_TOPUP && s.depMode === 'dep' && s.depTab === 'ton';
     var depInfo = window.RK && window.RK.net && window.RK.net.deposit;
     var liveTon = !TEST_TOPUP && s.depMode === 'dep' && s.depTab === 'ton';
-    var liveCb = s.depMode === 'dep' && s.depTab === 'crypto' && !!(window.RK && window.RK.net && window.RK.net.cryptobot);
+    var NN = window.RK && window.RK.net, hasCb = !!(NN && NN.cryptobot), hasXr = !!(NN && NN.xrocket), hasBoth = hasCb && hasXr;
+    var isXr = s.depProv === 'xr' ? hasXr : (!hasCb && hasXr);
+    if (isXr) cur = CURS[1]; // xRocket — только TON
+    var liveCb = s.depMode === 'dep' && s.depTab === 'crypto' && (isXr ? hasXr : hasCb);
     return {
       topUp: function () { self.setState({ dep: true }); },
       isAdmin: !!(window.RK && window.RK.net && window.RK.net.me && (window.RK.net.me.admin || window.RK.net.me.adminStale)),
@@ -479,11 +484,14 @@ class Component extends DCLogic {
       curCode: cur.code, curName: cur.name, curSym: cur.sym, curColor: cur.color,
       curToggle: function () { self.setState({ curOpen: !self.state.curOpen }); },
       curOpen: !!s.curOpen, curOpenAttr: s.curOpen ? 'true' : 'false', curArrow: s.curOpen ? 180 : 0, curBtnBorder: s.curOpen ? '#ffc83d' : '#262b3a',
+      provToggle: function () { var n = window.RK && window.RK.net; var next = self.state.depProv === 'xr' ? 'cb' : 'xr'; if (next === 'xr' && !(n && n.xrocket)) return self.showToast({ icon: '🚧', text: 'Пополнение через xRocket скоро будет доступно' }); if (next === 'cb' && !(n && n.cryptobot)) return self.showToast({ icon: '🚧', text: 'Пополнение через CryptoBot скоро будет доступно' }); var st = { depProv: next, curOpen: false }; if (next === 'xr') st.depCur = 1; self.setState(st); },
+      provName: isXr ? 'xRocket' : 'CryptoBot', provHint: hasBoth ? 'нажми, чтобы сменить' : 'в Telegram', provColor: isXr ? '#7b5cff' : '#1a8cff', provBorder: hasBoth ? '#3a3f55' : '#262b3a',
+      provIcon: isXr ? 'M12 2 C16 6 17 10 15 15 L9 15 C7 10 8 6 12 2Z M9 16 L15 16 L13 21 L11 21Z' : 'M21 4 L3 11 L9 13 L11 19 L14 15 L19 19Z',
       curList: CURS.map(function (c, i) {
         var sel = i === s.depCur;
         return { code: c.code, name: c.name, sym: c.sym, color: c.color, sel: sel ? 'true' : 'false', border: sel ? '#ffc83d' : '#262b3a', bg: sel ? '#2a2410' : '#151821',
           pick: function () { self.setState({ depCur: i, curOpen: false }); } };
-      }),
+      }).filter(function (c) { return !isXr || c.code === 'TON'; }),
       depCryptoAmount: s.depCryptoAmount, depOnCryptoAmount: function (e) { self.setState({ depCryptoAmount: cleanNum(e && e.target && e.target.value) }); },
       depGiftImgs: DROPS.slice(0, 4).map(function (d) { return { img: d.img, color: colorOf(d.price) }; }),
       depGiftSteps: giftAcc ? [
@@ -501,7 +509,7 @@ class Component extends DCLogic {
       modeDepSel: s.depMode === 'dep' ? 'true' : 'false', modeWdSel: s.depMode === 'wd' ? 'true' : 'false',
       modeDepBg: s.depMode === 'dep' ? '#ffc83d' : 'transparent', modeDepColor: s.depMode === 'dep' ? '#1a1300' : '#a3a8b5',
       modeWdBg: s.depMode === 'wd' ? '#ffc83d' : 'transparent', modeWdColor: s.depMode === 'wd' ? '#1a1300' : '#a3a8b5',
-      badgeText: s.depMode === 'wd' ? 'Вывод NFT по заявке · проверяет администратор' : testOn ? 'ТЕСТ · сумма сразу зачисляется на баланс' : (liveTon ? 'Оплата через Tonkeeper · зачисление автоматически' : liveCb ? 'Оплата через @CryptoBot · зачисление автоматически' : (s.depMode === 'dep' && s.depTab === 'gift' && giftAcc) ? 'NFT зачисляется автоматически' : 'ДЕМО · ' + (s.depMode === 'wd' ? 'вывод' : 'пополнение') + ' скоро будет доступно'),
+      badgeText: s.depMode === 'wd' ? 'Вывод NFT по заявке · проверяет администратор' : testOn ? 'ТЕСТ · сумма сразу зачисляется на баланс' : (liveTon ? 'Оплата через Tonkeeper · зачисление автоматически' : liveCb ? 'Оплата через @' + (isXr ? 'xRocket' : 'CryptoBot') + ' · зачисление автоматически' : (s.depMode === 'dep' && s.depTab === 'gift' && giftAcc) ? 'NFT зачисляется автоматически' : 'ДЕМО · ' + (s.depMode === 'wd' ? 'вывод' : 'пополнение') + ' скоро будет доступно'),
       badgeColor: s.depMode === 'wd' || testOn || liveTon || liveCb ? '#2bd46b' : '#ffc83d', badgeBg: s.depMode === 'wd' || testOn || liveTon || liveCb ? 'rgba(43,212,107,0.12)' : 'rgba(255,200,61,0.12)', badgeBorder: s.depMode === 'wd' || testOn || liveTon || liveCb ? 'rgba(43,212,107,0.4)' : 'rgba(255,200,61,0.35)',
       depComment: depInfo ? depInfo.comment : '', hasDepComment: !!depInfo,
       waiting: !!s.waitingDeposit && s.depTab === 'ton',
