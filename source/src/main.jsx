@@ -188,7 +188,7 @@ const net = (() => {
       if (m.t === 'res') { const f = pending[m.rid]; if (f) { delete pending[m.rid]; f(m); } return; }
       if (m.t === 'welcome') {
         if (window.rkLoaderDone) window.rkLoaderDone();
-        api.me = m.me; api.online = m.online; api.deposit = m.deposit || null; api.cryptobot = m.cryptobot || null; api.xrocket = m.xrocket || null; api.support = m.support || ''; api.wdMinDeposit = m.wdMinDeposit || 0; api.gifts = m.gifts || null; api.connected = true;
+        api.me = m.me; api.online = m.online; api.deposit = m.deposit || null; api.cryptobot = m.cryptobot || null; api.xrocket = m.xrocket || null; api.support = m.support || ''; api.limits = m.limits || {}; api.wdMinDeposit = m.wdMinDeposit || 0; api.gifts = m.gifts || null; api.connected = true;
         api.feed = m.feed || [];
         if (m.acct) applyAcct(m.acct);
         if (m.me && m.me.tg) raw({ t: 'wd.list' });

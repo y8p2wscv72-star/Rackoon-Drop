@@ -249,6 +249,9 @@ a{color:#ffc83d}a:hover{color:#ffe08a}
 <sc-if value="{{hasQueued}}" hint-placeholder-val="{{ false }}">
 <div style="font-size: 12px; color: #ffc83d; text-align: center">Ставка {{queuedText}} сыграет в следующем раунде</div>
 </sc-if>
+<sc-if value="{{hasCap}}" hint-placeholder-val="{{ true }}">
+<div style="font-size: 11px; color: #6c7282; text-align: center">Макс. выигрыш +{{capText}} TON к ставке — на нём ставка забирается сама</div>
+</sc-if>
 </div>
 </sc-if>
 
@@ -554,6 +557,7 @@ class Component extends DCLogic {
       showGiftPick: s.giftPick && !showCashout,
       gifts: inv.map(function (it) { var g = G(it.key); return { name: g.name, img: g.img, priceText: g.price + ' TON', pick: function () { self.placeGift(it.uid, g.name); } }; }),
       hasQueued: !!s.queued,
+      hasCap: !!(window.RK && window.RK.net && window.RK.net.limits && window.RK.net.limits.crashMaxProfit), capText: (window.RK && window.RK.net && window.RK.net.limits && window.RK.net.limits.crashMaxProfit) || 0,
       queuedText: s.queued ? (s.queued.gift ? s.queued.name : fmt(s.queued.amount) + ' TON') : '',
       hasErr: !!s.err, errText: s.err,
       players: players,
