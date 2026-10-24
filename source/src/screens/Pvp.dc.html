@@ -136,7 +136,7 @@ a{color:#ffc83d}a:hover{color:#ffe08a}
 
 <sc-if value="{{showPlayers}}" hint-placeholder-val="{{ true }}">
 <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px">
-<span style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 20px; font-weight: 500">Участники ({{playersCount}})</span><span style="font-size: 11px; color: #8a90a0">Тёмная зона RACKOON занимает 5% поля</span></span>
+<span style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 20px; font-weight: 500">Участники ({{playersCount}})</span><span style="font-size: 11px; color: #8a90a0">Победитель забирает банк, комиссия 10%</span></span>
 <span style="font-size: 11px; padding: 4px 8px; border-radius: 8px; background: #151821; color: #a3a8b5">Игра #{{gameId}}</span>
 </div>
 <div style="display: flex; flex-direction: column; gap: 8px">
@@ -216,7 +216,7 @@ a{color:#ffc83d}a:hover{color:#ffe08a}
 </div>
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":1250}}'>
-var FEE = 0.07, S = 358;
+var FEE = 0.10, S = 358;
 // Подарки берутся из инвентаря игрока (window.RK.inventory), цены — из общего каталога (window.RK.gift)
 function G(name) { return (window.RK && window.RK.gift && window.RK.gift(name)) || null; }
 function INV() { return window.RK && window.RK.inventory; }
@@ -250,11 +250,11 @@ function regionPts(d) {
 }
 function depthOf(x, y) { return (S - x) + y; }
 // Зона казино на арене: открыто занимает HOUSE от поля. Если точка упала в неё — банк забирает RACKOON.
-var HOUSE = 0.05;
+var HOUSE = 0;
 function withHouse(players) {
   if (!players.length) return players;
   var pot = 0; players.forEach(function (p) { pot += stakeOf(p); });
-  if (pot <= 0) return players;
+  if (pot <= 0 || !HOUSE) return players;
   return players.concat([{ id: 'house', name: 'RACKOON', house: true, me: false, giftValue: 0, ton: Math.round(pot * HOUSE / (1 - HOUSE) * 100) / 100, gifts: [], color: '#1d2230' }]);
 }
 // Порядок полос — как на сервере (по ставке, при равенстве — по id игрока)
