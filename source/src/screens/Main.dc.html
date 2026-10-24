@@ -94,6 +94,14 @@ a{color:#ffc83d}a:hover{color:#ffe08a}
 <span style="position: relative; font-size: 38px; font-weight: 900; font-style: italic; line-height: 1; text-shadow: 0 3px 8px rgba(0,0,0,0.35)">PVP</span>
 </a>
 
+<sc-if value="{{hasSupport}}" hint-placeholder-val="{{ true }}">
+<button type="button" onClick="{{openSupport}}" style="display: flex; align-items: center; gap: 12px; background: #151821; border: 1px solid #222838; border-radius: 18px; padding: 12px 14px; color: #ffffff; cursor: pointer; font-family: Rubik, system-ui, sans-serif; text-align: left">
+<span style="width: 38px; height: 38px; border-radius: 12px; background: #1f2a44; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0" aria-hidden="true">💬</span>
+<span style="display: flex; flex-direction: column; gap: 2px; flex-grow: 1; min-width: 0"><span style="font-size: 15px; font-weight: 700">Поддержка</span><span style="font-size: 12px; color: #8a90a0">Вопросы, пополнения, выводы — @{{supportName}}</span></span>
+<svg width="8" height="14" viewBox="0 0 8 14" aria-hidden="true"><path d="M1 1 L7 7 L1 13" fill="none" stroke="#6c7282" stroke-width="2" stroke-linecap="round"></path></svg>
+</button>
+</sc-if>
+
 <nav aria-label="Основное меню" style="margin-top: auto; position: sticky; bottom: 12px; z-index: 5; box-shadow: 0 10px 30px rgba(0,0,0,0.6); display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; background: #151821; border: 1px solid #222838; border-radius: 24px; padding: 6px">
 <a href="Inventory.dc.html" style="text-decoration: none; height: 56px; border-radius: 18px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; color: #8a90a0; font-size: 11px; font-weight: 700">
 <svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true"><path d="M11 2 L20 6.5 V15.5 L11 20 L2 15.5 V6.5Z M2 6.5 L11 11 L20 6.5 M11 11 V20" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"></path></svg>
@@ -221,6 +229,13 @@ a{color:#ffc83d}a:hover{color:#ffe08a}
 </sc-if>
 
 <sc-if value="{{isWdMode}}" hint-placeholder-val="{{ false }}">
+<sc-if value="{{wdNeedDep}}" hint-placeholder-val="{{ false }}">
+<div role="status" style="display: flex; align-items: center; gap: 10px; border-radius: 16px; background: rgba(255,200,61,0.1); border: 1px solid rgba(255,200,61,0.45); padding: 12px">
+<span style="font-size: 22px" aria-hidden="true">💡</span>
+<span style="flex-grow: 1; font-size: 13px; font-weight: 600; line-height: 1.4; color: #ffe29a">Для вывода нужно хотя бы одно пополнение баланса (от {{wdMinDep}} TON)</span>
+<button type="button" onClick="{{toDeposit}}" style="height: 36px; border-radius: 10px; border: 0; background: #ffc83d; color: #1a1300; font-family: Rubik, system-ui, sans-serif; font-size: 13px; font-weight: 900; padding: 0 12px; cursor: pointer; flex-shrink: 0">Пополнить</button>
+</div>
+</sc-if>
 <sc-if value="{{wdIsNft}}" hint-placeholder-val="{{ true }}">
 <div style="display: flex; justify-content: space-between; align-items: baseline">
 <span style="font-size: 15px; font-weight: 700">Выбери NFT</span>
@@ -338,6 +353,7 @@ function tonkeeperUrl(wallet, ton, comment) {
   var nano = Math.round(ton * 1e9);
   return 'https://app.tonkeeper.com/transfer/' + wallet + '?amount=' + nano + '&text=' + encodeURIComponent(comment);
 }
+function supportName() { var n = window.RK && window.RK.net; return (n && n.support) || ''; }
 function openLink(url) {
   var tg = window.Telegram && window.Telegram.WebApp;
   try { if (tg && tg.openLink) { tg.openLink(url); return; } } catch (e) {}
@@ -510,6 +526,11 @@ class Component extends DCLogic {
       ],
       depTitle: s.depMode === 'wd' ? 'ВЫВОД' : 'ДЕПОЗИТ',
       isDepMode: s.depMode === 'dep', isWdMode: s.depMode === 'wd',
+      wdNeedDep: s.depMode === 'wd' && !!(window.RK && window.RK.acct && window.RK.acct.loaded) && (window.RK.acct.deposited || 0) + 1e-9 < Math.max(0.01, (window.RK.net && window.RK.net.wdMinDeposit) || 0.1),
+      wdMinDep: (window.RK && window.RK.net && window.RK.net.wdMinDeposit) || 0.1,
+      toDeposit: function () { self.setState({ depMode: 'dep', depTab: 'ton' }); },
+      hasSupport: !!supportName(), supportName: supportName(),
+      openSupport: function () { if (supportName()) openTgLink('https://t.me/' + supportName()); },
       modeDep: function () { self.setState({ depMode: 'dep' }); }, modeWd: function () { self.setState({ depMode: 'wd' }); },
       modeDepSel: s.depMode === 'dep' ? 'true' : 'false', modeWdSel: s.depMode === 'wd' ? 'true' : 'false',
       modeDepBg: s.depMode === 'dep' ? '#ffc83d' : 'transparent', modeDepColor: s.depMode === 'dep' ? '#1a1300' : '#a3a8b5',
